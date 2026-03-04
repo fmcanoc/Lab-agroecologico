@@ -301,29 +301,25 @@ def sincronizar_api():
         with urllib.request.urlopen(req) as response:
             lineas = response.read().decode('utf-8').splitlines()
 
-        # LIMPIEZA: SurveyStack envía 4 o 5 filas de encabezados. 
-        # Buscamos la fila que realmente tiene los datos (la que empieza después de '_id')
+        # Buscamos la fila de los datos reales (_id)
         indice_cabecera = 0
         for i, linea in enumerate(lineas):
             if '_id' in linea:
                 indice_cabecera = i
                 break
         
-        # Saltamos las filas basura y leemos el resto
         contenido_util = io.StringIO("\n".join(lineas[indice_cabecera:]))
         lector = csv.DictReader(contenido_util, delimiter=',') 
         
         conexion = obtener_conexion()
         cur = conexion.cursor()
-        contador = 0
         usuario_actual = session['usuario_id']
+        contador = 0
         
         for fila in lector:
             nombre, cultivo, textura, id_unico = None, None, None, None
             lat, lon, desc, info = None, None, None, None
             
-            # 1. Extraemos los datos usando los nombres técnicos de SurveyStack
-            # (Basado en tu CSV: data.nombre_muestra, data.cultivo, etc.)
             for col, valor in fila.items():
                 if not col: continue
                 c = col.lower().strip()
@@ -334,45 +330,46 @@ def sincronizar_api():
                 elif 'latitud' in c: lat = valor
                 elif 'longitud' in c: lon = valor
                 elif 'descrip' in c: desc = valor
-                elif 'info' in c or 'manejo' in c: info = valor
+                elif 'info' in c: info = valor
 
-            # 2. SEGURO ANTI-DUPLICADOS: 
-            # Si el nombre ya existe o se repite, le agregamos los últimos 4 dígitos del ID único
-            if nombre and str(nombre).strip() != "":
-                sufijo = str(id_unico)[-4:] if id_unico else contador
-                nombre_final = f"{str(nombre).strip()} (#{sufijo})"
-            else:
-                # Si de plano no hay nombre, usamos el ID
-                nombre_final = f"Muestra_ID_{id_unico[:8] if id_unico else contador}"
+            if not id_unico: continue 
 
-            try:
-                cur.execute('''
-                    INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ''', (usuario_actual, nombre_final, cultivo, textura, lat, lon, desc, info))
-                contador += 1
-            except errors.UniqueViolation:
-                # Si por alguna razón extrema el nombre con ID también existe, actualizamos
-                conexion.rollback()
-                cur.execute('''
-                    UPDATE muestras SET cultivo=%s, textura=%s, latitud=%s, longitud=%s, descripcion=%s, informacion_relevante=%s, usuario_id=%s 
-                    WHERE nombre_muestra=%s
-                ''', (cultivo, textura, lat, lon, desc, info, usuario_actual, nombre_final))
-                contador += 1
+            # Generamos el nombre con el ID para evitar que se pisen muestras distintas
+            base_nombre = str(nombre).strip() if nombre and str(nombre).strip() != "" else "Muestra"
+            nombre_final = f"{base_nombre} (#{str(id_unico)[-4:]})"
+
+            # INSTRUCCIÓN MAESTRA: INSERT ON CONFLICT (UPSERT)
+            # Esto intenta insertar, y si hay conflicto de nombre+usuario, actualiza.
+            cur.execute('''
+                INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (usuario_id, nombre_muestra) 
+                DO UPDATE SET 
+                    cultivo = EXCLUDED.cultivo,
+                    textura = EXCLUDED.textura,
+                    latitud = EXCLUDED.latitud,
+                    longitud = EXCLUDED.longitud,
+                    descripcion = EXCLUDED.descripcion,
+                    informacion_relevante = EXCLUDED.informacion_relevante
+            ''', (usuario_actual, nombre_final, cultivo, textura, lat, lon, desc, info))
+            
+            contador += 1
                     
         conexion.commit()
         cur.close()
         conexion.close()
-        flash(f'¡Sincronización Perfecta! Aparecerán {contador} muestras nuevas en tu Dashboard.', 'success')
+        
+        flash(f'¡Sincronización exitosa! Se procesaron {contador} registros de SurveyStack.', 'success')
         
     except Exception as e:
-        flash(f'Error: {str(e)}', 'danger')
+        flash(f'Error en la base de datos: {str(e)}', 'danger')
         
     return redirect(url_for('inicio'))
 
 if __name__ == '__main__':
 
     app.run(debug=True)
+
 
 
 
