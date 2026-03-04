@@ -297,52 +297,62 @@ def sincronizar_api():
     url_api = "https://app.surveystack.io/api/submissions/csv?survey=69a78356a519d930190644d0&expandAllMatrices=true"
 
     try:
-        # 1. Traemos los datos de la nube
         req = urllib.request.Request(url_api, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req) as response:
-            contenido_csv = response.read().decode('utf-8')
+            lineas = response.read().decode('utf-8').splitlines()
 
-        stream = io.StringIO(contenido_csv, newline=None)
-        lector = csv.DictReader(stream, delimiter=',') 
+        # LIMPIEZA: SurveyStack envía 4 o 5 filas de encabezados. 
+        # Buscamos la fila que realmente tiene los datos (la que empieza después de '_id')
+        indice_cabecera = 0
+        for i, linea in enumerate(lineas):
+            if '_id' in linea:
+                indice_cabecera = i
+                break
         
-        # 2. Preparamos la conexión
+        # Saltamos las filas basura y leemos el resto
+        contenido_util = io.StringIO("\n".join(lineas[indice_cabecera:]))
+        lector = csv.DictReader(contenido_util, delimiter=',') 
+        
         conexion = obtener_conexion()
         cur = conexion.cursor()
         contador = 0
-        
-        # AQUÍ ESTÁ LA LÍNEA QUE FALTABA:
         usuario_actual = session['usuario_id']
         
-        # 3. Procesamos cada muestra
-        for i, fila in enumerate(lector):
-            nombre, cultivo, textura = None, None, None
+        for fila in lector:
+            nombre, cultivo, textura, id_unico = None, None, None, None
             lat, lon, desc, info = None, None, None, None
             
-            for col_original, valor in fila.items():
-                if not col_original: continue
-                col = col_original.lower().strip()
-                
-                # Buscador flexible de columnas
-                if any(k in col for k in ['nombre', 'lote', 'label']) and not nombre: nombre = valor
-                elif 'cultivo' in col: cultivo = valor
-                elif 'textura' in col: textura = valor
-                elif 'latitud' in col or 'latitude' in col: lat = valor
-                elif 'longitud' in col or 'longitude' in col: lon = valor
-                elif 'descrip' in col: desc = valor
-                elif 'info' in col or 'manejo' in col: info = valor
+            # 1. Extraemos los datos usando los nombres técnicos de SurveyStack
+            # (Basado en tu CSV: data.nombre_muestra, data.cultivo, etc.)
+            for col, valor in fila.items():
+                if not col: continue
+                c = col.lower().strip()
+                if c == '_id' or c == 'id': id_unico = valor
+                elif 'nombre_muestra' in c: nombre = valor
+                elif 'cultivo' in c: cultivo = valor
+                elif 'textura' in c: textura = valor
+                elif 'latitud' in c: lat = valor
+                elif 'longitud' in c: lon = valor
+                elif 'descrip' in c: desc = valor
+                elif 'info' in c or 'manejo' in c: info = valor
 
-            # Si no hay nombre en el CSV, usamos un genérico para no perder la fila
-            nombre_final = str(nombre).strip() if nombre else f"Muestra_Sincronizada_{i+1}"
+            # 2. SEGURO ANTI-DUPLICADOS: 
+            # Si el nombre ya existe o se repite, le agregamos los últimos 4 dígitos del ID único
+            if nombre and str(nombre).strip() != "":
+                sufijo = str(id_unico)[-4:] if id_unico else contador
+                nombre_final = f"{str(nombre).strip()} (#{sufijo})"
+            else:
+                # Si de plano no hay nombre, usamos el ID
+                nombre_final = f"Muestra_ID_{id_unico[:8] if id_unico else contador}"
 
             try:
-                # Intentamos INSERTAR
                 cur.execute('''
                     INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante) 
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ''', (usuario_actual, nombre_final, cultivo, textura, lat, lon, desc, info))
                 contador += 1
             except errors.UniqueViolation:
-                # Si ya existe, ACTUALIZAMOS
+                # Si por alguna razón extrema el nombre con ID también existe, actualizamos
                 conexion.rollback()
                 cur.execute('''
                     UPDATE muestras SET cultivo=%s, textura=%s, latitud=%s, longitud=%s, descripcion=%s, informacion_relevante=%s, usuario_id=%s 
@@ -353,15 +363,16 @@ def sincronizar_api():
         conexion.commit()
         cur.close()
         conexion.close()
-        flash(f'¡Éxito! Se sincronizaron {contador} muestras correctamente.', 'success')
+        flash(f'¡Sincronización Perfecta! Aparecerán {contador} muestras nuevas en tu Dashboard.', 'success')
         
     except Exception as e:
-        flash(f'Error al conectar: {str(e)}', 'danger')
+        flash(f'Error: {str(e)}', 'danger')
         
     return redirect(url_for('inicio'))
 
 if __name__ == '__main__':
 
     app.run(debug=True)
+
 
 
