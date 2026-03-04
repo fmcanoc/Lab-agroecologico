@@ -311,24 +311,34 @@ def sincronizar_api():
         for fila in lector:
             nombre, cultivo, textura = None, None, None
             
-            for columna, valor in fila.items():
-                if columna:
-                    col_lower = columna.lower()
-                    if 'nombre_muestra' in col_lower or 'nombre' in col_lower: nombre = valor
-                    elif 'cultivo' in col_lower: cultivo = valor
-                    elif 'textura' in col_lower: textura = valor
+            # Limpiamos los nombres de las columnas por si traen espacios invisibles
+            fila_limpia = {k.strip().lower() if k else k: v for k, v in fila.items()}
             
-            if nombre and nombre.strip() != "":
+            # Buscamos los datos con más flexibilidad
+            for col, valor in fila_limpia.items():
+                if col:
+                    if 'nombre_muestra' in col or 'nombre' in col or 'label' in col: 
+                        nombre = valor
+                    elif 'cultivo' in col: 
+                        cultivo = valor
+                    elif 'textura' in col: 
+                        textura = valor
+            
+            # Si encontramos un nombre válido
+            if nombre and str(nombre).strip() != "":
+                nombre_limpio = str(nombre).strip()
                 try:
+                    # Intentamos insertar asegurando que el usuario_id sea el actual
                     cur.execute('''INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura) 
                                    VALUES (%s, %s, %s, %s)''', 
-                                (session['usuario_id'], nombre.strip(), cultivo, textura))
+                                (session['usuario_id'], nombre_limpio, cultivo, textura))
                     contador += 1
                 except errors.UniqueViolation:
                     conexion.rollback()
+                    # Si ya existe, forzamos que ahora le pertenezca al usuario activo
                     cur.execute('''UPDATE muestras SET cultivo=%s, textura=%s 
                                    WHERE usuario_id=%s AND nombre_muestra=%s''', 
-                                (cultivo, textura, session['usuario_id'], nombre.strip()))
+                                (cultivo, textura, session['usuario_id'], nombre_limpio))
                     contador += 1
                     
         conexion.commit()
@@ -343,4 +353,5 @@ def sincronizar_api():
     return redirect(url_for('inicio'))
 
 if __name__ == '__main__':
+
     app.run(debug=True)
