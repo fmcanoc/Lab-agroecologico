@@ -2,167 +2,332 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Trazabilidad de Suelos - Lab Agroecológico</title>
+    <title>Lab Agroecológico - Trazabilidad</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        body { background-color: #f8f9fa; }
-        .card { border: none; border-radius: 10px; }
-        .nav-tabs .nav-link { color: #495057; font-weight: 500; border: none; padding: 12px 20px; }
-        .nav-tabs .nav-link.active { color: #0d6efd; font-weight: bold; border-bottom: 3px solid #0d6efd; background: none; }
-        .iframe-container { width: 100%; height: 700px; border-radius: 10px; overflow: hidden; }
+        :root {
+            --agro-dark: #1b4332;
+            --agro-primary: #2d6a4f;
+            --agro-light: #d8f3dc;
+            --agro-bg: #f4f7f6;
+        }
+        body { 
+            background-color: var(--agro-bg); 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            color: #333;
+        }
+        .text-agro { color: var(--agro-primary) !important; }
+        .bg-agro { background-color: var(--agro-primary) !important; color: white; }
+        
+        /* Encabezado y Tarjetas */
+        .header-bar { border-bottom: 3px solid var(--agro-primary); }
+        .section-card { 
+            background: white; 
+            border: 1px solid #e9ecef; 
+            border-radius: 10px; 
+            padding: 1.5rem; 
+            margin-bottom: 1.5rem; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02); 
+        }
+        
+        /* Pestañas */
+        .nav-tabs { border-bottom: 2px solid #dee2e6; margin-bottom: 1.5rem; }
+        .nav-tabs .nav-link { color: #6c757d; font-weight: 500; border: none; padding: 12px 20px; border-radius: 8px 8px 0 0; transition: all 0.3s; }
+        .nav-tabs .nav-link:hover { color: var(--agro-primary); background-color: var(--agro-light); }
+        .nav-tabs .nav-link.active { color: var(--agro-primary); font-weight: bold; border-bottom: 3px solid var(--agro-primary); background: none; }
+        
+        /* Botones */
+        .btn-agro { background-color: var(--agro-primary); color: white; border: none; font-weight: 500; }
+        .btn-agro:hover { background-color: var(--agro-dark); color: white; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(45, 106, 79, 0.2); }
+        
+        /* Tablas y Mapa */
+        .table > thead { background-color: var(--agro-dark); color: white; }
+        .table th { font-weight: 500; }
+        .map-container { border-radius: 10px; overflow: hidden; border: 1px solid #dee2e6; }
     </style>
 </head>
 <body class="container mt-4 mb-5">
 
-    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm border">
-        <h2 class="m-0 text-primary"><i class="bi bi-flower1"></i> Trazabilidad de Suelos</h2>
-        <div>
-            <span class="me-3 text-muted"><strong>{{ username }}</strong></span>
-            <a href="/logout" class="btn btn-sm btn-outline-danger">Salir</a>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% set bg_color = 'success' if category == 'success' else ('danger' if category == 'danger' else 'primary') %}
+                    <div class="toast align-items-center text-white bg-{{ bg_color }} border-0 mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body fw-bold"><i class="bi bi-info-circle me-2"></i>{{ message }}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-4 rounded shadow-sm header-bar">
+        <h2 class="m-0 text-agro fw-bold"><i class="bi bi-tree-fill me-2"></i> Lab Agroecológico</h2>
+        <div class="d-flex align-items-center">
+            <div class="me-3 text-end">
+                <small class="text-muted d-block lh-1">Productor / Usuario</small>
+                <strong>{{ username }}</strong>
+            </div>
+            <a href="/logout" class="btn btn-sm btn-outline-danger rounded-pill px-3"><i class="bi bi-box-arrow-right"></i> Salir</a>
         </div>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
-            {{ message }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <ul class="nav nav-tabs mb-3" id="misPestanas" role="tablist">
-        <li class="nav-item"><button class="nav-link active" id="muestras-tab" data-bs-toggle="tab" data-bs-target="#muestras" type="button"><i class="bi bi-journal-plus"></i> Registro / Sync</button></li>
-        <li class="nav-item"><button class="nav-link" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button">Carbono</button></li>
-        <li class="nav-item"><button class="nav-link" id="ph-tab" data-bs-toggle="tab" data-bs-target="#ph" type="button">pH/Cond.</button></li>
-        <li class="nav-item"><button class="nav-link" id="mop-tab" data-bs-toggle="tab" data-bs-target="#mop" type="button">MOP</button></li>
-        <li class="nav-item"><button class="nav-link" id="estab-tab" data-bs-toggle="tab" data-bs-target="#estab" type="button">Agregados</button></li>
-        <li class="nav-item ms-auto"><button class="nav-link fw-bold text-success" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button">Dashboard</button></li>
+    <ul class="nav nav-tabs" id="misPestanas" role="tablist">
+        <li class="nav-item"><button class="nav-link active" id="muestras-tab" data-bs-toggle="tab" data-bs-target="#muestras" type="button"><i class="bi bi-journal-plus me-1"></i> Registro</button></li>
+        <li class="nav-item"><button class="nav-link" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button"><i class="bi bi-droplet-half me-1"></i> Carbono</button></li>
+        <li class="nav-item"><button class="nav-link" id="ph-tab" data-bs-toggle="tab" data-bs-target="#ph" type="button"><i class="bi bi-speedometer2 me-1"></i> pH/Cond.</button></li>
+        <li class="nav-item"><button class="nav-link" id="mop-tab" data-bs-toggle="tab" data-bs-target="#mop" type="button"><i class="bi bi-layers me-1"></i> MOP</button></li>
+        <li class="nav-item"><button class="nav-link" id="estab-tab" data-bs-toggle="tab" data-bs-target="#estab" type="button"><i class="bi bi-grid-3x3-gap me-1"></i> Agregados</button></li>
+        <li class="nav-item ms-auto"><button class="nav-link fw-bold text-agro" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-1"></i> Dashboard</button></li>
     </ul>
 
-    <div class="tab-content bg-white p-4 rounded shadow-sm border" id="contenidoPestanas">
+    <div class="tab-content" id="contenidoPestanas">
         
         <div class="tab-pane fade show active" id="muestras">
             
-            <div class="row mb-4 align-items-center bg-light p-3 rounded border">
-                <div class="col-md-8"><h5 class="m-0 text-primary"><i class="bi bi-cloud-arrow-down"></i> Sincronizar con SurveyStack</h5><small class="text-muted">Importa los datos registrados en el campo.</small></div>
-                <div class="col-md-4 text-end"><form action="/sincronizar_api" method="POST"><button type="submit" class="btn btn-primary fw-bold shadow-sm">SINCRONIZAR AHORA</button></form></div>
+            <div class="section-card bg-light d-flex justify-content-between align-items-center border-primary border-opacity-25">
+                <div>
+                    <h5 class="text-primary fw-bold m-0"><i class="bi bi-cloud-arrow-down-fill me-2"></i> Importar Muestras (SurveyStack)</h5>
+                    <p class="text-muted small m-0 mt-1">Sincroniza los lotes mapeados y registrados con la aplicación móvil en el campo.</p>
+                </div>
+                <form action="/sincronizar_api" method="POST">
+                    <button type="submit" class="btn btn-primary px-4 fw-bold rounded-pill shadow-sm"><i class="bi bi-arrow-repeat me-1"></i> Sincronizar Ahora</button>
+                </form>
             </div>
 
             <form action="/" method="POST" class="form-memoria" data-tab="registro">
                 <input type="hidden" name="form_type" value="registro_muestra">
-                <div class="bg-light p-3 rounded mb-4 border">
-                    <label class="form-label fw-bold text-primary">Seleccionar muestra existente para editar:</label>
-                    <select class="form-select selector-memoria w-auto" name="muestra_id_editar">
-                        <option value="">-- Nueva Muestra --</option>
-                        {% for m in muestras %} <option value="{{ m.id }}">{{ m.nombre_muestra }}</option> {% endfor %}
-                    </select>
+                
+                <div class="section-card">
+                    <h5 class="mb-3 text-agro border-bottom pb-2"><i class="bi bi-pencil-square me-2"></i> Ingreso / Edición Manual</h5>
+                    
+                    <div class="mb-4 bg-light p-3 rounded d-inline-block border">
+                        <label class="form-label small fw-bold text-muted mb-1 d-block text-uppercase">¿Modificar una muestra existente?</label>
+                        <select class="form-select selector-memoria shadow-sm border-0" name="muestra_id_editar" style="min-width: 250px;">
+                            <option value="">-- No, Registrar Lote Nuevo --</option>
+                            {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4"><label class="form-label fw-bold text-secondary">Nombre del Lote *</label><input type="text" class="form-control" name="nombre" required placeholder="Ej: Lote Norte"></div>
+                        <div class="col-md-4"><label class="form-label fw-bold text-secondary">Cultivo Principal</label><input type="text" class="form-control" name="cultivo" placeholder="Ej: Vid, Ajo, Papa"></div>
+                        <div class="col-md-4"><label class="form-label fw-bold text-secondary">Textura del Suelo</label><input type="text" class="form-control" name="textura" placeholder="Ej: Franco arcilloso"></div>
+                    </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-4 mb-3"><label class="form-label fw-bold">Nombre *</label><input type="text" class="form-control" name="nombre" required></div>
-                    <div class="col-md-4 mb-3"><label class="form-label fw-bold">Cultivo</label><input type="text" class="form-control" name="cultivo"></div>
-                    <div class="col-md-4 mb-3"><label class="form-label fw-bold">Textura</label><input type="text" class="form-control" name="textura"></div>
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="section-card h-100">
+                            <h6 class="text-muted fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Ubicación Geográfica (Opcional)</h6>
+                            <div class="row g-2">
+                                <div class="col-sm-6"><label class="small text-muted">Latitud</label><input type="number" step="any" class="form-control" name="latitud" placeholder="Ej: -32.89"></div>
+                                <div class="col-sm-6"><label class="small text-muted">Longitud</label><input type="number" step="any" class="form-control" name="longitud" placeholder="Ej: -68.82"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="section-card h-100">
+                            <h6 class="text-muted fw-bold mb-3"><i class="bi bi-card-text text-info me-1"></i> Detalles Cualitativos</h6>
+                            <div class="mb-2"><input type="text" class="form-control form-control-sm mb-2" name="descripcion" placeholder="Descripción breve del terreno"></div>
+                            <div><textarea class="form-control form-control-sm" name="info" rows="2" placeholder="Observaciones de manejo, riego, etc."></textarea></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="row mb-3">
-                    <div class="col-md-6"><label>Latitud</label><input type="number" step="any" class="form-control" name="latitud"></div>
-                    <div class="col-md-6"><label>Longitud</label><input type="number" step="any" class="form-control" name="longitud"></div>
+
+                <div class="text-end mt-3">
+                    <button type="submit" class="btn btn-agro btn-lg px-5 rounded-pill"><i class="bi bi-save me-2"></i> Guardar Muestra</button>
                 </div>
-                <div class="mb-3"><label class="form-label fw-bold">Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
-                <div class="mb-4"><label class="form-label fw-bold">Observaciones</label><textarea class="form-control" name="info" rows="2"></textarea></div>
-                <button type="submit" class="btn btn-success px-4">Guardar Cambios</button>
             </form>
         </div>
 
         <div class="tab-pane fade" id="carbono">
             <form action="/" method="POST" class="form-memoria" data-tab="carbono">
                 <input type="hidden" name="form_type" value="carbono_activo">
-                <div class="mb-3"><label class="fw-bold">Elegir Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Seleccionar --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
-                <div class="row mb-3">
-                    <div class="col-md-6"><label>Peso Suelo (g)</label><input type="number" step="any" class="form-control" name="peso_suelo_carbono" value="2.5"></div>
-                    <div class="col-md-6"><label>Absorbancia Muestra</label><input type="number" step="any" class="form-control" name="abs_muestra"></div>
+                
+                <div class="section-card">
+                    <h5 class="text-agro mb-4"><i class="bi bi-droplet-half me-2"></i> Análisis de Carbono Activo (POXC)</h5>
+                    <div class="col-md-5 mb-4"><label class="form-label fw-bold">Seleccionar Muestra</label><select class="form-select selector-memoria border-success" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
+                    
+                    <h6 class="fw-bold text-secondary mb-3 mt-4 border-bottom pb-2">1. Datos de la Muestra</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4"><label class="text-muted small">Peso Suelo (g)</label><input type="number" step="any" class="form-control" name="peso_suelo_carbono" value="2.5"></div>
+                        <div class="col-md-4"><label class="text-muted small fw-bold text-dark">Absorbancia de Muestra</label><input type="number" step="any" class="form-control bg-light border-primary" name="abs_muestra" placeholder="Abs Muestra" required></div>
+                    </div>
+
+                    <h6 class="fw-bold text-secondary mb-3 mt-4 border-bottom pb-2">2. Curva de Calibración (Estándares)</h6>
+                    <div class="row g-2 mb-4">
+                        <div class="col"><label class="text-muted small">Abs 0.005</label><input type="number" step="any" class="form-control" name="abs_1" required></div>
+                        <div class="col"><label class="text-muted small">Abs 0.010</label><input type="number" step="any" class="form-control" name="abs_2" required></div>
+                        <div class="col"><label class="text-muted small">Abs 0.015</label><input type="number" step="any" class="form-control" name="abs_3" required></div>
+                        <div class="col"><label class="text-muted small">Abs 0.020</label><input type="number" step="any" class="form-control" name="abs_4" required></div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-agro px-4"><i class="bi bi-calculator me-2"></i> Calcular y Guardar POXC</button>
                 </div>
-                <div class="row mb-4">
-                    <div class="col"><input type="number" step="any" class="form-control" name="abs_1" placeholder="Abs 0.005"></div>
-                    <div class="col"><input type="number" step="any" class="form-control" name="abs_2" placeholder="Abs 0.010"></div>
-                    <div class="col"><input type="number" step="any" class="form-control" name="abs_3" placeholder="Abs 0.015"></div>
-                    <div class="col"><input type="number" step="any" class="form-control" name="abs_4" placeholder="Abs 0.020"></div>
-                </div>
-                <button type="submit" class="btn btn-primary">Calcular y Guardar POXC</button>
             </form>
         </div>
 
         <div class="tab-pane fade" id="ph">
             <form action="/" method="POST" class="form-memoria" data-tab="ph">
                 <input type="hidden" name="form_type" value="ph_conductividad">
-                <div class="mb-3"><label class="fw-bold">Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Seleccionar --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
-                <div class="row"><div class="col"><label>pH</label><input type="number" step="any" class="form-control" name="ph"></div><div class="col"><label>Conductividad</label><input type="number" step="any" class="form-control" name="conductividad"></div></div>
-                <button type="submit" class="btn btn-primary mt-4">Guardar pH/CE</button>
+                <div class="section-card">
+                    <h5 class="text-agro mb-4"><i class="bi bi-speedometer2 me-2"></i> Medición de pH y Conductividad</h5>
+                    <div class="col-md-5 mb-4"><label class="form-label fw-bold">Seleccionar Muestra</label><select class="form-select selector-memoria border-success" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
+                    
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-4"><label class="fw-bold text-muted">Valor de pH</label><input type="number" step="any" class="form-control form-control-lg" name="ph" placeholder="Ej: 7.2"></div>
+                        <div class="col-md-4"><label class="fw-bold text-muted">Conductividad Eléctrica (dS/m)</label><input type="number" step="any" class="form-control form-control-lg" name="conductividad" placeholder="Ej: 1.5"></div>
+                    </div>
+                    <button type="submit" class="btn btn-agro px-4"><i class="bi bi-save me-2"></i> Guardar Parámetros</button>
+                </div>
             </form>
         </div>
 
         <div class="tab-pane fade" id="mop">
             <form action="/" method="POST" class="form-memoria" data-tab="mop">
                 <input type="hidden" name="form_type" value="materia_organica">
-                <div class="mb-3"><label class="fw-bold">Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Seleccionar --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
-                <div class="row"><div class="col"><label>Peso partículas (mg)</label><input type="number" step="any" class="form-control" name="peso_particulas"></div><div class="col"><label>Peso suelo (g)</label><input type="number" step="any" class="form-control" name="peso_suelo"></div></div>
-                <button type="submit" class="btn btn-primary mt-4">Guardar MOP</button>
+                <div class="section-card">
+                    <h5 class="text-agro mb-4"><i class="bi bi-layers me-2"></i> Materia Orgánica Particulada (MOP)</h5>
+                    <div class="col-md-5 mb-4"><label class="form-label fw-bold">Seleccionar Muestra</label><select class="form-select selector-memoria border-success" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
+                    
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-4"><label class="text-muted fw-bold">Peso partículas lavadas (mg)</label><input type="number" step="any" class="form-control" name="peso_particulas" required></div>
+                        <div class="col-md-4"><label class="text-muted fw-bold">Peso total del suelo (g)</label><input type="number" step="any" class="form-control" name="peso_suelo" required></div>
+                    </div>
+                    <button type="submit" class="btn btn-agro px-4"><i class="bi bi-calculator me-2"></i> Calcular % MOP</button>
+                </div>
             </form>
         </div>
 
         <div class="tab-pane fade" id="estab">
             <form action="/" method="POST" class="form-memoria" data-tab="estab">
                 <input type="hidden" name="form_type" value="estabilidad_agregados">
-                <div class="mb-3"><label class="fw-bold">Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Seleccionar --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
-                <div class="row mb-3"><div class="col"><label>Peso Inicial</label><input type="number" step="any" class="form-control" name="peso_inicial"></div><div class="col"><label>Peso Filtro</label><input type="number" step="any" class="form-control" name="peso_filtro"></div></div>
-                <div class="row mb-3"><div class="col"><label>Peso Frac. Mayor</label><input type="number" step="any" class="form-control" name="peso_fraccion_mayor"></div><div class="col"><label>Peso Frac. 250</label><input type="number" step="any" class="form-control" name="peso_fraccion_250"></div><div class="col"><label>Peso Piedras</label><input type="number" step="any" class="form-control" name="peso_piedras"></div></div>
-                <button type="submit" class="btn btn-primary">Guardar Estabilidad</button>
+                <div class="section-card">
+                    <h5 class="text-agro mb-4"><i class="bi bi-grid-3x3-gap me-2"></i> Estabilidad de Agregados</h5>
+                    <div class="col-md-5 mb-4"><label class="form-label fw-bold">Seleccionar Muestra</label><select class="form-select selector-memoria border-success" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4"><label class="text-muted small">Peso Inicial (g)</label><input type="number" step="any" class="form-control" name="peso_inicial" required></div>
+                        <div class="col-md-4"><label class="text-muted small">Peso del Filtro vacío (g)</label><input type="number" step="any" class="form-control" name="peso_filtro" required></div>
+                        <div class="col-md-4"><label class="text-muted small">Peso Piedras >2mm (g)</label><input type="number" step="any" class="form-control" name="peso_piedras" required></div>
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6"><label class="text-muted small fw-bold">Peso Fracción Mayor a 2mm + Filtro (g)</label><input type="number" step="any" class="form-control" name="peso_fraccion_mayor" required></div>
+                        <div class="col-md-6"><label class="text-muted small fw-bold">Peso Fracción 250µm a 2mm + Filtro (g)</label><input type="number" step="any" class="form-control" name="peso_fraccion_250" required></div>
+                    </div>
+                    <button type="submit" class="btn btn-agro px-4"><i class="bi bi-calculator me-2"></i> Calcular Estabilidad</button>
+                </div>
             </form>
         </div>
 
         <div class="tab-pane fade" id="consolidado">
-            <div class="d-flex justify-content-between mb-4"><h4 class="text-success">Panel Analítico</h4><a href="/descargar_csv" class="btn btn-success btn-sm">Descargar CSV</a></div>
-            <div class="row mb-4">
-                <div class="col-md-4"><div class="card border p-2"><div id="miMapa" style="height: 300px;"></div></div></div>
-                <div class="col-md-8"><div class="card border p-2"><canvas id="miGraficoDinamico" style="max-height: 280px;"></canvas></div></div>
+            
+            {% if not consolidado %}
+            <div class="section-card text-center py-5">
+                <i class="bi bi-box2 text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">Aún no hay muestras registradas</h4>
+                <p class="text-secondary">Sincroniza tus datos de campo o carga una muestra manualmente para ver tus resultados aquí.</p>
+                <button class="btn btn-outline-primary mt-2" onclick="document.getElementById('muestras-tab').click()"><i class="bi bi-arrow-left"></i> Ir a Registro</button>
             </div>
-            <div class="table-responsive">
-                <table class="table table-hover border align-middle">
-                    <thead class="table-dark"><tr><th>Muestra</th><th>pH</th><th>Cond.</th><th>Carbono</th><th>MOP</th><th>Agreg.</th><th>Acciones</th></tr></thead>
-                    <tbody>
-                        {% for fila in consolidado %}
-                        <tr>
-                            <td class="fw-bold">{{ fila.nombre_muestra }}</td>
-                            <td>{{ fila.ph or '-' }}</td><td>{{ fila.conductividad or '-' }}</td>
-                            <td>{{ "%.2f"|format(fila.resultado_carbono) if fila.resultado_carbono else '-' }}</td>
-                            <td>{{ "%.2f"|format(fila.mop) if fila.mop else '-' }}%</td>
-                            <td>{{ "%.2f"|format(fila.porcentaje_mayor_2mm) if fila.porcentaje_mayor_2mm else '-' }}%</td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#modal-{{ fila.id }}"><i class="bi bi-eye"></i></button>
-                                <form action="/eliminar_muestra/{{ fila.id }}" method="POST" style="display:inline;"><button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar permanente?');"><i class="bi bi-trash"></i></button></form>
-                            </td>
-                        </tr>
-                        <div class="modal fade" id="modal-{{ fila.id }}" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header bg-light"><h5 class="modal-title">{{ fila.nombre_muestra }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                                    <div class="modal-body text-start">
-                                        <p><strong>Cultivo:</strong> {{ fila.cultivo or 'N/A' }}</p>
-                                        <p><strong>Textura:</strong> {{ fila.textura or 'N/A' }}</p>
-                                        <p><strong>Descripción:</strong> {{ fila.descripcion or 'N/A' }}</p>
-                                        <p><strong>Info Relevante:</strong> {{ fila.informacion_relevante or 'N/A' }}</p>
-                                        <p><strong>Coordenadas:</strong> {% if fila.latitud %} {{ fila.latitud }}, {{ fila.longitud }} {% else %} Sin GPS {% endif %}</p>
+            {% else %}
+            
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <div>
+                    <h4 class="text-agro fw-bold m-0">Panel Analítico Consolidado</h4>
+                    <small class="text-muted">Resumen interactivo de todas tus muestras analizadas.</small>
+                </div>
+                <a href="/descargar_csv" class="btn btn-success shadow-sm rounded-pill px-4"><i class="bi bi-file-earmark-excel me-2"></i> Exportar a Excel (CSV)</a>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="section-card h-100 p-2 map-container">
+                        <div id="miMapa" style="height: 320px; width: 100%;"></div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="section-card h-100 d-flex flex-column justify-content-center">
+                        <h6 class="text-center text-muted mb-3 fw-bold">Niveles de Carbono Activo por Lote</h6>
+                        <canvas id="miGraficoDinamico" style="max-height: 280px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card p-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle text-center m-0">
+                        <thead class="bg-agro text-white">
+                            <tr>
+                                <th class="py-3 px-3 text-start">Lote / Muestra</th>
+                                <th>pH</th>
+                                <th>Cond.</th>
+                                <th>Carbono (mg/kg)</th>
+                                <th>MOP (%)</th>
+                                <th>Agreg. >2mm</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fila in consolidado %}
+                            <tr>
+                                <td class="fw-bold text-start px-3 text-primary">{{ fila.nombre_muestra }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ fila.ph or '-' }}</span></td>
+                                <td><span class="badge bg-light text-dark border">{{ fila.conductividad or '-' }}</span></td>
+                                <td>{% if fila.resultado_carbono %}<span class="badge bg-success shadow-sm">{{ "%.2f"|format(fila.resultado_carbono) }}</span>{% else %}-{% endif %}</td>
+                                <td>{% if fila.mop %}<span class="badge bg-warning text-dark">{{ "%.2f"|format(fila.mop) }}%</span>{% else %}-{% endif %}</td>
+                                <td>{% if fila.porcentaje_mayor_2mm %}<span class="badge bg-info text-dark">{{ "%.1f"|format(fila.porcentaje_mayor_2mm) }}%</span>{% else %}-{% endif %}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-light border shadow-sm text-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#modal-{{ fila.id }}" title="Ver detalles cualitativos">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </button>
+                                    <form action="/eliminar_muestra/{{ fila.id }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-light border shadow-sm text-danger rounded-circle ms-1" onclick="return confirm('¿Estás seguro de eliminar todo el registro de {{ fila.nombre_muestra }}?');" title="Eliminar muestra">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+
+                            <div class="modal fade" id="modal-{{ fila.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow-lg">
+                                        <div class="modal-header bg-light border-0">
+                                            <h5 class="modal-title fw-bold text-agro"><i class="bi bi-card-heading me-2"></i> {{ fila.nombre_muestra }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-start p-4">
+                                            <div class="row mb-3">
+                                                <div class="col-6"><small class="text-muted d-block">Cultivo</small><strong>{{ fila.cultivo or 'N/A' }}</strong></div>
+                                                <div class="col-6"><small class="text-muted d-block">Textura</small><strong>{{ fila.textura or 'N/A' }}</strong></div>
+                                            </div>
+                                            <div class="mb-3"><small class="text-muted d-block">Descripción de campo</small><p class="m-0 bg-light p-2 rounded border">{{ fila.descripcion or 'Sin descripción registrada.' }}</p></div>
+                                            <div class="mb-3"><small class="text-muted d-block">Información Relevante</small><p class="m-0 bg-light p-2 rounded border">{{ fila.informacion_relevante or 'Sin información adicional.' }}</p></div>
+                                            <div>
+                                                <small class="text-muted d-block mb-1">Coordenadas GPS</small>
+                                                {% if fila.latitud %}
+                                                    <span class="badge bg-secondary"><i class="bi bi-geo-alt-fill me-1"></i> {{ fila.latitud }}, {{ fila.longitud }}</span>
+                                                {% else %}
+                                                    <span class="text-muted small fst-italic">Sin georreferenciación</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+            {% endif %}
         </div>
     </div>
 
@@ -171,7 +336,12 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             
-            // PUNTO 4: Redirección automática a la pestaña correcta tras guardar
+            // 1. INICIALIZAR TOASTS (Notificaciones)
+            const toastElList = document.querySelectorAll('.toast');
+            const toastList = [...toastElList].map(toastEl => new bootstrap.Toast(toastEl, { delay: 4000 }));
+            toastList.forEach(toast => toast.show());
+
+            // 2. PERSISTENCIA DE PESTAÑAS INTELIGENTE
             let activeTabId = window.location.hash ? window.location.hash.substring(1) + '-tab' : localStorage.getItem('pestañaActiva');
             if (activeTabId) { 
                 let t = document.querySelector('#' + activeTabId); 
@@ -180,11 +350,11 @@
             document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(btn => { 
                 btn.addEventListener('shown.bs.tab', e => {
                     localStorage.setItem('pestañaActiva', e.target.id);
-                    window.location.hash = e.target.getAttribute('data-bs-target');
+                    window.history.replaceState(null, null, e.target.getAttribute('data-bs-target'));
                 }); 
             });
 
-            // PUNTO 7: Memoria y Auto-Relleno 
+            // 3. MEMORIA DE FORMULARIOS Y ALERTAS
             const selectores = document.querySelectorAll('.selector-memoria');
             selectores.forEach(select => {
                 select.addEventListener('change', function() {
@@ -198,7 +368,6 @@
                         return;
                     }
 
-                    // Tu código fetch original que funcionaba perfecto
                     fetch('/api/datos_crudos/' + id)
                         .then(r => r.json())
                         .then(data => {
@@ -212,7 +381,7 @@
                                 form.querySelector('[name="longitud"]').value = data.longitud || '';
                                 form.querySelector('[name="descripcion"]').value = data.descripcion || '';
                                 form.querySelector('[name="info"]').value = data.info || '';
-                                tieneDatosReales = true; // En registro siempre avisa si editas
+                                tieneDatosReales = true;
                             }
                             if(tab === 'ph' && data.ph !== undefined && data.ph !== null) { 
                                 form.querySelector('[name="ph"]').value = data.ph; 
@@ -242,34 +411,71 @@
                                 tieneDatosReales = true;
                             }
                             
-                            // SOLO activa la alerta si la DB devolvió datos para este tab
                             form.dataset.modificando = tieneDatosReales ? "true" : "false";
                         });
                 });
             });
 
-            // CONFIRMACIÓN ANTES DE SOBRESCRIBIR
             document.querySelectorAll('.form-memoria').forEach(form => {
                 form.onsubmit = function(e) {
                     if (this.dataset.modificando === "true") {
-                        if (!confirm("⚠️ Esta muestra ya tiene datos guardados en esta sección.\n¿Estás seguro de que deseas SOBRESCRIBIRLOS?")) {
+                        if (!confirm("⚠️ Esta muestra ya tiene datos guardados en esta sección.\n¿Estás seguro de que deseas SOBRESCRIBIRLOS de forma permanente?")) {
                             e.preventDefault();
                         }
                     }
                 };
             });
 
-            // GRÁFICOS Y MAPA ORIGINALES
-            let names = []; let carbon = [];
-            {% for f in consolidado %} names.push("{{ f.nombre_muestra }}"); carbon.push({{ f.resultado_carbono if f.resultado_carbono else 'null' }}); {% endfor %}
-            const ctx = document.getElementById('miGraficoDinamico').getContext('2d');
-            new Chart(ctx, { type: 'bar', data: { labels: names, datasets: [{ label: 'Carbono Activo', data: carbon, backgroundColor: '#198754' }] } });
+            // 4. MAPA Y GRÁFICOS (Solo si hay datos para evitar errores JS)
+            {% if consolidado %}
+                let names = []; let carbon = [];
+                {% for f in consolidado %} 
+                    names.push("{{ f.nombre_muestra }}"); 
+                    carbon.push({{ f.resultado_carbono if f.resultado_carbono else 'null' }}); 
+                {% endfor %}
+                
+                const ctx = document.getElementById('miGraficoDinamico').getContext('2d');
+                new Chart(ctx, { 
+                    type: 'bar', 
+                    data: { 
+                        labels: names, 
+                        datasets: [{ 
+                            label: 'Carbono Activo (mg/kg)', 
+                            data: carbon, 
+                            backgroundColor: '#52b788',
+                            borderRadius: 4
+                        }] 
+                    },
+                    options: { maintainAspectRatio: false }
+                });
 
-            let map = L.map('miMapa').setView([-32.89, -68.82], 5);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            {% for f in consolidado %} {% if f.latitud %} L.marker([{{ f.latitud }}, {{ f.longitud }}]).addTo(map).bindPopup("{{ f.nombre_muestra }}"); {% endif %} {% endfor %}
+                let map = L.map('miMapa').setView([-32.89, -68.82], 5);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                
+                let markers = [];
+                {% for f in consolidado %} 
+                    {% if f.latitud %} 
+                        var marker = L.marker([{{ f.latitud }}, {{ f.longitud }}]).addTo(map)
+                        .bindPopup("<b>{{ f.nombre_muestra }}</b><br>{{ f.cultivo or 'Sin cultivo' }}");
+                        markers.push(marker);
+                    {% endif %} 
+                {% endfor %}
+                
+                // Si hay pines, centramos el mapa en ellos automáticamente
+                if(markers.length > 0) {
+                    var group = new L.featureGroup(markers);
+                    // Solo hacemos fitBounds cuando la pestaña se muestra para evitar un bug de Leaflet
+                    document.getElementById('consolidado-tab').addEventListener('shown.bs.tab', function () {
+                        map.invalidateSize();
+                        map.fitBounds(group.getBounds().pad(0.1));
+                    });
+                }
+            {% endif %}
         });
     </script>
 </body>
 </html>
+
 
