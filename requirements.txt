@@ -1,0 +1,7 @@
+Flask
+Werkzeug
+psycopg[binary]
+numpy
+scipy
+matplotlib
+gunicorn
