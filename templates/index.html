@@ -2,42 +2,31 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Trazabilidad de Suelos - Lab Agroecológico</title>
+    <title>Lab Suelos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background-color: #f8f9fa; }
-        .card { border: none; border-radius: 10px; }
-        .nav-tabs .nav-link { color: #495057; font-weight: 500; border: none; padding: 12px 20px; }
         .nav-tabs .nav-link.active { color: #0d6efd; font-weight: bold; border-bottom: 3px solid #0d6efd; background: none; }
-        .iframe-container { width: 100%; height: 700px; border-radius: 10px; overflow: hidden; }
     </style>
 </head>
 <body class="container mt-4 mb-5">
 
     <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm border">
         <h2 class="m-0 text-primary"><i class="bi bi-flower1"></i> Trazabilidad de Suelos</h2>
-        <div>
-            <span class="me-3 text-muted"><strong>{{ username }}</strong></span>
-            <a href="/logout" class="btn btn-sm btn-outline-danger">Salir</a>
-        </div>
+        <div><span class="me-3 text-muted"><strong>{{ username }}</strong></span><a href="/logout" class="btn btn-sm btn-outline-danger">Salir</a></div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
-            {{ message }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
+      {% if messages %}{% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show">{{ message }}<button class="btn-close" data-bs-dismiss="alert"></button></div>
+      {% endfor %}{% endif %}
     {% endwith %}
 
     <ul class="nav nav-tabs mb-3" id="misPestanas" role="tablist">
-        <li class="nav-item"><button class="nav-link active" id="muestras-tab" data-bs-toggle="tab" data-bs-target="#muestras" type="button"><i class="bi bi-journal-plus"></i> Registro</button></li>
-        <li class="nav-item"><button class="nav-link text-primary fw-bold" id="campo-tab" data-bs-toggle="tab" data-bs-target="#campo" type="button"><i class="bi bi-phone"></i> Campo / Sync</button></li>
+        <li class="nav-item"><button class="nav-link active" id="muestras-tab" data-bs-toggle="tab" data-bs-target="#muestras" type="button">Registro / Sync</button></li>
         <li class="nav-item"><button class="nav-link" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button">Carbono</button></li>
         <li class="nav-item"><button class="nav-link" id="ph-tab" data-bs-toggle="tab" data-bs-target="#ph" type="button">pH/Cond.</button></li>
         <li class="nav-item"><button class="nav-link" id="mop-tab" data-bs-toggle="tab" data-bs-target="#mop" type="button">MOP</button></li>
@@ -48,101 +37,76 @@
     <div class="tab-content bg-white p-4 rounded shadow-sm border" id="contenidoPestanas">
         
         <div class="tab-pane fade show active" id="muestras">
+            <div class="bg-light p-3 rounded mb-4 border d-flex justify-content-between align-items-center">
+                <h5 class="m-0 text-primary">Sincronizar con SurveyStack</h5>
+                <form action="/sincronizar_api" method="POST"><button type="submit" class="btn btn-primary fw-bold">SINCRONIZAR AHORA</button></form>
+            </div>
+
             <form action="/" method="POST" class="form-memoria" data-tab="registro">
                 <input type="hidden" name="form_type" value="registro_muestra">
-                <div class="bg-light p-3 rounded mb-4 border">
-                    <label class="form-label fw-bold text-primary">Seleccionar muestra existente para editar:</label>
-                    <select class="form-select selector-memoria w-auto" name="muestra_id_selector">
-                        <option value="">-- Nueva Muestra --</option>
-                        {% for m in muestras %} <option value="{{ m.id }}">{{ m.nombre_muestra }}</option> {% endfor %}
-                    </select>
-                </div>
+                <select class="form-select selector-memoria mb-4 w-auto" name="muestra_id_editar">
+                    <option value="">-- Nueva Muestra --</option>
+                    {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
+                </select>
                 <div class="row">
-                    <div class="col-md-4 mb-3"><label class="form-label fw-bold">Nombre *</label><input type="text" class="form-control" name="nombre" required></div>
-                    <div class="col-md-4 mb-3"><label class="form-label fw-bold">Cultivo</label><input type="text" class="form-control" name="cultivo"></div>
-                    <div class="col-md-4 mb-3"><label class="form-label fw-bold">Textura</label><input type="text" class="form-control" name="textura"></div>
+                    <div class="col-md-4 mb-3"><label>Nombre *</label><input type="text" class="form-control" name="nombre" required></div>
+                    <div class="col-md-4 mb-3"><label>Cultivo</label><input type="text" class="form-control" name="cultivo"></div>
+                    <div class="col-md-4 mb-3"><label>Textura</label><input type="text" class="form-control" name="textura"></div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-6"><label>Latitud</label><input type="number" step="any" class="form-control" name="latitud"></div>
                     <div class="col-md-6"><label>Longitud</label><input type="number" step="any" class="form-control" name="longitud"></div>
                 </div>
-                <div class="mb-3"><label class="form-label fw-bold">Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
-                <div class="mb-4"><label class="form-label fw-bold">Observaciones</label><textarea class="form-control" name="info" rows="2"></textarea></div>
+                <div class="mb-3"><label>Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
+                <div class="mb-4"><label>Observaciones</label><textarea class="form-control" name="info" rows="2"></textarea></div>
                 <button type="submit" class="btn btn-success px-4">Guardar Cambios</button>
             </form>
-        </div>
-
-        <div class="tab-pane fade" id="campo">
-            <div class="row mb-3 align-items-center bg-light p-3 rounded border">
-                <div class="col-md-8"><h5 class="m-0">Sincronizar con SurveyStack</h5></div>
-                <div class="col-md-4 text-end"><form action="/sincronizar_api" method="POST"><button type="submit" class="btn btn-primary fw-bold shadow-sm">SINCRONIZAR AHORA</button></form></div>
-            </div>
-            <div class="iframe-container border"><iframe src="https://app.surveystack.io/groups/5e95e368fbbf75000146a006/surveys/61117da6e7011c000134fba5/submissions/new?minimal_ui=true" width="100%" height="100%" style="border: none;"></iframe></div>
         </div>
 
         <div class="tab-pane fade" id="carbono">
             <form action="/" method="POST" class="form-memoria" data-tab="carbono">
                 <input type="hidden" name="form_type" value="carbono_activo">
-                <div class="mb-3"><label class="fw-bold">Elegir Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Seleccionar --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
-                <div class="row mb-3">
-                    <div class="col-md-6"><label>Peso Suelo (g)</label><input type="number" step="any" class="form-control" name="peso_suelo_carbono" value="2.5"></div>
-                    <div class="col-md-6"><label>Absorbancia Muestra</label><input type="number" step="any" class="form-control" name="abs_muestra"></div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col"><input type="number" step="any" class="form-control" name="abs_1" placeholder="Abs 0.005"></div>
-                    <div class="col"><input type="number" step="any" class="form-control" name="abs_2" placeholder="Abs 0.010"></div>
-                    <div class="col"><input type="number" step="any" class="form-control" name="abs_3" placeholder="Abs 0.015"></div>
-                    <div class="col"><input type="number" step="any" class="form-control" name="abs_4" placeholder="Abs 0.020"></div>
-                </div>
-                <button type="submit" class="btn btn-primary">Calcular y Guardar POXC</button>
+                <select class="form-select selector-memoria mb-3" name="muestra_id" required><option value="">-- Seleccionar --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select>
+                <div class="row mb-3"><div class="col-6"><input type="number" step="any" class="form-control" name="peso_suelo_carbono" value="2.5"></div><div class="col-6"><input type="number" step="any" class="form-control" name="abs_muestra" placeholder="Abs Muestra"></div></div>
+                <div class="row mb-3"><div class="col"><input type="number" step="any" class="form-control" name="abs_1" placeholder="Abs 1"></div><div class="col"><input type="number" step="any" class="form-control" name="abs_2" placeholder="Abs 2"></div><div class="col"><input type="number" step="any" class="form-control" name="abs_3" placeholder="Abs 3"></div><div class="col"><input type="number" step="any" class="form-control" name="abs_4" placeholder="Abs 4"></div></div>
+                <button type="submit" class="btn btn-primary">Calcular y Guardar</button>
             </form>
         </div>
 
         <div class="tab-pane fade" id="ph">
             <form action="/" method="POST" class="form-memoria" data-tab="ph">
                 <input type="hidden" name="form_type" value="ph_conductividad">
-                <div class="mb-3"><label class="fw-bold">Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Seleccionar --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
-                <div class="row"><div class="col"><label>pH</label><input type="number" step="any" class="form-control" name="ph"></div><div class="col"><label>Conductividad</label><input type="number" step="any" class="form-control" name="conductividad"></div></div>
-                <button type="submit" class="btn btn-primary mt-4">Guardar pH/CE</button>
-            </form>
-        </div>
-
-        <div class="tab-pane fade" id="mop">
-            <form action="/" method="POST" class="form-memoria" data-tab="mop">
-                <input type="hidden" name="form_type" value="materia_organica">
-                <div class="mb-3"><label class="fw-bold">Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Seleccionar --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
-                <div class="row"><div class="col"><label>Peso partículas (mg)</label><input type="number" step="any" class="form-control" name="peso_particulas"></div><div class="col"><label>Peso suelo (g)</label><input type="number" step="any" class="form-control" name="peso_suelo"></div></div>
-                <button type="submit" class="btn btn-primary mt-4">Guardar MOP</button>
-            </form>
-        </div>
-
-        <div class="tab-pane fade" id="estab">
-            <form action="/" method="POST" class="form-memoria" data-tab="estab">
-                <input type="hidden" name="form_type" value="estabilidad_agregados">
-                <div class="mb-3"><label class="fw-bold">Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Seleccionar --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
-                <div class="row mb-3"><div class="col"><label>Peso Inicial</label><input type="number" step="any" class="form-control" name="peso_inicial"></div><div class="col"><label>Peso Filtro</label><input type="number" step="any" class="form-control" name="peso_filtro"></div></div>
-                <div class="row mb-3"><div class="col"><label>Peso Frac. Mayor</label><input type="number" step="any" class="form-control" name="peso_fraccion_mayor"></div><div class="col"><label>Peso Frac. 250</label><input type="number" step="any" class="form-control" name="peso_fraccion_250"></div><div class="col"><label>Peso Piedras</label><input type="number" step="any" class="form-control" name="peso_piedras"></div></div>
-                <button type="submit" class="btn btn-primary">Guardar Estabilidad</button>
+                <select class="form-select selector-memoria mb-3" name="muestra_id" required><option value="">-- Seleccionar --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select>
+                <div class="row"><div class="col"><input type="number" step="any" class="form-control" name="ph" placeholder="pH"></div><div class="col"><input type="number" step="any" class="form-control" name="conductividad" placeholder="Cond"></div></div>
+                <button type="submit" class="btn btn-primary mt-3">Guardar</button>
             </form>
         </div>
 
         <div class="tab-pane fade" id="consolidado">
             <div class="d-flex justify-content-between mb-4"><h4 class="text-success">Panel Analítico</h4><a href="/descargar_csv" class="btn btn-success btn-sm">Descargar CSV</a></div>
             <div class="row mb-4">
-                <div class="col-md-4"><div class="card border p-2"><div id="miMapa" style="height: 300px;"></div></div></div>
-                <div class="col-md-8"><div class="card border p-2"><canvas id="miGraficoDinamico" style="max-height: 280px;"></canvas></div></div>
+                <div class="col-md-4"><div id="miMapa" style="height: 300px;" class="border rounded"></div></div>
+                <div class="col-md-8"><canvas id="miGraficoDinamico" style="max-height: 280px;"></canvas></div>
             </div>
-            <div class="table-responsive"><table class="table table-hover border">
+            <div class="table-responsive"><table class="table table-hover border text-center">
                 <thead class="table-dark"><tr><th>Muestra</th><th>pH</th><th>Cond.</th><th>Carbono</th><th>MOP</th><th>Acciones</th></tr></thead>
                 <tbody>
-                    {% for fila in consolidado %}
+                    {% for f in consolidado %}
                     <tr>
-                        <td class="fw-bold">{{ fila.nombre_muestra }}</td>
-                        <td>{{ fila.ph or '-' }}</td><td>{{ fila.conductividad or '-' }}</td>
-                        <td>{{ "%.2f"|format(fila.resultado_carbono) if fila.resultado_carbono else '-' }}</td>
-                        <td>{{ "%.2f"|format(fila.mop) if fila.mop else '-' }}%</td>
-                        <td><form action="/eliminar_muestra/{{ fila.id }}" method="POST" style="display:inline;"><button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar permanente?');"><i class="bi bi-trash"></i></button></form></td>
+                        <td class="fw-bold">{{ f.nombre_muestra }}</td>
+                        <td>{{ f.ph or '-' }}</td><td>{{ f.conductividad or '-' }}</td>
+                        <td>{{ "%.2f"|format(f.resultado_carbono) if f.resultado_carbono else '-' }}</td>
+                        <td>{{ "%.2f"|format(f.mop) if f.mop else '-' }}%</td>
+                        <td>
+                            <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#modal{{f.id}}"><i class="bi bi-eye"></i></button>
+                            <form action="/eliminar_muestra/{{ f.id }}" method="POST" style="display:inline;"><button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button></form>
+                        </td>
                     </tr>
+                    <div class="modal fade" id="modal{{f.id}}" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5>{{ f.nombre_muestra }}</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-start">
+                        <p><strong>Descripción:</strong> {{ f.descripcion or 'N/A' }}</p>
+                        <p><strong>Info Relevante:</strong> {{ f.informacion_relevante or 'N/A' }}</p>
+                        <p><strong>Ubicación:</strong> {{ f.latitud or '0' }}, {{ f.longitud or '0' }}</p>
+                    </div></div></div></div>
                     {% endfor %}
                 </tbody>
             </table></div>
@@ -153,80 +117,39 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // LÓGICA DE MEMORIA (AUTO-RELLENO)
-            const selectores = document.querySelectorAll('.selector-memoria');
-            selectores.forEach(select => {
-                select.addEventListener('change', function() {
-                    const id = this.value;
-                    const form = this.closest('form');
-                    const tab = form.dataset.tab;
-                    
-                    if (!id) {
-                        form.reset();
-                        form.dataset.modificando = "false";
-                        return;
-                    }
+            // PUNTO 4: Persistencia de pestañas
+            var hash = window.location.hash;
+            if (hash) {
+                var triggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
+                if (triggerEl) bootstrap.Tab.getOrCreateInstance(triggerEl).show();
+            }
 
-                    fetch('/api/datos_crudos/' + id)
-                        .then(r => r.json())
-                        .then(data => {
-                            form.dataset.modificando = "true";
-                            if(tab === 'registro') {
-                                form.querySelector('[name="nombre"]').value = data.nombre || '';
-                                form.querySelector('[name="cultivo"]').value = data.cultivo || '';
-                                form.querySelector('[name="textura"]').value = data.textura || '';
-                                form.querySelector('[name="latitud"]').value = data.latitud || '';
-                                form.querySelector('[name="longitud"]').value = data.longitud || '';
-                                form.querySelector('[name="descripcion"]').value = data.descripcion || '';
-                                form.querySelector('[name="info"]').value = data.info || '';
-                            }
-                            if(tab === 'ph') { 
-                                form.querySelector('[name="ph"]').value = data.ph || ''; 
-                                form.querySelector('[name="conductividad"]').value = data.conductividad || ''; 
-                            }
-                            if(tab === 'carbono') { 
-                                form.querySelector('[name="peso_suelo_carbono"]').value = data.c_peso || '2.5'; 
-                                form.querySelector('[name="abs_muestra"]').value = data.c_abs || '';
-                                form.querySelector('[name="abs_1"]').value = data.c_a1 || '';
-                                form.querySelector('[name="abs_2"]').value = data.c_a2 || '';
-                                form.querySelector('[name="abs_3"]').value = data.c_a3 || '';
-                                form.querySelector('[name="abs_4"]').value = data.c_a4 || '';
-                            }
-                            if(tab === 'mop') {
-                                form.querySelector('[name="peso_particulas"]').value = data.mop_part || '';
-                                form.querySelector('[name="peso_suelo"]').value = data.mop_suelo || '';
-                            }
-                            if(tab === 'estab') {
-                                form.querySelector('[name="peso_inicial"]').value = data.ea_pi || '';
-                                form.querySelector('[name="peso_filtro"]').value = data.ea_pf || '';
-                                form.querySelector('[name="peso_fraccion_mayor"]').value = data.ea_pm || '';
-                                form.querySelector('[name="peso_fraccion_250"]').value = data.ea_p250 || '';
-                                form.querySelector('[name="peso_piedras"]').value = data.ea_pp || '';
-                            }
-                        });
-                });
-            });
-
-            // CONFIRMACIÓN ANTES DE SOBRESCRIBIR
-            document.querySelectorAll('.form-memoria').forEach(form => {
-                form.onsubmit = function(e) {
-                    if (this.dataset.modificando === "true") {
-                        if (!confirm("⚠️ Esta muestra ya tiene datos guardados.\n¿Estás seguro de que deseas SOBRESCRIBIRLOS con los nuevos valores?")) {
-                            e.preventDefault();
+            // MEMORIA Y ALERTAS (Punto 7 corregido)
+            document.querySelectorAll('.selector-memoria').forEach(sel => {
+                sel.onchange = function() {
+                    const id = this.value; const form = this.closest('form');
+                    if(!id){ form.reset(); form.dataset.modificando="false"; return; }
+                    fetch('/api/datos_crudos/' + id).then(r => r.json()).then(data => {
+                        form.dataset.modificando = (data.ph || data.c_abs) ? "true" : "false"; // Solo alerta si hay datos reales
+                        if(form.dataset.tab === 'registro'){
+                            form.querySelector('[name="nombre"]').value = data.nombre;
+                            form.querySelector('[name="latitud"]').value = data.latitud;
+                            form.querySelector('[name="longitud"]').value = data.longitud;
                         }
-                    }
-                };
+                    });
+                }
             });
 
-            // GRÁFICOS Y MAPA
-            let names = []; let carbon = [];
-            {% for f in consolidado %} names.push("{{ f.nombre_muestra }}"); carbon.push({{ f.resultado_carbono if f.resultado_carbono else 'null' }}); {% endfor %}
-            const ctx = document.getElementById('miGraficoDinamico').getContext('2d');
-            new Chart(ctx, { type: 'bar', data: { labels: names, datasets: [{ label: 'Carbono Activo', data: carbon, backgroundColor: '#198754' }] } });
+            document.querySelectorAll('.form-memoria').forEach(f => {
+                f.onsubmit = function(e){ if(this.dataset.modificando === "true" && !confirm("¿Sobrescribir datos existentes?")) e.preventDefault(); }
+            });
 
+            // MAPA (Punto 3)
             let map = L.map('miMapa').setView([-32.89, -68.82], 5);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            {% for f in consolidado %} {% if f.latitud %} L.marker([{{ f.latitud }}, {{ f.longitud }}]).addTo(map).bindPopup("{{ f.nombre_muestra }}"); {% endif %} {% endfor %}
+            {% for f in consolidado %}{% if f.latitud %}
+                L.marker([{{ f.latitud }}, {{ f.longitud }}]).addTo(map).bindPopup("{{ f.nombre_muestra }}");
+            {% endif %}{% endfor %}
         });
     </script>
 </body>
