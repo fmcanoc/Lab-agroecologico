@@ -308,38 +308,42 @@ def sincronizar_api():
         cur = conexion.cursor()
         contador = 0
         
-        for fila in lector:
+        for i, fila in enumerate(lector):
+            # Preparamos las variables que queremos llenar
             nombre, cultivo, textura = None, None, None
+            lat, lon, desc, info = None, None, None, None
             
-            # Limpiamos los nombres de las columnas por si traen espacios invisibles
-            fila_limpia = {k.strip().lower() if k else k: v for k, v in fila.items()}
-            
-            # Buscamos los datos con más flexibilidad
-            for col, valor in fila_limpia.items():
-                if col:
-                    if 'nombre_muestra' in col or 'nombre' in col or 'label' in col: 
-                        nombre = valor
-                    elif 'cultivo' in col: 
-                        cultivo = valor
-                    elif 'textura' in col: 
-                        textura = valor
-            
-            # Si encontramos un nombre válido
-            if nombre and str(nombre).strip() != "":
-                nombre_limpio = str(nombre).strip()
-                try:
-                    # Intentamos insertar asegurando que el usuario_id sea el actual
-                    cur.execute('''INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura) 
-                                   VALUES (%s, %s, %s, %s)''', 
-                                (session['usuario_id'], nombre_limpio, cultivo, textura))
-                    contador += 1
-                except errors.UniqueViolation:
-                    conexion.rollback()
-                    # Si ya existe, forzamos que ahora le pertenezca al usuario activo
-                    cur.execute('''UPDATE muestras SET cultivo=%s, textura=%s 
-                                   WHERE usuario_id=%s AND nombre_muestra=%s''', 
-                                (cultivo, textura, session['usuario_id'], nombre_limpio))
-                    contador += 1
+            # RECORREMOS CADA COLUMNA DEL CSV DE SURVEYSTACK
+            for col_original, valor in fila.items():
+                if not col_original: continue
+                col = col_original.lower().strip()
+                
+                # Búsqueda inteligente por palabras clave
+                if any(k in col for k in ['nombre', 'lote', 'label']) and not nombre: nombre = valor
+                elif 'cultivo' in col: cultivo = valor
+                elif 'textura' in col: textura = valor
+                elif 'latitud' in col or 'latitude' in col: lat = valor
+                elif 'longitud' in col or 'longitude' in col: lon = valor
+                elif 'descrip' in col: desc = valor
+                elif 'info' in col or 'manejo' in col: info = valor
+
+            # Plan B para el nombre
+            nombre_final = str(nombre).strip() if nombre else f"Muestra_Sincronizada_{i+1}"
+
+            try:
+                # INSERTAMOS O ACTUALIZAMOS TODOS LOS CAMPOS
+                cur.execute('''
+                    INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ''', (usuario_actual, nombre_final, cultivo, textura, lat, lon, desc, info))
+                contador += 1
+            except errors.UniqueViolation:
+                conexion.rollback()
+                cur.execute('''
+                    UPDATE muestras SET cultivo=%s, textura=%s, latitud=%s, longitud=%s, descripcion=%s, informacion_relevante=%s, usuario_id=%s 
+                    WHERE nombre_muestra=%s
+                ''', (cultivo, textura, lat, lon, desc, info, usuario_actual, nombre_final))
+                contador += 1
                     
         conexion.commit()
         cur.close()
@@ -355,3 +359,4 @@ def sincronizar_api():
 if __name__ == '__main__':
 
     app.run(debug=True)
+
