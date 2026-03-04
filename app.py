@@ -297,6 +297,7 @@ def sincronizar_api():
     url_api = "https://app.surveystack.io/api/submissions/csv?survey=69a78356a519d930190644d0&expandAllMatrices=true"
 
     try:
+        # 1. Traemos los datos de la nube
         req = urllib.request.Request(url_api, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req) as response:
             contenido_csv = response.read().decode('utf-8')
@@ -304,21 +305,24 @@ def sincronizar_api():
         stream = io.StringIO(contenido_csv, newline=None)
         lector = csv.DictReader(stream, delimiter=',') 
         
+        # 2. Preparamos la conexión
         conexion = obtener_conexion()
         cur = conexion.cursor()
         contador = 0
         
+        # AQUÍ ESTÁ LA LÍNEA QUE FALTABA:
+        usuario_actual = session['usuario_id']
+        
+        # 3. Procesamos cada muestra
         for i, fila in enumerate(lector):
-            # Preparamos las variables que queremos llenar
             nombre, cultivo, textura = None, None, None
             lat, lon, desc, info = None, None, None, None
             
-            # RECORREMOS CADA COLUMNA DEL CSV DE SURVEYSTACK
             for col_original, valor in fila.items():
                 if not col_original: continue
                 col = col_original.lower().strip()
                 
-                # Búsqueda inteligente por palabras clave
+                # Buscador flexible de columnas
                 if any(k in col for k in ['nombre', 'lote', 'label']) and not nombre: nombre = valor
                 elif 'cultivo' in col: cultivo = valor
                 elif 'textura' in col: textura = valor
@@ -327,17 +331,18 @@ def sincronizar_api():
                 elif 'descrip' in col: desc = valor
                 elif 'info' in col or 'manejo' in col: info = valor
 
-            # Plan B para el nombre
+            # Si no hay nombre en el CSV, usamos un genérico para no perder la fila
             nombre_final = str(nombre).strip() if nombre else f"Muestra_Sincronizada_{i+1}"
 
             try:
-                # INSERTAMOS O ACTUALIZAMOS TODOS LOS CAMPOS
+                # Intentamos INSERTAR
                 cur.execute('''
                     INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante) 
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ''', (usuario_actual, nombre_final, cultivo, textura, lat, lon, desc, info))
                 contador += 1
             except errors.UniqueViolation:
+                # Si ya existe, ACTUALIZAMOS
                 conexion.rollback()
                 cur.execute('''
                     UPDATE muestras SET cultivo=%s, textura=%s, latitud=%s, longitud=%s, descripcion=%s, informacion_relevante=%s, usuario_id=%s 
@@ -348,15 +353,15 @@ def sincronizar_api():
         conexion.commit()
         cur.close()
         conexion.close()
-        
-        flash(f'¡Éxito total! Se sincronizaron {contador} muestras directamente de la nube de SurveyStack.', 'success')
+        flash(f'¡Éxito! Se sincronizaron {contador} muestras correctamente.', 'success')
         
     except Exception as e:
-        flash(f'Error al conectarse con SurveyStack: {str(e)}', 'danger')
+        flash(f'Error al conectar: {str(e)}', 'danger')
         
     return redirect(url_for('inicio'))
 
 if __name__ == '__main__':
 
     app.run(debug=True)
+
 
