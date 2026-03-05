@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import io
 import base64
 import csv
+import json
 import urllib.request
 
 import psycopg
@@ -274,37 +275,105 @@ def descargar_csv():
 
 @app.route('/sincronizar_api', methods=['POST'])
 def sincronizar_api():
-    if 'usuario_id' not in session: return redirect(url_for('login'))
-    url_api = "https://app.surveystack.io/api/submissions/csv?survey=69a78356a519d930190644d0&expandAllMatrices=true"
+    if 'usuario_id' not in session: 
+        return redirect(url_for('login'))
+    
+    # Recibimos las credenciales desde el nuevo modal de la web
+    ss_email = request.form.get('ss_email')
+    ss_password = request.form.get('ss_password')
+    
+    url_api = "https://app.surveystack.io/api/submissions?survey=64c114078e8b2200011f0494"
+    token = None
+    
     try:
-        req = urllib.request.Request(url_api, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req) as response:
-            lineas = response.read().decode('utf-8').splitlines()
+        # PASO 1: Iniciar sesión en SurveyStack para obtener el Token
+        if ss_email and ss_password:
+            auth_url = "https://app.surveystack.io/api/login"
+            auth_payload = json.dumps({"email": ss_email, "password": ss_password}).encode('utf-8')
+            req_auth = urllib.request.Request(auth_url, data=auth_payload, headers={'Content-Type': 'application/json'})
+            
+            try:
+                with urllib.request.urlopen(req_auth) as auth_res:
+                    auth_data = json.loads(auth_res.read().decode('utf-8'))
+                    token = auth_data.get('token')
+            except urllib.error.HTTPError as e:
+                flash("Credenciales de SurveyStack incorrectas. Intenta nuevamente.", "danger")
+                return redirect(url_for('inicio') + '#muestras')
 
-        indice_cabecera = next((i for i, linea in enumerate(lineas) if '_id' in linea), 0)
-        lector = csv.DictReader(io.StringIO("\n".join(lineas[indice_cabecera:])), delimiter=',') 
+        # PASO 2: Consultar la encuesta privada usando el Token
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        if token:
+            headers['Authorization'] = f'Bearer {token}'
+            
+        req = urllib.request.Request(url_api, headers=headers)
+        with urllib.request.urlopen(req) as response:
+            respuesta = response.read().decode('utf-8')
+            
+        datos_json = json.loads(respuesta)
         
-        conexion = obtener_conexion(); cur = conexion.cursor(); usuario_actual = session['usuario_id']; contador = 0
-        for fila in lector:
-            id_unico = fila.get('_id', fila.get('id'))
+        # SurveyStack a veces envuelve la lista en un objeto {"data": [...] }
+        if isinstance(datos_json, dict) and 'data' in datos_json:
+            datos_json = datos_json['data']
+            
+        conexion = obtener_conexion()
+        cur = conexion.cursor()
+        usuario_actual = session['usuario_id']
+        contador = 0
+        
+        # PASO 3: Procesar la estructura JSON
+        for fila in datos_json:
+            id_unico = fila.get('_id')
             if not id_unico: continue 
             
-            nombre = fila.get('data.nombre_muestra', 'Muestra')
-            nombre_final = f"{str(nombre).strip()} (#{str(id_unico)[-4:]})"
+            # Función interna para extraer datos limpios de la rama "value"
+            data = fila.get('data', {})
+            def extraer(clave):
+                return data.get(clave, {}).get('value')
             
-            cur.execute('''INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante) 
-                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                           ON CONFLICT (usuario_id, nombre_muestra) DO UPDATE SET 
-                           cultivo = COALESCE(EXCLUDED.cultivo, muestras.cultivo), textura = COALESCE(EXCLUDED.textura, muestras.textura), latitud = COALESCE(EXCLUDED.latitud, muestras.latitud), longitud = COALESCE(EXCLUDED.longitud, muestras.longitud), descripcion = COALESCE(EXCLUDED.descripcion, muestras.descripcion), informacion_relevante = COALESCE(EXCLUDED.informacion_relevante, muestras.informacion_relevante)
-                        ''', (usuario_actual, nombre_final, fila.get('data.cultivo'), fila.get('data.textura'), fila.get('data.latitud'), fila.get('data.longitud'), fila.get('data.descrip'), fila.get('data.info')))
+            nombre_crudo = extraer('nombre_muestra') or extraer('id_parcela') or "Muestra"
+            nombre_final = f"{str(nombre_crudo).strip()} (#{str(id_unico)[-4:]})"
+            
+            cultivo = extraer('cultivo_parcela')
+            textura = extraer('tipo_parcela')
+            descripcion = extraer('observaciones_muestra')
+            info = extraer('fert_parcela')
+            
+            # Navegar por el GeoJSON para sacar Latitud y Longitud
+            lat, lon = None, None
+            ubicacion = extraer('ubicacion_muestra')
+            if ubicacion and isinstance(ubicacion, dict) and 'geometry' in ubicacion:
+                coords = ubicacion['geometry'].get('coordinates', [])
+                if len(coords) >= 2:
+                    lon = coords[0] # GeoJSON siempre pone Longitud primero
+                    lat = coords[1] # Latitud segundo
+            
+            cur.execute('''
+                INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (usuario_id, nombre_muestra) DO UPDATE SET 
+                cultivo = COALESCE(EXCLUDED.cultivo, muestras.cultivo), 
+                textura = COALESCE(EXCLUDED.textura, muestras.textura), 
+                latitud = COALESCE(EXCLUDED.latitud, muestras.latitud), 
+                longitud = COALESCE(EXCLUDED.longitud, muestras.longitud), 
+                descripcion = COALESCE(EXCLUDED.descripcion, muestras.descripcion), 
+                informacion_relevante = COALESCE(EXCLUDED.informacion_relevante, muestras.informacion_relevante)
+            ''', (usuario_actual, nombre_final, cultivo, textura, lat, lon, descripcion, info))
+            
             contador += 1
-        conexion.commit(); cur.close(); conexion.close()
-        flash(f'¡Sincronización exitosa! {contador} registros de SurveyStack.', 'success')
-    except Exception as e: flash(f'Error BD: {str(e)}', 'danger')
+            
+        conexion.commit()
+        cur.close()
+        conexion.close()
+        flash(f'¡Sincronización privada exitosa! {contador} muestras importadas de SurveyStack.', 'success')
+        
+    except Exception as e: 
+        flash(f'Error al conectar con la API: {str(e)}', 'danger')
+        
     return redirect(url_for('inicio') + '#muestras')
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
