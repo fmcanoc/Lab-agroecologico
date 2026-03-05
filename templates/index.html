@@ -62,27 +62,47 @@
         
         <div class="tab-pane fade show active" id="muestras">
             <div class="section-card bg-light d-flex justify-content-between align-items-center border-primary border-opacity-25">
-                <div><h5 class="text-primary fw-bold m-0"><i class="bi bi-cloud-arrow-down-fill me-2"></i> Importar Muestras (SurveyStack)</h5><p class="text-muted small m-0 mt-1">Sincroniza los lotes mapeados y registrados con la aplicación móvil en el campo.</p></div>
-                <form action="/sincronizar_api" method="POST"><button type="submit" class="btn btn-primary px-4 fw-bold rounded-pill shadow-sm"><i class="bi bi-arrow-repeat me-1"></i> Sincronizar</button></form>
-            </div>
+    <div>
+        <h5 class="text-primary fw-bold m-0"><i class="bi bi-cloud-arrow-down-fill me-2"></i> Importar Muestras Privadas</h5>
+        <p class="text-muted small m-0 mt-1">Conecta con tu cuenta de SurveyStack para traer los lotes registrados en el campo.</p>
+    </div>
+    <button type="button" class="btn btn-primary px-4 fw-bold rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#modalSync">
+        <i class="bi bi-arrow-repeat me-1"></i> Conectar
+    </button>
+</div>
 
-            <form action="/" method="POST" class="form-memoria" data-tab="registro">
-                <input type="hidden" name="form_type" value="registro_muestra">
-                <div class="section-card">
-                    <h5 class="mb-3 text-agro border-bottom pb-2"><i class="bi bi-pencil-square me-2"></i> Ingreso / Edición Manual</h5>
-                    <div class="mb-4 bg-light p-3 rounded d-inline-block border">
-                        <label class="form-label small fw-bold text-muted mb-1 d-block text-uppercase">¿Modificar una muestra existente?</label>
-                        <select class="form-select selector-memoria shadow-sm border-0" name="muestra_id_editar" style="min-width: 250px;">
-                            <option value="">-- No, Registrar Lote Nuevo --</option>
-                            {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
-                        </select>
+<div class="modal fade" id="modalSync" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-agro text-white border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-shield-lock-fill me-2"></i> Autenticación SurveyStack</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/sincronizar_api" method="POST">
+                <div class="modal-body p-4 text-start">
+                    <p class="text-muted small mb-4">Para importar datos privados, necesitamos validar tu identidad temporalmente con la base de datos de SurveyStack.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary">Email de SurveyStack</label>
+                        <input type="email" class="form-control" name="ss_email" placeholder="tu@email.com" required>
                     </div>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4"><label class="form-label fw-bold text-secondary">Nombre del Lote *</label><input type="text" class="form-control" name="nombre" required placeholder="Ej: Lote Norte"></div>
-                        <div class="col-md-4"><label class="form-label fw-bold text-secondary">Cultivo Principal</label><input type="text" class="form-control" name="cultivo" placeholder="Ej: Vid, Ajo"></div>
-                        <div class="col-md-4"><label class="form-label fw-bold text-secondary">Textura del Suelo</label><input type="text" class="form-control" name="textura" placeholder="Ej: Franco arcilloso"></div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary">Contraseña</label>
+                        <input type="password" class="form-control" name="ss_password" placeholder="••••••••" required>
+                    </div>
+
+                    <div class="alert alert-light border small text-muted m-0">
+                        <i class="bi bi-info-circle text-primary me-1"></i> Tus credenciales solo viajan de tu navegador a la API para solicitar acceso y <strong>jamás se guardan</strong> en nuestro sistema.
                     </div>
                 </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-agro rounded-pill px-4"><i class="bi bi-cloud-download me-2"></i> Iniciar Sesión e Importar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
                 <div class="row g-4">
                     <div class="col-md-6">
@@ -309,5 +329,6 @@
     </script>
 </body>
 </html>
+
 
 
