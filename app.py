@@ -9,6 +9,7 @@ import base64
 import csv
 import json
 import urllib.request
+import urllib.error
 
 import psycopg
 from psycopg.rows import dict_row
@@ -275,20 +276,20 @@ def descargar_csv():
 
 @app.route('/sincronizar_api', methods=['POST'])
 def sincronizar_api():
-    if 'usuario_id' not in session: 
-        return redirect(url_for('login'))
+    if 'usuario_id' not in session: return redirect(url_for('login'))
     
-    # Recibimos las credenciales desde el nuevo modal de la web
+    # Recibimos las credenciales desde el modal de la web
     ss_email = request.form.get('ss_email')
     ss_password = request.form.get('ss_password')
     
-    url_api = "https://app.surveystack.io/api/submissions?survey=64c114078e8b2200011f0494"
     token = None
     
     try:
-        # PASO 1: Iniciar sesión en SurveyStack para obtener el Token
+        # ==========================================================
+        # FASE 1: LOGIN EN SURVEYSTACK (Igual que en tu código R)
+        # ==========================================================
         if ss_email and ss_password:
-            auth_url = "https://app.surveystack.io/api/login"
+            auth_url = "https://app.surveystack.io/api/auth/login"
             auth_payload = json.dumps({"email": ss_email, "password": ss_password}).encode('utf-8')
             req_auth = urllib.request.Request(auth_url, data=auth_payload, headers={'Content-Type': 'application/json'})
             
@@ -297,16 +298,21 @@ def sincronizar_api():
                     auth_data = json.loads(auth_res.read().decode('utf-8'))
                     token = auth_data.get('token')
             except urllib.error.HTTPError as e:
-                flash("Credenciales de SurveyStack incorrectas. Intenta nuevamente.", "danger")
+                flash("Credenciales de SurveyStack incorrectas. Revisa tu email y contraseña.", "danger")
                 return redirect(url_for('inicio') + '#muestras')
 
-        # PASO 2: Consultar la encuesta privada usando el Token
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        if token:
-            headers['Authorization'] = f'Bearer {token}'
+        # ==========================================================
+        # FASE 2: TRAER LOS DATOS PRIVADOS
+        # ==========================================================
+        url_api = "https://app.surveystack.io/api/submissions?survey=64c114078e8b2200011f0494"
+        headers = {'Content-Type': 'application/json'}
+        
+        # Armamos el header de autorización EXACTAMENTE como lo hace tu script de R
+        if token and ss_email:
+            headers['Authorization'] = f"{ss_email} {token}"
             
-        req = urllib.request.Request(url_api, headers=headers)
-        with urllib.request.urlopen(req) as response:
+        req_datos = urllib.request.Request(url_api, headers=headers)
+        with urllib.request.urlopen(req_datos) as response:
             respuesta = response.read().decode('utf-8')
             
         datos_json = json.loads(respuesta)
@@ -320,15 +326,15 @@ def sincronizar_api():
         usuario_actual = session['usuario_id']
         contador = 0
         
-        # PASO 3: Procesar la estructura JSON
+        # ==========================================================
+        # FASE 3: GUARDAR EN LA BASE DE DATOS
+        # ==========================================================
         for fila in datos_json:
             id_unico = fila.get('_id')
             if not id_unico: continue 
             
-            # Función interna para extraer datos limpios de la rama "value"
             data = fila.get('data', {})
-            def extraer(clave):
-                return data.get(clave, {}).get('value')
+            def extraer(clave): return data.get(clave, {}).get('value')
             
             nombre_crudo = extraer('nombre_muestra') or extraer('id_parcela') or "Muestra"
             nombre_final = f"{str(nombre_crudo).strip()} (#{str(id_unico)[-4:]})"
@@ -344,8 +350,8 @@ def sincronizar_api():
             if ubicacion and isinstance(ubicacion, dict) and 'geometry' in ubicacion:
                 coords = ubicacion['geometry'].get('coordinates', [])
                 if len(coords) >= 2:
-                    lon = coords[0] # GeoJSON siempre pone Longitud primero
-                    lat = coords[1] # Latitud segundo
+                    lon = coords[0] # R saca el [1] que es Longitud
+                    lat = coords[1] # R saca el [2] que es Latitud
             
             cur.execute('''
                 INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante) 
@@ -364,15 +370,16 @@ def sincronizar_api():
         conexion.commit()
         cur.close()
         conexion.close()
-        flash(f'¡Sincronización privada exitosa! {contador} muestras importadas de SurveyStack.', 'success')
+        flash(f'¡Sincronización privada exitosa! {contador} muestras de tu cuenta fueron importadas.', 'success')
         
     except Exception as e: 
-        flash(f'Error al conectar con la API: {str(e)}', 'danger')
+        flash(f'Error al procesar los datos: {str(e)}', 'danger')
         
     return redirect(url_for('inicio') + '#muestras')
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
