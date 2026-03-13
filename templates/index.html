@@ -14,12 +14,14 @@
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     
     <style>
-        /* PALETA DE COLORES REGOSH: Minimalismo extremo sobre blanco */
+        /* NUEVA PALETA DE COLORES: Franjas oscuras y resaltados vibrantes */
         :root { 
-            --r-bg: #ffffff;            /* Fondo Blanco Puro */
+            --r-bg: #ffffff;            /* Fondo Blanco Puro para el contenido */
             --r-text: #4a4a4a;          /* Texto Gris Oscuro Suave */
-            --r-accent: #2d6a4f;        /* Tu verde, usado con extrema sutileza */
-            --r-accent-light: #e9f5ef;  /* Verde muy pálido para hovers */
+            --r-dark-bg: #343a40;       /* Gris Oscuro Profundo para la franja */
+            --r-highlight: #ccff00;      /* Verde Lima Neón para resaltar el título */
+            --r-accent: #2d6a4f;        /* Tu verde oscuro, para detalles sutiles */
+            --r-accent-light: #e9f5ef;  /* Verde muy pálido para hovers en contenido */
             --r-divider: #eeeeee;       /* Líneas divisorias ultra finas */
             --r-shadow: 0 2px 4px rgba(0,0,0,0.02); /* Sombra casi invisible */
         }
@@ -38,14 +40,31 @@
 
         .text-agro { color: var(--r-accent) !important; }
         
-        /* HEADER: Limpio, sin sombras pesadas */
+        /* HEADER CON FRANJA OSCURA QUE OCUPA TODO EL ANCHO */
         .header-bar { 
-            border-bottom: 1px solid var(--r-divider); 
-            margin-bottom: 2rem;
-            padding: 1rem 0;
+            background-color: var(--r-dark-bg);
+            color: #ffffff;
+            padding: 1.5rem 0;
+            margin-bottom: 0; /* Las pestañas irán justo debajo */
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* TARJETAS: Estilo REGOSH, bordes finos, mucha amplitud */
+        /* Estilos para el título resaltado */
+        .lab-title {
+            color: var(--r-highlight);
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        /* Información de usuario en color claro */
+        .user-info {
+            color: rgba(255,255,255,0.7);
+        }
+        .user-info strong {
+            color: #ffffff;
+        }
+
+        /* TARJETAS: Estilo limpio, bordes finos, mucha amplitud */
         .section-card { 
             background: #ffffff; 
             border: 1px solid var(--r-divider); 
@@ -55,42 +74,49 @@
             box-shadow: var(--r-shadow);
         }
 
-        /* PESTAÑAS REGOSH: Solo texto y una línea inferior al activar */
+        /* PESTAÑAS DENTRO DE LA FRANJA OSCURA */
+        .nav-tabs-container {
+            background-color: var(--r-dark-bg);
+            padding: 0;
+            margin-bottom: 2.5rem;
+        }
+
         .nav-tabs { 
-            border-bottom: 2px solid var(--r-divider); 
-            margin-bottom: 2.5rem; 
-            gap: 1.5rem; 
+            border-bottom: none; 
+            margin-bottom: 0; 
+            gap: 2rem; 
             flex-wrap: nowrap; 
             overflow-x: auto; 
             -webkit-overflow-scrolling: touch; 
+            padding: 0 1rem;
         }
         .nav-tabs::-webkit-scrollbar { height: 0px; } /* Ocultar barra scroll */
 
-        .nav-tabs .nav-item { margin-bottom: -2px; }
+        .nav-tabs .nav-item { margin-bottom: 0; }
 
         .nav-tabs .nav-link { 
-            color: var(--r-text); 
+            color: rgba(255,255,255,0.7); 
             font-weight: 500; 
             border: none; 
             background: transparent;
-            padding: 0.75rem 0.2rem; 
+            padding: 1rem 0.2rem; 
             border-bottom: 3px solid transparent;
             transition: all 0.2s ease;
             white-space: nowrap;
             font-size: 0.9rem;
-            text-transform: uppercase; /* Toque más formal */
+            text-transform: uppercase;
             letter-spacing: 0.05em;
         }
         .nav-tabs .nav-link:hover { 
-            color: var(--r-accent); 
+            color: var(--r-highlight); 
             background-color: transparent; 
-            border-bottom-color: var(--r-divider);
+            border-bottom-color: rgba(255,255,255,0.2);
         }
         .nav-tabs .nav-link.active { 
-            color: var(--r-accent); 
+            color: var(--r-highlight); 
             font-weight: 700; 
             background-color: transparent; 
-            border-bottom-color: var(--r-accent);
+            border-bottom-color: var(--r-highlight);
         }
 
         /* BOTONES OUTLINE: Más sutiles, estilo "open technology" */
@@ -133,7 +159,7 @@
             box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1); 
         }
 
-        /* TABLAS: Fondo blanco total, cabecera simple (adiós bloques verdes oscuros) */
+        /* TABLAS: Fondo blanco total, cabecera simple */
         .table { background-color: #ffffff; }
         .table > thead { border-bottom: 2px solid var(--r-divider); }
         .table > thead > tr > th { 
@@ -166,9 +192,7 @@
         .skiptranslate iframe { display: none !important; }
     </style>
 </head>
-<body class="container mt-3 mb-5">
-
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+<body class="mb-5"> <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -181,27 +205,33 @@
         {% endwith %}
     </div>
 
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 header-bar">
-        <h3 class="m-0 text-agro fw-bold d-flex align-items-center"><i class="bi bi-tree-fill me-2"></i> LAB AGROECOLÓGICO</h3>
-        <div class="d-flex align-items-center">
-            <div id="google_translate_element" class="me-3"></div>
-            <div class="me-3 text-end d-none d-sm-block border-start ps-3"><small class="text-muted d-block lh-1" style="font-size: 0.7rem;">Sesión activa</small><strong class="text-dark">{{ username }}</strong></div>
-            <a href="/logout" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold"><i class="bi bi-box-arrow-right"></i></a>
+    <div class="header-bar">
+        <div class="container d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <h3 class="m-0 d-flex align-items-center lab-title"><i class="bi bi-tree-fill me-2"></i> LAB AGROECOLÓGICO</h3>
+            <div class="d-flex align-items-center">
+                <div id="google_translate_element" class="me-3 goog-te-gadget-simple-dark"></div>
+                <div class="me-3 text-end d-none d-sm-block user-info border-start ps-3 border-secondary"><small class="text-white-50 d-block lh-1" style="font-size: 0.7rem;">Sesión activa</small><strong>{{ username }}</strong></div>
+                <a href="/logout" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold"><i class="bi bi-box-arrow-right"></i></a>
+            </div>
         </div>
     </div>
 
-    <ul class="nav nav-tabs" id="misPestanas" role="tablist">
-        <li class="nav-item"><button class="nav-link active" id="muestras-tab" data-bs-toggle="tab" data-bs-target="#muestras" type="button">Lotes</button></li>
-        <li class="nav-item"><button class="nav-link" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button">POXC</button></li>
-        <li class="nav-item"><button class="nav-link" id="fosforo-tab" data-bs-toggle="tab" data-bs-target="#fosforo" type="button">Fósforo</button></li>
-        <li class="nav-item"><button class="nav-link" id="ph-tab" data-bs-toggle="tab" data-bs-target="#ph" type="button">pH / CE</button></li>
-        <li class="nav-item"><button class="nav-link" id="mop-tab" data-bs-toggle="tab" data-bs-target="#mop" type="button">MOP</button></li>
-        <li class="nav-item"><button class="nav-link" id="estab-tab" data-bs-toggle="tab" data-bs-target="#estab" type="button">Agregados</button></li>
-        <li class="nav-item"><button class="nav-link text-warning" id="macrofauna-tab" data-bs-toggle="tab" data-bs-target="#macrofauna" type="button">Macrofauna</button></li>
-        <li class="nav-item ms-md-auto"><button class="nav-link text-agro" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-1"></i> Dashboard Inteligente</button></li>
-    </ul>
+    <div class="nav-tabs-container">
+        <div class="container">
+            <ul class="nav nav-tabs" id="misPestanas" role="tablist">
+                <li class="nav-item"><button class="nav-link active" id="muestras-tab" data-bs-toggle="tab" data-bs-target="#muestras" type="button">Lotes</button></li>
+                <li class="nav-item"><button class="nav-link" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button">POXC</button></li>
+                <li class="nav-item"><button class="nav-link" id="fosforo-tab" data-bs-toggle="tab" data-bs-target="#fosforo" type="button">Fósforo</button></li>
+                <li class="nav-item"><button class="nav-link" id="ph-tab" data-bs-toggle="tab" data-bs-target="#ph" type="button">pH / CE</button></li>
+                <li class="nav-item"><button class="nav-link" id="mop-tab" data-bs-toggle="tab" data-bs-target="#mop" type="button">MOP</button></li>
+                <li class="nav-item"><button class="nav-link" id="estab-tab" data-bs-toggle="tab" data-bs-target="#estab" type="button">Agregados</button></li>
+                <li class="nav-item"><button class="nav-link text-warning" id="macrofauna-tab" data-bs-toggle="tab" data-bs-target="#macrofauna" type="button">Macrofauna</button></li>
+                <li class="nav-item ms-md-auto"><button class="nav-link text- agro" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-1"></i> Dashboard Inteligente</button></li>
+            </ul>
+        </div>
+    </div>
 
-    <div class="tab-content" id="contenidoPestanas">
+    <div class="container tab-content" id="contenidoPestanas">
         
         <div class="tab-pane fade show active" id="muestras">
             <div class="section-card bg-white d-flex justify-content-between align-items-center border border-primary border-opacity-10 flex-wrap gap-3 p-4 mb-4">
@@ -216,13 +246,7 @@
                 <input type="hidden" name="form_type" value="registro_muestra">
                 <div class="section-card">
                     <h5 class="mb-4 text-dark fw-bold"><i class="bi bi-pencil-square text-muted me-2"></i> Registro de Lote</h5>
-                    <div class="mb-4 bg-light p-4 rounded-3 border">
-                        <label class="form-label small fw-bold text-muted mb-2 d-block text-uppercase">¿Editar lote existente?</label>
-                        <select class="form-select selector-memoria shadow-sm border-0 bg-white" name="muestra_id_editar">
-                            <option value="">-- No, crear un Lote Nuevo --</option>
-                            {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
-                        </select>
-                    </div>
+                    <div class="mb-4 bg-light p-4 rounded-3 border"><label class="form-label small fw-bold text-muted mb-2 d-block text-uppercase">¿Editar lote existente?</label><select class="form-select selector-memoria shadow-sm border-0 bg-white" name="muestra_id_editar"><option value="">-- No, crear un Lote Nuevo --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
                             <label class="form-label fw-bold text-secondary small d-flex justify-content-between align-items-center">ID del Lote *<button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill" id="btn-scan-qr"><i class="bi bi-qr-code-scan"></i></button></label>
@@ -233,10 +257,7 @@
                         <div class="col-md-4"><label class="form-label fw-bold text-secondary small">Textura del Suelo</label><input type="text" class="form-control" name="textura"></div>
                     </div>
                 </div>
-                <div class="row g-4">
-                    <div class="col-md-6"><div class="section-card h-100"><h6 class="text-secondary fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Ubicación Geográfica</h6><div class="row g-3"><div class="col-sm-6"><label class="small text-muted fw-bold">Latitud</label><input type="number" step="any" class="form-control" name="latitud"></div><div class="col-sm-6"><label class="small text-muted fw-bold">Longitud</label><input type="number" step="any" class="form-control" name="longitud"></div></div></div></div>
-                    <div class="col-md-6"><div class="section-card h-100"><h6 class="text-secondary fw-bold mb-3"><i class="bi bi-card-text text-info me-2"></i>Detalles Cualitativos</h6><div class="mb-3"><input type="text" class="form-control" name="descripcion" placeholder="Descripción breve"></div><div><textarea class="form-control" name="info" rows="2" placeholder="Observaciones..."></textarea></div></div></div>
-                </div>
+                <div class="row g-4"><div class="col-md-6"><div class="section-card h-100"><h6 class="text-secondary fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Ubicación Geográfica</h6><div class="row g-3"><div class="col-sm-6"><label class="small text-muted fw-bold">Latitud</label><input type="number" step="any" class="form-control" name="latitud"></div><div class="col-sm-6"><label class="small text-muted fw-bold">Longitud</label><input type="number" step="any" class="form-control" name="longitud"></div></div></div></div><div class="col-md-6"><div class="section-card h-100"><h6 class="text-secondary fw-bold mb-3"><i class="bi bi-card-text text-info me-2"></i>Detalles Cualitativos</h6><div class="mb-3"><input type="text" class="form-control" name="descripcion" placeholder="Descripción breve"></div><div><textarea class="form-control" name="info" rows="2" placeholder="Observaciones..."></textarea></div></div></div></div>
                 <div class="text-end mt-4"><button type="submit" class="btn btn-agro btn-lg px-5 rounded-pill shadow-sm"><i class="bi bi-save me-2"></i> Guardar Lote</button></div>
             </form>
         </div>
@@ -247,7 +268,6 @@
         <div class="tab-pane fade" id="mop"><form action="/" method="POST" class="form-memoria" data-tab="mop"><input type="hidden" name="form_type" value="materia_organica"><div class="section-card"><h5 class="text-dark fw-bold mb-4"><i class="bi bi-layers text-muted me-2"></i> Materia Orgánica Particulada (MOP)</h5><div class="col-md-6 mb-4"><label class="form-label fw-bold small text-secondary">Seleccionar Muestra</label><select class="form-select selector-memoria bg-white shadow-sm" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="bg-light p-4 rounded-4 mb-4 border"><div class="row g-4"><div class="col-md-4"><label class="text-danger small fw-bold"><i class="bi bi-funnel-fill me-1"></i> Tara: Filtro (mg)</label><input type="number" step="any" class="form-control border-danger bg-white" name="peso_filtro_mop" required></div><div class="col-md-4"><label class="text-primary small fw-bold">Peso Muestra + Filtro (mg)</label><input type="number" step="any" class="form-control border-primary bg-white" name="peso_muestra_con_filtro" required></div><div class="col-md-4"><label class="text-success small fw-bold">Suelo Total Analizado (g)</label><input type="number" step="any" class="form-control border-success bg-white" name="peso_suelo" required></div></div></div><button type="submit" class="btn btn-agro px-5 py-2 rounded-pill"><i class="bi bi-calculator me-2"></i> Calcular</button></div></form></div>
         <div class="tab-pane fade" id="estab"><form action="/" method="POST" class="form-memoria" data-tab="estab"><input type="hidden" name="form_type" value="estabilidad_agregados"><div class="section-card"><h5 class="text-dark fw-bold mb-4"><i class="bi bi-grid-3x3-gap text-muted me-2"></i> Estabilidad de Agregados</h5><div class="col-md-6 mb-4"><label class="form-label fw-bold small text-secondary">Seleccionar Muestra</label><select class="form-select selector-memoria bg-white shadow-sm" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="bg-light p-4 rounded-4 mb-4 border"><h6 class="fw-bold text-dark mb-3">Masas Iniciales y Taras (g)</h6><div class="row g-3"><div class="col-md-4"><label class="text-success small fw-bold">Peso Inicial Suelo</label><input type="number" step="any" class="form-control bg-white" name="peso_inicial" required></div><div class="col-md-4"><label class="text-danger small fw-bold">Tara 1: Filtro</label><input type="number" step="any" class="form-control border-danger bg-white" name="peso_filtro" required></div><div class="col-md-4"><label class="text-danger small fw-bold">Tara 2: Recipiente</label><input type="number" step="any" class="form-control border-danger bg-white" name="peso_recipiente_piedras" required></div></div></div><div class="bg-light p-4 rounded-4 mb-4 border"><h6 class="fw-bold text-dark mb-3">Pesajes con Fracciones (g)</h6><div class="row g-3"><div class="col-md-4"><label class="text-primary small fw-bold">Piedras >2mm + Rec.</label><input type="number" step="any" class="form-control border-primary bg-white" name="peso_piedras_con_recipiente" required></div><div class="col-md-4"><label class="text-muted small fw-bold">Fracción >2mm + Filtro</label><input type="number" step="any" class="form-control bg-white" name="peso_fraccion_mayor" required></div><div class="col-md-4"><label class="text-muted small fw-bold">Fracción 250µm + Filtro</label><input type="number" step="any" class="form-control bg-white" name="peso_fraccion_250" required></div></div></div><button type="submit" class="btn btn-agro px-5 py-2 rounded-pill"><i class="bi bi-calculator me-2"></i> Calcular</button></div></form></div>
         <div class="tab-pane fade" id="macrofauna"><div class="row g-4 mb-4"><div class="col-lg-6"><div class="section-card h-100 p-0 overflow-hidden text-center bg-white d-flex align-items-center justify-content-center border border-dashed"><img src="{{ url_for('static', filename='infografia_macrofauna.png') }}" class="img-fluid w-100 h-100" style="object-fit: contain;" alt="Guía"></div></div><div class="col-lg-6"><form action="/" method="POST" class="form-memoria" data-tab="macrofauna"><input type="hidden" name="form_type" value="macrofauna"><div class="section-card h-100 d-flex flex-column"><h5 class="text-dark fw-bold mb-4"><i class="bi bi-camera text-muted me-2"></i> Captura en Campo</h5><div class="mb-4"><label class="form-label fw-bold small text-secondary">1. Seleccionar Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="mb-4 flex-grow-1"><label class="form-label fw-bold small text-secondary d-block">2. Toma Fotográfica</label><input type="file" id="input_foto_macrofauna" accept="image/*" capture="environment" style="display: none;"><input type="hidden" name="foto_macrofauna" id="hidden_url_foto" required><label for="input_foto_macrofauna" class="btn btn-outline-warning text-dark w-100 py-4 mb-2 shadow-sm rounded-4" style="cursor: pointer; border-width: 2px; border-style: dashed;"><i class="bi bi-camera-fill fs-2 d-block mb-2 text-warning"></i> <span class="fw-bold">Abrir Cámara</span></label><div id="foto_preview_container" class="mt-3 text-center" style="display: none;"><img id="foto_preview" src="" alt="Macrofauna" class="img-fluid rounded-4 border border-warning border-2" style="max-height: 200px; object-fit: cover;"><span class="d-block badge border border-success text-success mt-2 p-2 rounded-pill"><i class="bi bi-check-circle me-1"></i> Imagen adjuntada</span></div><div id="foto_loading" style="display: none;" class="text-center text-muted small py-4 bg-light rounded-4 border mt-2"><div class="spinner-border text-warning mb-2" role="status"></div><br>Subiendo...</div></div><button type="submit" class="btn btn-warning w-100 fw-bold text-dark rounded-pill py-3 shadow-sm mt-auto"><i class="bi bi-cloud-upload me-2"></i> Guardar</button></div></form></div></div><div class="section-card"><h5 class="text-dark fw-bold mb-4"><i class="bi bi-images text-muted me-2"></i> Galería de Biodiversidad</h5><div class="row g-3">{% set fotos = consolidado | selectattr('foto_macrofauna') | list %}{% if fotos %}{% for fila in fotos %}<div class="col-6 col-md-3 col-lg-2 position-relative"><div class="gallery-card h-100 d-flex flex-column"><a href="{{ fila.foto_macrofauna }}" target="_blank" style="overflow: hidden; display: block; flex-grow: 1;"><img src="{{ fila.foto_macrofauna }}" class="gallery-img h-100" alt="Macrofauna"></a><div class="p-2 bg-light border-top text-center"><small class="fw-bold d-block text-truncate text-secondary" title="{{ fila.nombre_muestra }}">{{ fila.nombre_muestra }}</small></div><form action="/eliminar_foto/{{ fila.id }}" method="POST" class="position-absolute top-0 end-0 m-2"><button type="submit" class="btn btn-sm btn-danger rounded-circle p-1 lh-1 shadow border border-white" onclick="return confirm('¿Borrar foto?');"><i class="bi bi-x fw-bold"></i></button></form></div></div>{% endfor %}{% else %}<div class="col-12 text-center text-muted py-5 bg-light rounded-4 border border-dashed"><i class="bi bi-camera-slash" style="font-size: 3rem; color: #dee2e6;"></i><h6 class="mt-3 fw-bold">Galería Vacía</h6><p class="small mb-0">Toma una foto en el campo.</p></div>{% endif %}</div></div></div>
-
 
         <div class="tab-pane fade" id="consolidado">
             {% if not consolidado %}
@@ -580,7 +600,6 @@
     </script>
 </body>
 </html>
-
 
 
 
