@@ -304,7 +304,8 @@ def inicio():
         
         consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, m.foto_macrofauna, 
                                   c.resultado_carbono, p.ph, p.conductividad, mo.resultado_porcentaje AS mop, 
-                                  ea.porcentaje_mayor_2mm, ea.porcentaje_250_2mm, fo.resultado_mg_kg AS fosforo 
+                                  ea.porcentaje_mayor_2mm, ea.porcentaje_250_2mm, 
+                                  fo.resultado_mg_kg AS fosforo, fo.resultado_ppm AS fosforo_ppm 
                                   FROM muestras m 
                                   LEFT JOIN carbono_activo c ON m.id = c.muestra_id 
                                   LEFT JOIN ph_conductividad p ON m.id = p.muestra_id 
@@ -404,7 +405,9 @@ def descargar_csv():
     conexion = obtener_conexion()
     cur = conexion.cursor()
     consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion", m.foto_macrofauna AS "Foto_Macrofauna", 
-                  c.resultado_carbono AS "Carbono_Activo", fo.resultado_mg_kg AS "Fosforo_Olsen", p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc", 
+                  c.resultado_carbono AS "Carbono_Activo", 
+                  fo.resultado_ppm AS "Fosforo_ppm", fo.resultado_mg_kg AS "Fosforo_mg_kg", 
+                  p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc", 
                   ea.porcentaje_mayor_2mm AS "Agregados_Mayor_2mm_Porc", ea.porcentaje_250_2mm AS "Agregados_250_2mm_Porc" 
                   FROM muestras m 
                   LEFT JOIN carbono_activo c ON m.id = c.muestra_id 
