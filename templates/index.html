@@ -89,9 +89,12 @@
                                     <input type="text" class="form-control" name="survey_id" value="64c114078e8b2200011f0494" placeholder="Ej: 64c114078e8b2200011f0494" required>
                                     <small class="text-muted">Si usas tu propia plantilla, pega aquí el código de tu encuesta.</small>
                                 </div>
+                                
+                                <div class="mb-3">
                                     <label class="form-label fw-bold text-secondary">Email de SurveyStack</label>
                                     <input type="email" class="form-control" name="ss_email" placeholder="tu@email.com" required>
                                 </div>
+
                                 <div class="mb-4">
                                     <label class="form-label fw-bold text-secondary">Contraseña</label>
                                     <input type="password" class="form-control" name="ss_password" placeholder="••••••••" required>
@@ -109,6 +112,7 @@
                     </div>
                 </div>
             </div>
+
             <form action="/" method="POST" class="form-memoria" data-tab="registro">
                 <input type="hidden" name="form_type" value="registro_muestra">
                 
@@ -125,13 +129,13 @@
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
-    <label class="form-label fw-bold text-secondary d-flex justify-content-between align-items-center">
-        Nombre / ID del Lote *
-        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-scan-qr"><i class="bi bi-qr-code-scan"></i> QR</button>
-    </label>
-    <input type="text" class="form-control" name="nombre" id="input_nombre_qr" required placeholder="Ej: Lote Norte o Escanea QR">
-    <div id="qr-reader" style="display:none; width:100%; margin-top:10px; border-radius: 8px; overflow: hidden; border: 2px solid #2d6a4f;"></div>
-</div>
+                            <label class="form-label fw-bold text-secondary d-flex justify-content-between align-items-center">
+                                Nombre / ID del Lote *
+                                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-scan-qr"><i class="bi bi-qr-code-scan"></i> QR</button>
+                            </label>
+                            <input type="text" class="form-control" name="nombre" id="input_nombre_qr" required placeholder="Ej: Lote Norte o Escanea QR">
+                            <div id="qr-reader" style="display:none; width:100%; margin-top:10px; border-radius: 8px; overflow: hidden; border: 2px solid #2d6a4f;"></div>
+                        </div>
                         <div class="col-md-4"><label class="form-label fw-bold text-secondary">Cultivo Principal</label><input type="text" class="form-control" name="cultivo" placeholder="Ej: Vid, Ajo, Papa"></div>
                         <div class="col-md-4"><label class="form-label fw-bold text-secondary">Textura del Suelo</label><input type="text" class="form-control" name="textura" placeholder="Ej: Franco arcilloso"></div>
                     </div>
@@ -362,7 +366,8 @@
                     document.getElementById('consolidado-tab').addEventListener('shown.bs.tab', function () { map.invalidateSize(); map.fitBounds(group.getBounds().pad(0.1)); });
                 }
             {% endif %}
-        // ==========================================
+
+            // ==========================================
             // 1. REGISTRO DE PWA (APP INSTALABLE)
             // ==========================================
             if ('serviceWorker' in navigator) {
@@ -398,22 +403,18 @@
                         
                         html5QrCode = new Html5Qrcode("qr-reader");
                         html5QrCode.start(
-                            { facingMode: "environment" }, // Usa la cámara trasera del celu
+                            { facingMode: "environment" }, 
                             { fps: 10, qrbox: { width: 200, height: 200 } },
                             (textoDecodificado) => {
-                                // ¡ÉXITO! Leyó el código
                                 inputNombre.value = textoDecodificado;
-                                // Sonido de "Bip" opcional
                                 try { navigator.vibrate(200); } catch(e){}
-                                
-                                // Apagamos la cámara automáticamente
                                 html5QrCode.stop().then(() => {
                                     qrReaderDiv.style.display = 'none';
                                     btnScan.innerHTML = '<i class="bi bi-qr-code-scan"></i> QR';
                                     btnScan.classList.replace('btn-danger', 'btn-outline-primary');
                                 });
                             },
-                            (errorLeyendo) => { /* Sigue buscando... */ }
+                            (errorLeyendo) => { }
                         ).catch((err) => {
                             alert("Por favor, dale permiso a tu navegador para usar la cámara.");
                             qrReaderDiv.style.display = 'none';
