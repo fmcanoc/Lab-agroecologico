@@ -54,6 +54,13 @@ def crear_tablas():
                             porcentaje_mayor_2mm NUMERIC, porcentaje_250_2mm NUMERIC, peso_inicial NUMERIC, 
                             peso_filtro NUMERIC, peso_piedras NUMERIC, peso_fraccion_mayor NUMERIC, 
                             peso_fraccion_250 NUMERIC, peso_recipiente_piedras NUMERIC, peso_piedras_con_recipiente NUMERIC)''')
+            
+            # NUEVA TABLA: FÓSFORO OLSEN
+            cur.execute('''CREATE TABLE IF NOT EXISTS fosforo_olsen (
+                            id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
+                            resultado_ppm NUMERIC, resultado_mg_kg NUMERIC, peso_suelo NUMERIC, 
+                            vol_extracto NUMERIC, vol_dilucion NUMERIC, abs_muestra NUMERIC, 
+                            abs_0 NUMERIC, abs_05 NUMERIC, abs_1 NUMERIC, abs_15 NUMERIC, abs_2 NUMERIC)''')
             conexion.commit()
 
             try:
@@ -127,9 +134,6 @@ def inicio():
     conexion = obtener_conexion()
     cur = conexion.cursor()
     
-    plot_url = None
-    poxc_calculado = None
-    
     try:
         if request.method == 'POST':
             tipo_formulario = request.form.get('form_type')
@@ -191,6 +195,43 @@ def inicio():
                 conexion.commit()
                 flash('POXC Calculado.', 'success')
                 return redirect(url_for('inicio') + '#carbono')
+
+            elif tipo_formulario == 'fosforo_olsen':
+                muestra_id = request.form['muestra_id']
+                
+                # Constantes preestablecidas
+                peso_g = float(request.form.get('peso_suelo', 2.5))
+                vol_ext = float(request.form.get('vol_extracto', 7.0))
+                vol_dil = float(request.form.get('vol_dilucion', 20.0))
+                
+                # Curva de calibración y muestra
+                abs_m = float(request.form['abs_muestra'])
+                a0 = float(request.form['abs_0'])
+                a05 = float(request.form['abs_05'])
+                a1 = float(request.form['abs_1'])
+                a15 = float(request.form['abs_15'])
+                a2 = float(request.form['abs_2'])
+                
+                # Regresión Lineal (X = Concentración, Y = Absorbancia)
+                conc = np.array([0.0, 0.5, 1.0, 1.5, 2.0])
+                absor = np.array([a0, a05, a1, a15, a2])
+                resultado = stats.linregress(conc, absor)
+                pendiente = resultado.slope
+                
+                # FÓRMULA 1: Concentración en ppm
+                ppm = abs_m / pendiente if pendiente != 0 else 0
+                
+                # FÓRMULA 2: Fósforo Disponible (mg P / kg suelo)
+                # (((absorbancia/pendiente)*0.0559 - 0.052)*(volumen dilución / volumen extracto) * 0.025) / (peso de muestra/1000)
+                p_disponible = (((ppm * 0.0559) - 0.052) * (vol_dil / vol_ext) * 0.025) / (peso_g / 1000)
+                
+                cur.execute('DELETE FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
+                cur.execute('''INSERT INTO fosforo_olsen (muestra_id, resultado_ppm, resultado_mg_kg, peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_05, abs_1, abs_15, abs_2) 
+                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', 
+                            (muestra_id, ppm, p_disponible, peso_g, vol_ext, vol_dil, abs_m, a0, a05, a1, a15, a2))
+                conexion.commit()
+                flash('Fósforo calculado correctamente.', 'success')
+                return redirect(url_for('inicio') + '#fosforo')
 
             elif tipo_formulario == 'ph_conductividad':
                 muestra_id = request.form['muestra_id']
@@ -263,17 +304,18 @@ def inicio():
         
         consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, m.foto_macrofauna, 
                                   c.resultado_carbono, p.ph, p.conductividad, mo.resultado_porcentaje AS mop, 
-                                  ea.porcentaje_mayor_2mm, ea.porcentaje_250_2mm 
+                                  ea.porcentaje_mayor_2mm, ea.porcentaje_250_2mm, fo.resultado_mg_kg AS fosforo 
                                   FROM muestras m 
                                   LEFT JOIN carbono_activo c ON m.id = c.muestra_id 
                                   LEFT JOIN ph_conductividad p ON m.id = p.muestra_id 
                                   LEFT JOIN materia_organica mo ON m.id = mo.muestra_id 
                                   LEFT JOIN estabilidad_agregados ea ON m.id = ea.muestra_id 
+                                  LEFT JOIN fosforo_olsen fo ON m.id = fo.muestra_id
                                   WHERE m.usuario_id = %s ORDER BY m.id DESC'''
         cur.execute(consulta_consolidado, (usuario_id,))
         consolidado_db = cur.fetchall()
         
-        return render_template('index.html', muestras=muestras_db, consolidado=consolidado_db, plot_url=plot_url, poxc_calculado=poxc_calculado, username=username)
+        return render_template('index.html', muestras=muestras_db, consolidado=consolidado_db, username=username)
     finally:
         cur.close()
         conexion.close()
@@ -300,6 +342,11 @@ def datos_crudos(muestra_id):
         c_row = cur.fetchone()
         if c_row: 
             datos.update({'c_peso': c_row['peso_suelo'], 'c_abs': c_row['abs_muestra'], 'c_a1': c_row['abs_1'], 'c_a2': c_row['abs_2'], 'c_a3': c_row['abs_3'], 'c_a4': c_row['abs_4']})
+            
+        cur.execute('SELECT peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_05, abs_1, abs_15, abs_2 FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
+        p_row = cur.fetchone()
+        if p_row: 
+            datos.update({'p_peso': p_row['peso_suelo'], 'p_volext': p_row['vol_extracto'], 'p_voldil': p_row['vol_dilucion'], 'p_abs': p_row['abs_muestra'], 'p_a0': p_row['abs_0'], 'p_a05': p_row['abs_05'], 'p_a1': p_row['abs_1'], 'p_a15': p_row['abs_15'], 'p_a2': p_row['abs_2']})
         
         cur.execute('SELECT peso_suelo, peso_filtro, peso_muestra_con_filtro FROM materia_organica WHERE muestra_id = %s', (muestra_id,))
         mop_row = cur.fetchone()
@@ -324,6 +371,7 @@ def eliminar_muestra(muestra_id):
     cur = conexion.cursor()
     try:
         cur.execute('DELETE FROM carbono_activo WHERE muestra_id = %s', (muestra_id,))
+        cur.execute('DELETE FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
         cur.execute('DELETE FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
         cur.execute('DELETE FROM materia_organica WHERE muestra_id = %s', (muestra_id,))
         cur.execute('DELETE FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
@@ -356,10 +404,11 @@ def descargar_csv():
     conexion = obtener_conexion()
     cur = conexion.cursor()
     consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion", m.foto_macrofauna AS "Foto_Macrofauna", 
-                  c.resultado_carbono AS "Carbono_Activo", p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc", 
+                  c.resultado_carbono AS "Carbono_Activo", fo.resultado_mg_kg AS "Fosforo_Olsen", p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc", 
                   ea.porcentaje_mayor_2mm AS "Agregados_Mayor_2mm_Porc", ea.porcentaje_250_2mm AS "Agregados_250_2mm_Porc" 
                   FROM muestras m 
                   LEFT JOIN carbono_activo c ON m.id = c.muestra_id 
+                  LEFT JOIN fosforo_olsen fo ON m.id = fo.muestra_id 
                   LEFT JOIN ph_conductividad p ON m.id = p.muestra_id 
                   LEFT JOIN materia_organica mo ON m.id = mo.muestra_id 
                   LEFT JOIN estabilidad_agregados ea ON m.id = ea.muestra_id 
@@ -485,11 +534,7 @@ def manifest():
         "display": "standalone",
         "background_color": "#f8f9fa",
         "theme_color": "#2d6a4f",
-        "icons": [{
-            "src": "https://cdn-icons-png.flaticon.com/512/2875/2875078.png", 
-            "sizes": "512x512",
-            "type": "image/png"
-        }]
+        "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/2875/2875078.png", "sizes": "512x512", "type": "image/png"}]
     }
     response = make_response(jsonify(manifest_data))
     response.headers["Content-Type"] = "application/json"
@@ -497,10 +542,7 @@ def manifest():
 
 @app.route('/sw.js')
 def sw():
-    sw_content = """
-    self.addEventListener('install', (e) => { console.log('[Service Worker] Instalado'); });
-    self.addEventListener('fetch', (e) => { /* Modo online por defecto */ });
-    """
+    sw_content = "self.addEventListener('install', (e) => { console.log('[Service Worker] Instalado'); }); self.addEventListener('fetch', (e) => { });"
     response = make_response(sw_content)
     response.headers['Content-Type'] = 'application/javascript'
     return response
