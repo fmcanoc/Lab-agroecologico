@@ -149,31 +149,29 @@ def inicio():
                 latitud = float(lat_str) if lat_str else None
                 longitud = float(lon_str) if lon_str else None
                 
-                # Atrapamos la foto (vía ImgBB desde la Web)
-            
                 muestra_id_editar = request.form.get('muestra_id_editar')
 
                 if muestra_id_editar:
                     cur.execute('''
                         UPDATE muestras 
-                        SET nombre_muestra=%s, cultivo=%s, textura=%s, latitud=%s, longitud=%s, descripcion=%s, informacion_relevante=%s, foto_macrofauna=COALESCE(%s, foto_macrofauna)
+                        SET nombre_muestra=%s, cultivo=%s, textura=%s, latitud=%s, longitud=%s, descripcion=%s, informacion_relevante=%s
                         WHERE id=%s AND usuario_id=%s
-                    ''', (nombre, cultivo, textura, latitud, longitud, descripcion, info, url_foto_manual, muestra_id_editar, usuario_id))
+                    ''', (nombre, cultivo, textura, latitud, longitud, descripcion, info, muestra_id_editar, usuario_id))
                     flash('Muestra actualizada exitosamente.', 'info')
                 else:
                     try:
                         cur.execute('''
-                            INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, descripcion, informacion_relevante, latitud, longitud, foto_macrofauna) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ''', (usuario_id, nombre, cultivo, textura, descripcion, info, latitud, longitud, url_foto_manual))
+                            INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, descripcion, informacion_relevante, latitud, longitud) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        ''', (usuario_id, nombre, cultivo, textura, descripcion, info, latitud, longitud))
                         flash('Muestra creada exitosamente.', 'success')
                     except errors.UniqueViolation:
                         conexion.rollback()
                         cur.execute('''
                             UPDATE muestras 
-                            SET cultivo=%s, textura=%s, descripcion=%s, informacion_relevante=%s, latitud=%s, longitud=%s, foto_macrofauna=COALESCE(%s, foto_macrofauna)
+                            SET cultivo=%s, textura=%s, descripcion=%s, informacion_relevante=%s, latitud=%s, longitud=%s
                             WHERE usuario_id=%s AND nombre_muestra=%s
-                        ''', (cultivo, textura, descripcion, info, latitud, longitud, url_foto_manual, usuario_id, nombre))
+                        ''', (cultivo, textura, descripcion, info, latitud, longitud, usuario_id, nombre))
                         flash('Muestra actualizada exitosamente.', 'info')
                 conexion.commit()
                 return redirect(url_for('inicio') + '#muestras')
@@ -238,8 +236,6 @@ def inicio():
                 denominador = pi - ppd_neto
                 porc_mayor = ((pm - pf) / denominador) * 100
                 porc_250 = ((p250 - pf) / denominador) * 100
-
-    
                 
                 cur.execute('DELETE FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
                 cur.execute('''INSERT INTO estabilidad_agregados (muestra_id, porcentaje_mayor_2mm, porcentaje_250_2mm, peso_inicial, peso_filtro, peso_piedras, peso_fraccion_mayor, peso_fraccion_250, peso_recipiente_piedras, peso_piedras_con_recipiente) 
@@ -249,10 +245,9 @@ def inicio():
                 flash('Estabilidad calculada descontando la tara del recipiente.', 'success')
                 return redirect(url_for('inicio') + '#estab')
 
-                
-                # --- NUEVA LÓGICA MACROFAUNA ---
-                elif tipo_formulario == 'macrofauna':
-                muestra_id = request.form['muestra_id']
+            # --- NUEVA LÓGICA MACROFAUNA ---
+            elif tipo_formulario == 'macrofauna':
+                muestra_id = request.form.get('muestra_id')
                 url_foto_manual = request.form.get('foto_macrofauna')
                 
                 if not url_foto_manual:
@@ -267,11 +262,6 @@ def inicio():
                 conexion.commit()
                 flash('Foto de macrofauna guardada en la galería.', 'success')
                 return redirect(url_for('inicio') + '#macrofauna')
-
-        # --- AQUÍ EMPIEZA LA LECTURA DE LA BASE DE DATOS (No borrar) ---
-        cur.execute('SELECT id, nombre_muestra FROM muestras WHERE usuario_id = %s ORDER BY id DESC', (usuario_id,))
-
-        
 
         cur.execute('SELECT id, nombre_muestra FROM muestras WHERE usuario_id = %s ORDER BY id DESC', (usuario_id,))
         muestras_db = cur.fetchall()
@@ -438,7 +428,6 @@ def sincronizar_api():
                 nombre_archivo = archivo_bruto[0] if isinstance(archivo_bruto, list) else archivo_bruto
                 url_foto = f"https://surveystack.s3.amazonaws.com/{nombre_archivo}"
             
-            # ¡Consulta INSERT corregida con foto_macrofauna incluida!
             cur.execute('''
                 INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna) 
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -498,6 +487,7 @@ def sw():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
