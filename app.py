@@ -281,6 +281,7 @@ def sincronizar_api():
     # Recibimos las credenciales desde el modal de la web
     ss_email = request.form.get('ss_email')
     ss_password = request.form.get('ss_password')
+    survey_id = request.form.get('survey_id') # <--- NUEVO: Atrapamos el ID
     
     token = None
     
@@ -304,7 +305,8 @@ def sincronizar_api():
         # ==========================================================
         # FASE 2: TRAER LOS DATOS PRIVADOS
         # ==========================================================
-        url_api = "https://app.surveystack.io/api/submissions?survey=64c114078e8b2200011f0494"
+        url_api = f"https://app.surveystack.io/api/submissions?survey={survey_id}"
+        
         headers = {'Content-Type': 'application/json'}
         
         # Armamos el header de autorización EXACTAMENTE como lo hace tu script de R
@@ -410,6 +412,7 @@ def sw():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
