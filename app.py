@@ -26,6 +26,60 @@ def obtener_conexion():
     conexion = psycopg.connect(url_bd, row_factory=dict_row)
     return conexion
 
+def crear_tablas():
+    conexion = obtener_conexion()
+    if conexion:
+        try:
+            cur = conexion.cursor()
+            # 1. TABLA USUARIOS
+            cur.execute('''CREATE TABLE IF NOT EXISTS usuarios (
+                            id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL)''')
+            # 2. TABLA MUESTRAS
+            cur.execute('''CREATE TABLE IF NOT EXISTS muestras (
+                            id SERIAL PRIMARY KEY, usuario_id INTEGER NOT NULL, nombre_muestra TEXT NOT NULL, 
+                            cultivo TEXT, textura TEXT, latitud NUMERIC, longitud NUMERIC, 
+                            descripcion TEXT, informacion_relevante TEXT, 
+                            fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+                            UNIQUE(usuario_id, nombre_muestra))''')
+            # 3. TABLA CARBONO
+            cur.execute('''CREATE TABLE IF NOT EXISTS carbono_activo (
+                            id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
+                            resultado_carbono NUMERIC, peso_suelo NUMERIC, abs_muestra NUMERIC, 
+                            abs_1 NUMERIC, abs_2 NUMERIC, abs_3 NUMERIC, abs_4 NUMERIC)''')
+            # 4. TABLA PH Y COND
+            cur.execute('''CREATE TABLE IF NOT EXISTS ph_conductividad (
+                            id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
+                            ph NUMERIC, conductividad NUMERIC)''')
+            # 5. TABLA MOP
+            cur.execute('''CREATE TABLE IF NOT EXISTS materia_organica (
+                            id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
+                            resultado_porcentaje NUMERIC, peso_particulas NUMERIC, peso_suelo NUMERIC, 
+                            peso_filtro NUMERIC, peso_muestra_con_filtro NUMERIC)''')
+            # 6. TABLA ESTABILIDAD
+            cur.execute('''CREATE TABLE IF NOT EXISTS estabilidad_agregados (
+                            id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
+                            porcentaje_mayor_2mm NUMERIC, porcentaje_250_2mm NUMERIC, peso_inicial NUMERIC, 
+                            peso_filtro NUMERIC, peso_piedras NUMERIC, peso_fraccion_mayor NUMERIC, 
+                            peso_fraccion_250 NUMERIC, peso_recipiente_piedras NUMERIC, peso_piedras_con_recipiente NUMERIC)''')
+            conexion.commit()
+
+            # AGREGAR COLUMNA FOTO MACROFAUNA SIN ROMPER NADA
+            try:
+                cur.execute("ALTER TABLE muestras ADD COLUMN foto_macrofauna TEXT;")
+            except Exception as e:
+                conexion.rollback() # Ignoramos si la columna ya existe
+            else:
+                conexion.commit()
+            
+            cur.close()
+        except Exception as e:
+            print("Error al crear tablas:", e)
+        finally:
+            conexion.close()
+
+# Ejecutamos la creación de tablas al arrancar la app
+crear_tablas()
+
 @app.route('/registro', methods=['POST'])
 def registro():
     username = request.form['new_username']
@@ -95,17 +149,32 @@ def inicio():
                 latitud = float(lat_str) if lat_str else None
                 longitud = float(lon_str) if lon_str else None
                 
-                try:
-                    cur.execute('''INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, descripcion, informacion_relevante, latitud, longitud) 
-                                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', 
-                                (usuario_id, nombre, cultivo, textura, descripcion, info, latitud, longitud))
-                    flash('Muestra creada exitosamente.', 'success')
-                except errors.UniqueViolation: 
-                    conexion.rollback() 
-                    cur.execute('''UPDATE muestras SET cultivo=%s, textura=%s, descripcion=%s, informacion_relevante=%s, latitud=%s, longitud=%s 
-                                   WHERE usuario_id=%s AND nombre_muestra=%s''', 
-                                (cultivo, textura, descripcion, info, latitud, longitud, usuario_id, nombre))
+                # Atrapamos la foto (vía ImgBB desde la Web)
+                url_foto_manual = request.form.get('foto_macrofauna') or None
+                muestra_id_editar = request.form.get('muestra_id_editar')
+
+                if muestra_id_editar:
+                    cur.execute('''
+                        UPDATE muestras 
+                        SET nombre_muestra=%s, cultivo=%s, textura=%s, latitud=%s, longitud=%s, descripcion=%s, informacion_relevante=%s, foto_macrofauna=COALESCE(%s, foto_macrofauna)
+                        WHERE id=%s AND usuario_id=%s
+                    ''', (nombre, cultivo, textura, latitud, longitud, descripcion, info, url_foto_manual, muestra_id_editar, usuario_id))
                     flash('Muestra actualizada exitosamente.', 'info')
+                else:
+                    try:
+                        cur.execute('''
+                            INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, descripcion, informacion_relevante, latitud, longitud, foto_macrofauna) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ''', (usuario_id, nombre, cultivo, textura, descripcion, info, latitud, longitud, url_foto_manual))
+                        flash('Muestra creada exitosamente.', 'success')
+                    except errors.UniqueViolation:
+                        conexion.rollback()
+                        cur.execute('''
+                            UPDATE muestras 
+                            SET cultivo=%s, textura=%s, descripcion=%s, informacion_relevante=%s, latitud=%s, longitud=%s, foto_macrofauna=COALESCE(%s, foto_macrofauna)
+                            WHERE usuario_id=%s AND nombre_muestra=%s
+                        ''', (cultivo, textura, descripcion, info, latitud, longitud, url_foto_manual, usuario_id, nombre))
+                        flash('Muestra actualizada exitosamente.', 'info')
                 conexion.commit()
                 return redirect(url_for('inicio') + '#muestras')
                 
@@ -138,14 +207,12 @@ def inicio():
                 flash('pH y Conductividad guardados.', 'success')
                 return redirect(url_for('inicio') + '#ph')
 
-            # --- NUEVA LÓGICA MOP (TARA DEL FILTRO) ---
             elif tipo_formulario == 'materia_organica':
                 muestra_id = request.form['muestra_id']
                 pf_mop = float(request.form['peso_filtro_mop'])
                 pm_filtro = float(request.form['peso_muestra_con_filtro'])
                 ps = float(request.form['peso_suelo'])
                 
-                # Descuento del filtro
                 pp_neto = pm_filtro - pf_mop
                 mop_porcentaje = pp_neto / (ps * 10)
                 
@@ -157,7 +224,6 @@ def inicio():
                 flash('MOP calculado descontando el peso del filtro.', 'success')
                 return redirect(url_for('inicio') + '#mop')
 
-            # --- NUEVA LÓGICA AGREGADOS (TARA DEL RECIPIENTE) ---
             elif tipo_formulario == 'estabilidad_agregados':
                 muestra_id = request.form['muestra_id']
                 pi = float(request.form['peso_inicial'])
@@ -168,9 +234,7 @@ def inicio():
                 pm = float(request.form['peso_fraccion_mayor'])
                 p250 = float(request.form['peso_fraccion_250'])
                 
-                # Descuento de la tara de piedras
                 ppd_neto = piedras_bruto - tara_piedras
-                
                 denominador = pi - ppd_neto
                 porc_mayor = ((pm - pf) / denominador) * 100
                 porc_250 = ((p250 - pf) / denominador) * 100
@@ -186,7 +250,7 @@ def inicio():
         cur.execute('SELECT id, nombre_muestra FROM muestras WHERE usuario_id = %s ORDER BY id DESC', (usuario_id,))
         muestras_db = cur.fetchall()
         
-        consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, 
+        consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, m.foto_macrofauna, 
                                   c.resultado_carbono, p.ph, p.conductividad, mo.resultado_porcentaje AS mop, 
                                   ea.porcentaje_mayor_2mm, ea.porcentaje_250_2mm 
                                   FROM muestras m 
@@ -210,9 +274,9 @@ def datos_crudos(muestra_id):
     cur = conexion.cursor()
     try:
         datos = {}
-        cur.execute('SELECT nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
+        cur.execute('SELECT nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         m_row = cur.fetchone()
-        if m_row: datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante']})
+        if m_row: datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante'], 'foto_macrofauna': m_row['foto_macrofauna']})
             
         cur.execute('SELECT ph, conductividad FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
         ph_row = cur.fetchone()
@@ -222,12 +286,10 @@ def datos_crudos(muestra_id):
         c_row = cur.fetchone()
         if c_row: datos.update({'c_peso': c_row['peso_suelo'], 'c_abs': c_row['abs_muestra'], 'c_a1': c_row['abs_1'], 'c_a2': c_row['abs_2'], 'c_a3': c_row['abs_3'], 'c_a4': c_row['abs_4']})
         
-        # Nuevos campos MOP
         cur.execute('SELECT peso_suelo, peso_filtro, peso_muestra_con_filtro FROM materia_organica WHERE muestra_id = %s', (muestra_id,))
         mop_row = cur.fetchone()
         if mop_row: datos.update({'mop_suelo': mop_row['peso_suelo'], 'mop_pf': mop_row.get('peso_filtro'), 'mop_pmcf': mop_row.get('peso_muestra_con_filtro')})
         
-        # Nuevos campos Agregados
         cur.execute('SELECT peso_inicial, peso_filtro, peso_fraccion_mayor, peso_fraccion_250, peso_recipiente_piedras, peso_piedras_con_recipiente FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
         ea_row = cur.fetchone()
         if ea_row: datos.update({'ea_pi': ea_row['peso_inicial'], 'ea_pf': ea_row['peso_filtro'], 'ea_pm': ea_row['peso_fraccion_mayor'], 'ea_p250': ea_row['peso_fraccion_250'], 'ea_rec_p': ea_row.get('peso_recipiente_piedras'), 'ea_pcr': ea_row.get('peso_piedras_con_recipiente')})
@@ -255,7 +317,7 @@ def eliminar_muestra(muestra_id):
 def descargar_csv():
     if 'usuario_id' not in session: return redirect(url_for('login'))
     conexion = obtener_conexion(); cur = conexion.cursor()
-    consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion", 
+    consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion", m.foto_macrofauna AS "Foto_Macrofauna", 
                   c.resultado_carbono AS "Carbono_Activo", p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc", 
                   ea.porcentaje_mayor_2mm AS "Agregados_Mayor_2mm_Porc", ea.porcentaje_250_2mm AS "Agregados_250_2mm_Porc" 
                   FROM muestras m 
@@ -278,17 +340,14 @@ def descargar_csv():
 def sincronizar_api():
     if 'usuario_id' not in session: return redirect(url_for('login'))
     
-    # Recibimos las credenciales desde el modal de la web
     ss_email = request.form.get('ss_email')
     ss_password = request.form.get('ss_password')
-    survey_id = request.form.get('survey_id') # <--- NUEVO: Atrapamos el ID
+    survey_id = request.form.get('survey_id')
     
     token = None
     
     try:
-        # ==========================================================
-        # FASE 1: LOGIN EN SURVEYSTACK (Igual que en tu código R)
-        # ==========================================================
+        # FASE 1: LOGIN EN SURVEYSTACK
         if ss_email and ss_password:
             auth_url = "https://app.surveystack.io/api/auth/login"
             auth_payload = json.dumps({"email": ss_email, "password": ss_password}).encode('utf-8')
@@ -302,14 +361,9 @@ def sincronizar_api():
                 flash("Credenciales de SurveyStack incorrectas. Revisa tu email y contraseña.", "danger")
                 return redirect(url_for('inicio') + '#muestras')
 
-        # ==========================================================
         # FASE 2: TRAER LOS DATOS PRIVADOS
-        # ==========================================================
         url_api = f"https://app.surveystack.io/api/submissions?survey={survey_id}"
-        
         headers = {'Content-Type': 'application/json'}
-        
-        # Armamos el header de autorización EXACTAMENTE como lo hace tu script de R
         if token and ss_email:
             headers['Authorization'] = f"{ss_email} {token}"
             
@@ -318,8 +372,6 @@ def sincronizar_api():
             respuesta = response.read().decode('utf-8')
             
         datos_json = json.loads(respuesta)
-        
-        # SurveyStack a veces envuelve la lista en un objeto {"data": [...] }
         if isinstance(datos_json, dict) and 'data' in datos_json:
             datos_json = datos_json['data']
             
@@ -328,9 +380,7 @@ def sincronizar_api():
         usuario_actual = session['usuario_id']
         contador = 0
         
-        # ==========================================================
         # FASE 3: GUARDAR EN LA BASE DE DATOS
-        # ==========================================================
         for fila in datos_json:
             id_unico = fila.get('_id')
             if not id_unico: continue 
@@ -352,20 +402,29 @@ def sincronizar_api():
             if ubicacion and isinstance(ubicacion, dict) and 'geometry' in ubicacion:
                 coords = ubicacion['geometry'].get('coordinates', [])
                 if len(coords) >= 2:
-                    lon = coords[0] # R saca el [1] que es Longitud
-                    lat = coords[1] # R saca el [2] que es Latitud
+                    lon = coords[0] 
+                    lat = coords[1] 
+                    
+            # Atrapamos la foto de SurveyStack
+            archivo_bruto = extraer('foto_macrofauna')
+            url_foto = None
+            if archivo_bruto:
+                nombre_archivo = archivo_bruto[0] if isinstance(archivo_bruto, list) else archivo_bruto
+                url_foto = f"https://surveystack.s3.amazonaws.com/{nombre_archivo}"
             
+            # ¡Consulta INSERT corregida con foto_macrofauna incluida!
             cur.execute('''
-                INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (usuario_id, nombre_muestra) DO UPDATE SET 
                 cultivo = COALESCE(EXCLUDED.cultivo, muestras.cultivo), 
                 textura = COALESCE(EXCLUDED.textura, muestras.textura), 
                 latitud = COALESCE(EXCLUDED.latitud, muestras.latitud), 
                 longitud = COALESCE(EXCLUDED.longitud, muestras.longitud), 
                 descripcion = COALESCE(EXCLUDED.descripcion, muestras.descripcion), 
-                informacion_relevante = COALESCE(EXCLUDED.informacion_relevante, muestras.informacion_relevante)
-            ''', (usuario_actual, nombre_final, cultivo, textura, lat, lon, descripcion, info))
+                informacion_relevante = COALESCE(EXCLUDED.informacion_relevante, muestras.informacion_relevante),
+                foto_macrofauna = COALESCE(EXCLUDED.foto_macrofauna, muestras.foto_macrofauna)
+            ''', (usuario_actual, nombre_final, cultivo, textura, lat, lon, descripcion, info, url_foto))
             
             contador += 1
             
@@ -378,6 +437,7 @@ def sincronizar_api():
         flash(f'Error al procesar los datos: {str(e)}', 'danger')
         
     return redirect(url_for('inicio') + '#muestras')
+
 # ==========================================================
 # RUTAS PARA PWA (APP DE CELULAR)
 # ==========================================================
@@ -391,7 +451,7 @@ def manifest():
         "background_color": "#f4f7f6",
         "theme_color": "#2d6a4f",
         "icons": [{
-            "src": "https://cdn-icons-png.flaticon.com/512/2875/2875078.png", # Ícono temporal (una hojita)
+            "src": "https://cdn-icons-png.flaticon.com/512/2875/2875078.png", 
             "sizes": "512x512",
             "type": "image/png"
         }]
