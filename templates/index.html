@@ -6,6 +6,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
@@ -119,7 +120,14 @@
                     </div>
 
                     <div class="row g-3 mb-4">
-                        <div class="col-md-4"><label class="form-label fw-bold text-secondary">Nombre del Lote *</label><input type="text" class="form-control" name="nombre" required placeholder="Ej: Lote Norte"></div>
+                        <div class="col-md-4">
+    <label class="form-label fw-bold text-secondary d-flex justify-content-between align-items-center">
+        Nombre / ID del Lote *
+        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-scan-qr"><i class="bi bi-qr-code-scan"></i> QR</button>
+    </label>
+    <input type="text" class="form-control" name="nombre" id="input_nombre_qr" required placeholder="Ej: Lote Norte o Escanea QR">
+    <div id="qr-reader" style="display:none; width:100%; margin-top:10px; border-radius: 8px; overflow: hidden; border: 2px solid #2d6a4f;"></div>
+</div>
                         <div class="col-md-4"><label class="form-label fw-bold text-secondary">Cultivo Principal</label><input type="text" class="form-control" name="cultivo" placeholder="Ej: Vid, Ajo, Papa"></div>
                         <div class="col-md-4"><label class="form-label fw-bold text-secondary">Textura del Suelo</label><input type="text" class="form-control" name="textura" placeholder="Ej: Franco arcilloso"></div>
                     </div>
@@ -286,6 +294,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const toastList = [...document.querySelectorAll('.toast')].map(t => new bootstrap.Toast(t, { delay: 4000 }));
@@ -349,10 +358,70 @@
                     document.getElementById('consolidado-tab').addEventListener('shown.bs.tab', function () { map.invalidateSize(); map.fitBounds(group.getBounds().pad(0.1)); });
                 }
             {% endif %}
+        // ==========================================
+            // 1. REGISTRO DE PWA (APP INSTALABLE)
+            // ==========================================
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                .then(() => console.log("¡App lista para instalarse!"))
+                .catch(err => console.log("Error en PWA:", err));
+            }
+
+            // ==========================================
+            // 2. ESCÁNER DE CÓDIGOS QR
+            // ==========================================
+            const btnScan = document.getElementById('btn-scan-qr');
+            const qrReaderDiv = document.getElementById('qr-reader');
+            const inputNombre = document.getElementById('input_nombre_qr');
+            let html5QrCode;
+
+            if(btnScan) {
+                btnScan.addEventListener('click', () => {
+                    if(qrReaderDiv.style.display === 'block') {
+                        // Apagar cámara
+                        if(html5QrCode) {
+                            html5QrCode.stop().then(() => {
+                                qrReaderDiv.style.display = 'none';
+                                btnScan.innerHTML = '<i class="bi bi-qr-code-scan"></i> QR';
+                                btnScan.classList.replace('btn-danger', 'btn-outline-primary');
+                            });
+                        }
+                    } else {
+                        // Encender cámara
+                        qrReaderDiv.style.display = 'block';
+                        btnScan.innerHTML = '<i class="bi bi-stop-circle"></i> Parar';
+                        btnScan.classList.replace('btn-outline-primary', 'btn-danger');
+                        
+                        html5QrCode = new Html5Qrcode("qr-reader");
+                        html5QrCode.start(
+                            { facingMode: "environment" }, // Usa la cámara trasera del celu
+                            { fps: 10, qrbox: { width: 200, height: 200 } },
+                            (textoDecodificado) => {
+                                // ¡ÉXITO! Leyó el código
+                                inputNombre.value = textoDecodificado;
+                                // Sonido de "Bip" opcional
+                                try { navigator.vibrate(200); } catch(e){}
+                                
+                                // Apagamos la cámara automáticamente
+                                html5QrCode.stop().then(() => {
+                                    qrReaderDiv.style.display = 'none';
+                                    btnScan.innerHTML = '<i class="bi bi-qr-code-scan"></i> QR';
+                                    btnScan.classList.replace('btn-danger', 'btn-outline-primary');
+                                });
+                            },
+                            (errorLeyendo) => { /* Sigue buscando... */ }
+                        ).catch((err) => {
+                            alert("Por favor, dale permiso a tu navegador para usar la cámara.");
+                            qrReaderDiv.style.display = 'none';
+                        });
+                    }
+                });
+            }
         });
     </script>
 </body>
 </html>
+
 
 
 
