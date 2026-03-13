@@ -15,7 +15,7 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg import errors
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash, Response, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, Response, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -376,9 +376,41 @@ def sincronizar_api():
         flash(f'Error al procesar los datos: {str(e)}', 'danger')
         
     return redirect(url_for('inicio') + '#muestras')
+# ==========================================================
+# RUTAS PARA PWA (APP DE CELULAR)
+# ==========================================================
+@app.route('/manifest.json')
+def manifest():
+    manifest_data = {
+        "name": "Lab Agroecológico",
+        "short_name": "LabAgro",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#f4f7f6",
+        "theme_color": "#2d6a4f",
+        "icons": [{
+            "src": "https://cdn-icons-png.flaticon.com/512/2875/2875078.png", # Ícono temporal (una hojita)
+            "sizes": "512x512",
+            "type": "image/png"
+        }]
+    }
+    response = make_response(jsonify(manifest_data))
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+@app.route('/sw.js')
+def sw():
+    sw_content = """
+    self.addEventListener('install', (e) => { console.log('[Service Worker] Instalado'); });
+    self.addEventListener('fetch', (e) => { /* Modo online por defecto */ });
+    """
+    response = make_response(sw_content)
+    response.headers['Content-Type'] = 'application/javascript'
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
