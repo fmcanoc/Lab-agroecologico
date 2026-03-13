@@ -5,7 +5,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io
-import base64
 import csv
 import json
 import urllib.request
@@ -19,7 +18,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'clave_super_secreta_trazabilidad_suelos' 
+app.secret_key = 'clave_super_secreta_trazabilidad_suelos'
 
 def obtener_conexion():
     url_bd = os.environ.get('DATABASE_URL', '***REMOVED_DB_URI***')
@@ -31,31 +30,25 @@ def crear_tablas():
     if conexion:
         try:
             cur = conexion.cursor()
-            # 1. TABLA USUARIOS
             cur.execute('''CREATE TABLE IF NOT EXISTS usuarios (
                             id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL)''')
-            # 2. TABLA MUESTRAS
             cur.execute('''CREATE TABLE IF NOT EXISTS muestras (
                             id SERIAL PRIMARY KEY, usuario_id INTEGER NOT NULL, nombre_muestra TEXT NOT NULL, 
                             cultivo TEXT, textura TEXT, latitud NUMERIC, longitud NUMERIC, 
                             descripcion TEXT, informacion_relevante TEXT, 
                             fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
                             UNIQUE(usuario_id, nombre_muestra))''')
-            # 3. TABLA CARBONO
             cur.execute('''CREATE TABLE IF NOT EXISTS carbono_activo (
                             id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
                             resultado_carbono NUMERIC, peso_suelo NUMERIC, abs_muestra NUMERIC, 
                             abs_1 NUMERIC, abs_2 NUMERIC, abs_3 NUMERIC, abs_4 NUMERIC)''')
-            # 4. TABLA PH Y COND
             cur.execute('''CREATE TABLE IF NOT EXISTS ph_conductividad (
                             id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
                             ph NUMERIC, conductividad NUMERIC)''')
-            # 5. TABLA MOP
             cur.execute('''CREATE TABLE IF NOT EXISTS materia_organica (
                             id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
                             resultado_porcentaje NUMERIC, peso_particulas NUMERIC, peso_suelo NUMERIC, 
                             peso_filtro NUMERIC, peso_muestra_con_filtro NUMERIC)''')
-            # 6. TABLA ESTABILIDAD
             cur.execute('''CREATE TABLE IF NOT EXISTS estabilidad_agregados (
                             id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
                             porcentaje_mayor_2mm NUMERIC, porcentaje_250_2mm NUMERIC, peso_inicial NUMERIC, 
@@ -63,11 +56,10 @@ def crear_tablas():
                             peso_fraccion_250 NUMERIC, peso_recipiente_piedras NUMERIC, peso_piedras_con_recipiente NUMERIC)''')
             conexion.commit()
 
-            # AGREGAR COLUMNA FOTO MACROFAUNA SIN ROMPER NADA
             try:
                 cur.execute("ALTER TABLE muestras ADD COLUMN foto_macrofauna TEXT;")
-            except Exception as e:
-                conexion.rollback() # Ignoramos si la columna ya existe
+            except Exception:
+                conexion.rollback()
             else:
                 conexion.commit()
             
@@ -77,7 +69,6 @@ def crear_tablas():
         finally:
             conexion.close()
 
-# Ejecutamos la creación de tablas al arrancar la app
 crear_tablas()
 
 @app.route('/registro', methods=['POST'])
@@ -128,24 +119,29 @@ def logout():
 
 @app.route('/', methods=['GET', 'POST'])
 def inicio():
-    if 'usuario_id' not in session: return redirect(url_for('login'))
+    if 'usuario_id' not in session: 
+        return redirect(url_for('login'))
         
     usuario_id = session['usuario_id']
     username = session['username']
     conexion = obtener_conexion()
     cur = conexion.cursor()
     
-    plot_url = None 
-    poxc_calculado = None 
+    plot_url = None
+    poxc_calculado = None
     
     try:
         if request.method == 'POST':
             tipo_formulario = request.form.get('form_type')
             
             if tipo_formulario == 'registro_muestra':
-                nombre, cultivo, descripcion, info = request.form['nombre'], request.form['cultivo'], request.form['descripcion'], request.form['info']
-                textura = request.form.get('textura') 
-                lat_str, lon_str = request.form.get('latitud'), request.form.get('longitud')
+                nombre = request.form['nombre']
+                cultivo = request.form['cultivo']
+                descripcion = request.form['descripcion']
+                info = request.form['info']
+                textura = request.form.get('textura')
+                lat_str = request.form.get('latitud')
+                lon_str = request.form.get('longitud')
                 latitud = float(lat_str) if lat_str else None
                 longitud = float(lon_str) if lon_str else None
                 
@@ -219,7 +215,7 @@ def inicio():
                                VALUES (%s, %s, %s, %s, %s, %s)''', 
                             (muestra_id, mop_porcentaje, pp_neto, ps, pf_mop, pm_filtro))
                 conexion.commit()
-                flash('MOP calculado descontando el peso del filtro.', 'success')
+                flash('MOP calculado.', 'success')
                 return redirect(url_for('inicio') + '#mop')
 
             elif tipo_formulario == 'estabilidad_agregados':
@@ -242,10 +238,9 @@ def inicio():
                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', 
                             (muestra_id, porc_mayor, porc_250, pi, pf, ppd_neto, pm, p250, tara_piedras, piedras_bruto))
                 conexion.commit()
-                flash('Estabilidad calculada descontando la tara del recipiente.', 'success')
+                flash('Estabilidad calculada.', 'success')
                 return redirect(url_for('inicio') + '#estab')
 
-            # --- NUEVA LÓGICA MACROFAUNA ---
             elif tipo_formulario == 'macrofauna':
                 muestra_id = request.form.get('muestra_id')
                 url_foto_manual = request.form.get('foto_macrofauna')
@@ -285,30 +280,36 @@ def inicio():
 
 @app.route('/api/datos_crudos/<int:muestra_id>')
 def datos_crudos(muestra_id):
-    if 'usuario_id' not in session: return jsonify({"error": "No autorizado"}), 403
+    if 'usuario_id' not in session: 
+        return jsonify({"error": "No autorizado"}), 403
     conexion = obtener_conexion()
     cur = conexion.cursor()
     try:
         datos = {}
         cur.execute('SELECT nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         m_row = cur.fetchone()
-        if m_row: datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante'], 'foto_macrofauna': m_row['foto_macrofauna']})
+        if m_row: 
+            datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante'], 'foto_macrofauna': m_row['foto_macrofauna']})
             
         cur.execute('SELECT ph, conductividad FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
         ph_row = cur.fetchone()
-        if ph_row: datos.update({'ph': ph_row['ph'], 'conductividad': ph_row['conductividad']})
+        if ph_row: 
+            datos.update({'ph': ph_row['ph'], 'conductividad': ph_row['conductividad']})
         
         cur.execute('SELECT peso_suelo, abs_muestra, abs_1, abs_2, abs_3, abs_4 FROM carbono_activo WHERE muestra_id = %s', (muestra_id,))
         c_row = cur.fetchone()
-        if c_row: datos.update({'c_peso': c_row['peso_suelo'], 'c_abs': c_row['abs_muestra'], 'c_a1': c_row['abs_1'], 'c_a2': c_row['abs_2'], 'c_a3': c_row['abs_3'], 'c_a4': c_row['abs_4']})
+        if c_row: 
+            datos.update({'c_peso': c_row['peso_suelo'], 'c_abs': c_row['abs_muestra'], 'c_a1': c_row['abs_1'], 'c_a2': c_row['abs_2'], 'c_a3': c_row['abs_3'], 'c_a4': c_row['abs_4']})
         
         cur.execute('SELECT peso_suelo, peso_filtro, peso_muestra_con_filtro FROM materia_organica WHERE muestra_id = %s', (muestra_id,))
         mop_row = cur.fetchone()
-        if mop_row: datos.update({'mop_suelo': mop_row['peso_suelo'], 'mop_pf': mop_row.get('peso_filtro'), 'mop_pmcf': mop_row.get('peso_muestra_con_filtro')})
+        if mop_row: 
+            datos.update({'mop_suelo': mop_row['peso_suelo'], 'mop_pf': mop_row.get('peso_filtro'), 'mop_pmcf': mop_row.get('peso_muestra_con_filtro')})
         
         cur.execute('SELECT peso_inicial, peso_filtro, peso_fraccion_mayor, peso_fraccion_250, peso_recipiente_piedras, peso_piedras_con_recipiente FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
         ea_row = cur.fetchone()
-        if ea_row: datos.update({'ea_pi': ea_row['peso_inicial'], 'ea_pf': ea_row['peso_filtro'], 'ea_pm': ea_row['peso_fraccion_mayor'], 'ea_p250': ea_row['peso_fraccion_250'], 'ea_rec_p': ea_row.get('peso_recipiente_piedras'), 'ea_pcr': ea_row.get('peso_piedras_con_recipiente')})
+        if ea_row: 
+            datos.update({'ea_pi': ea_row['peso_inicial'], 'ea_pf': ea_row['peso_filtro'], 'ea_pm': ea_row['peso_fraccion_mayor'], 'ea_p250': ea_row['peso_fraccion_250'], 'ea_rec_p': ea_row.get('peso_recipiente_piedras'), 'ea_pcr': ea_row.get('peso_piedras_con_recipiente')})
         
         return jsonify(datos)
     finally: 
@@ -317,8 +318,10 @@ def datos_crudos(muestra_id):
 
 @app.route('/eliminar_muestra/<int:muestra_id>', methods=['POST'])
 def eliminar_muestra(muestra_id):
-    if 'usuario_id' not in session: return redirect(url_for('login'))
-    conexion = obtener_conexion(); cur = conexion.cursor()
+    if 'usuario_id' not in session: 
+        return redirect(url_for('login'))
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
     try:
         cur.execute('DELETE FROM carbono_activo WHERE muestra_id = %s', (muestra_id,))
         cur.execute('DELETE FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
@@ -326,13 +329,32 @@ def eliminar_muestra(muestra_id):
         cur.execute('DELETE FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
         cur.execute('DELETE FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         conexion.commit()
-    finally: cur.close(); conexion.close()
+    finally: 
+        cur.close()
+        conexion.close()
     return redirect(url_for('inicio') + '#consolidado')
+
+@app.route('/eliminar_foto/<int:muestra_id>', methods=['POST'])
+def eliminar_foto(muestra_id):
+    if 'usuario_id' not in session: 
+        return redirect(url_for('login'))
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    try:
+        cur.execute('UPDATE muestras SET foto_macrofauna = NULL WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
+        conexion.commit()
+        flash('Foto eliminada correctamente.', 'success')
+    finally: 
+        cur.close()
+        conexion.close()
+    return redirect(url_for('inicio') + '#macrofauna')
 
 @app.route('/descargar_csv')
 def descargar_csv():
-    if 'usuario_id' not in session: return redirect(url_for('login'))
-    conexion = obtener_conexion(); cur = conexion.cursor()
+    if 'usuario_id' not in session: 
+        return redirect(url_for('login'))
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
     consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion", m.foto_macrofauna AS "Foto_Macrofauna", 
                   c.resultado_carbono AS "Carbono_Activo", p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc", 
                   ea.porcentaje_mayor_2mm AS "Agregados_Mayor_2mm_Porc", ea.porcentaje_250_2mm AS "Agregados_250_2mm_Porc" 
@@ -345,16 +367,21 @@ def descargar_csv():
     cur.execute(consulta, (session['usuario_id'],))
     filas = cur.fetchall()
     nombres_columnas = [col.name for col in cur.description]
-    cur.close(); conexion.close()
+    cur.close()
+    conexion.close()
     
-    output = io.StringIO(); output.write('\ufeff'); writer = csv.writer(output, delimiter=';')
+    output = io.StringIO()
+    output.write('\ufeff')
+    writer = csv.writer(output, delimiter=';')
     writer.writerow(nombres_columnas)
-    for fila in filas: writer.writerow(list(fila.values()))
+    for fila in filas: 
+        writer.writerow(list(fila.values()))
     return Response(output.getvalue(), mimetype="text/csv", headers={"Content-disposition": "attachment; filename=Mis_Datos_Suelos.csv"})
 
 @app.route('/sincronizar_api', methods=['POST'])
 def sincronizar_api():
-    if 'usuario_id' not in session: return redirect(url_for('login'))
+    if 'usuario_id' not in session: 
+        return redirect(url_for('login'))
     
     ss_email = request.form.get('ss_email')
     ss_password = request.form.get('ss_password')
@@ -363,7 +390,6 @@ def sincronizar_api():
     token = None
     
     try:
-        # FASE 1: LOGIN EN SURVEYSTACK
         if ss_email and ss_password:
             auth_url = "https://app.surveystack.io/api/auth/login"
             auth_payload = json.dumps({"email": ss_email, "password": ss_password}).encode('utf-8')
@@ -373,11 +399,10 @@ def sincronizar_api():
                 with urllib.request.urlopen(req_auth) as auth_res:
                     auth_data = json.loads(auth_res.read().decode('utf-8'))
                     token = auth_data.get('token')
-            except urllib.error.HTTPError as e:
+            except urllib.error.HTTPError:
                 flash("Credenciales de SurveyStack incorrectas. Revisa tu email y contraseña.", "danger")
                 return redirect(url_for('inicio') + '#muestras')
 
-        # FASE 2: TRAER LOS DATOS PRIVADOS
         url_api = f"https://app.surveystack.io/api/submissions?survey={survey_id}"
         headers = {'Content-Type': 'application/json'}
         if token and ss_email:
@@ -396,10 +421,10 @@ def sincronizar_api():
         usuario_actual = session['usuario_id']
         contador = 0
         
-        # FASE 3: GUARDAR EN LA BASE DE DATOS
         for fila in datos_json:
             id_unico = fila.get('_id')
-            if not id_unico: continue 
+            if not id_unico: 
+                continue 
             
             data = fila.get('data', {})
             def extraer(clave): return data.get(clave, {}).get('value')
@@ -412,7 +437,6 @@ def sincronizar_api():
             descripcion = extraer('observaciones_muestra')
             info = extraer('fert_parcela')
             
-            # Navegar por el GeoJSON para sacar Latitud y Longitud
             lat, lon = None, None
             ubicacion = extraer('ubicacion_muestra')
             if ubicacion and isinstance(ubicacion, dict) and 'geometry' in ubicacion:
@@ -421,7 +445,6 @@ def sincronizar_api():
                     lon = coords[0] 
                     lat = coords[1] 
                     
-            # Atrapamos la foto de SurveyStack
             archivo_bruto = extraer('foto_macrofauna')
             url_foto = None
             if archivo_bruto:
@@ -446,16 +469,13 @@ def sincronizar_api():
         conexion.commit()
         cur.close()
         conexion.close()
-        flash(f'¡Sincronización privada exitosa! {contador} muestras de tu cuenta fueron importadas.', 'success')
+        flash(f'¡Sincronización exitosa! {contador} muestras importadas.', 'success')
         
     except Exception as e: 
         flash(f'Error al procesar los datos: {str(e)}', 'danger')
         
     return redirect(url_for('inicio') + '#muestras')
 
-# ==========================================================
-# RUTAS PARA PWA (APP DE CELULAR)
-# ==========================================================
 @app.route('/manifest.json')
 def manifest():
     manifest_data = {
@@ -463,7 +483,7 @@ def manifest():
         "short_name": "LabAgro",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#f4f7f6",
+        "background_color": "#f8f9fa",
         "theme_color": "#2d6a4f",
         "icons": [{
             "src": "https://cdn-icons-png.flaticon.com/512/2875/2875078.png", 
@@ -487,16 +507,3 @@ def sw():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
