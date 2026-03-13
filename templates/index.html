@@ -284,7 +284,49 @@
                                 </td>
                             </tr>
                             
-                            <div class="modal fade" id="modal-{{ fila.id }}" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-light border-0 rounded-top-4"><h5 class="modal-title fw-bold text-agro"><i class="bi bi-card-heading me-2"></i> {{ fila.nombre_muestra }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-start p-4"><div class="row mb-3"><div class="col-6"><small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Cultivo</small><span class="text-dark">{{ fila.cultivo or 'N/A' }}</span></div><div class="col-6"><small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Textura</small><span class="text-dark">{{ fila.textura or 'N/A' }}</span></div></div><div class="mb-3"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Descripción</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.descripcion or 'Sin descripción' }}</p></div><div class="mb-3"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Manejo / Observaciones</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.informacion_relevante or 'Sin información adicional' }}</p></div><div><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Coordenadas GPS</small>{% if fila.latitud %}<span class="badge bg-secondary rounded-pill px-3 py-2"><i class="bi bi-geo-alt-fill me-1"></i> {{ fila.latitud }}, {{ fila.longitud }}</span>{% else %}<span class="text-muted small fst-italic">No registradas</span>{% endif %}</div></div></div></div></div>
+                            <div class="modal fade" id="modal-{{ fila.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow-lg rounded-4">
+                                        <div class="modal-header bg-light border-0 rounded-top-4">
+                                            <h5 class="modal-title fw-bold text-agro"><i class="bi bi-card-heading me-2"></i> {{ fila.nombre_muestra }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-start p-4">
+                                            <div class="row mb-3">
+                                                <div class="col-6"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Cultivo</small><span class="text-dark">{{ fila.cultivo or 'N/A' }}</span></div>
+                                                <div class="col-6"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Textura</small><span class="text-dark">{{ fila.textura or 'N/A' }}</span></div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Descripción</small>
+                                                <p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.descripcion or 'Sin descripción' }}</p>
+                                            </div>
+                                            <div class="mb-3">
+                                                <small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Manejo / Observaciones</small>
+                                                <p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.informacion_relevante or 'Sin información adicional' }}</p>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Coordenadas GPS</small>
+                                                {% if fila.latitud %}
+                                                    <span class="badge bg-secondary rounded-pill px-3 py-2"><i class="bi bi-geo-alt-fill me-1"></i> {{ fila.latitud }}, {{ fila.longitud }}</span>
+                                                {% else %}
+                                                    <span class="text-muted small fst-italic">No registradas</span>
+                                                {% endif %}
+                                            </div>
+
+                                            {% if fila.fosforo or fila.fosforo_ppm %}
+                                            <div class="mb-3 mt-3 pt-3 border-top">
+                                                <small class="text-muted d-block text-uppercase fw-bold mb-2" style="font-size: 0.7rem;"><i class="bi bi-moisture me-1"></i> Análisis de Fósforo (Olsen)</small>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">Concentración: {{ "%.2f"|format(fila.fosforo_ppm) }} ppm</span>
+                                                    <span class="badge bg-primary text-white shadow-sm px-2 py-1">Disponible: {{ "%.2f"|format(fila.fosforo) }} mg/kg</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -333,7 +375,6 @@
                         if(tab === 'ph' && data.ph !== undefined && data.ph !== null) { form.querySelector('[name="ph"]').value = data.ph; form.querySelector('[name="conductividad"]').value = data.conductividad; tieneDatos = true; }
                         if(tab === 'carbono' && data.c_abs !== undefined && data.c_abs !== null) { form.querySelector('[name="peso_suelo_carbono"]').value = data.c_peso || '2.5'; form.querySelector('[name="abs_muestra"]').value = data.c_abs; form.querySelector('[name="abs_1"]').value = data.c_a1 || ''; form.querySelector('[name="abs_2"]').value = data.c_a2 || ''; form.querySelector('[name="abs_3"]').value = data.c_a3 || ''; form.querySelector('[name="abs_4"]').value = data.c_a4 || ''; tieneDatos = true; }
                         
-                        // AUTOCOMPLETAR FÓSFORO OLSEN
                         if(tab === 'fosforo' && data.p_abs !== undefined && data.p_abs !== null) { 
                             form.querySelector('[name="peso_suelo"]').value = data.p_peso || '2.5'; 
                             form.querySelector('[name="vol_extracto"]').value = data.p_volext || '7'; 
