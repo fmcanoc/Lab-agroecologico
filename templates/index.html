@@ -224,35 +224,38 @@
             </div>
 
             <div class="section-card">
-                <h5 class="text-agro mb-4"><i class="bi bi-images me-2"></i> Galería de Biodiversidad Detectada</h5>
-                <div class="row g-3">
-                    {% set has_photos = false %}
-                    {% for fila in consolidado %}
-                        {% if fila.foto_macrofauna %}
-                            {% set has_photos = true %}
-                            <div class="col-6 col-md-3 col-lg-2">
-                                <div class="card h-100 border-0 shadow-sm overflow-hidden">
-                                    <a href="{{ fila.foto_macrofauna }}" target="_blank" style="overflow: hidden; display: block;">
-                                        <img src="{{ fila.foto_macrofauna }}" class="card-img-top gallery-img" alt="Macrofauna">
-                                    </a>
-                                    <div class="card-body p-2 bg-light border-top text-center">
-                                        <small class="fw-bold d-block text-truncate text-secondary" title="{{ fila.nombre_muestra }}">{{ fila.nombre_muestra }}</small>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if not has_photos %}
-                        <div class="col-12 text-center text-muted py-5 bg-light rounded border border-dashed">
-                            <i class="bi bi-camera-slash" style="font-size: 3rem; color: #dee2e6;"></i>
-                            <h6 class="mt-3">Aún no hay fotos registradas</h6>
-                            <p class="small mb-0">¡Abre la cámara y sube el primer registro de campo!</p>
-                        </div>
-                    {% endif %}
+    <h5 class="text-agro mb-4"><i class="bi bi-images me-2"></i> Galería de Biodiversidad Detectada</h5>
+    <div class="row g-3">
+        {% set fotos = consolidado | selectattr('foto_macrofauna') | list %}
+        
+        {% if fotos %}
+            {% for fila in fotos %}
+                <div class="col-md-6">
+                    <div class="section-card h-100 p-0 overflow-hidden text-center bg-light border">
+                        <img src="{{ url_for('static', filename='infografia_macrofauna.jpg') }}" class="img-fluid w-100" alt="Guía de Identificación de Macrofauna">
+                    </div>
                 </div>
+                        </a>
+                        <div class="card-body p-2 bg-light border-top text-center">
+                            <small class="fw-bold d-block text-truncate text-secondary" title="{{ fila.nombre_muestra }}">{{ fila.nombre_muestra }}</small>
+                        </div>
+                        <form action="/eliminar_foto/{{ fila.id }}" method="POST" class="position-absolute top-0 end-0 m-1">
+                            <button type="submit" class="btn btn-sm btn-danger rounded-circle p-1 lh-1 shadow" onclick="return confirm('¿Borrar esta foto? (La muestra de suelo no se borrará)');" title="Eliminar foto">
+                                <i class="bi bi-x fw-bold"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center text-muted py-5 bg-light rounded border border-dashed">
+                <i class="bi bi-camera-slash" style="font-size: 3rem; color: #dee2e6;"></i>
+                <h6 class="mt-3">Aún no hay fotos registradas</h6>
+                <p class="small mb-0">¡Abre la cámara y sube el primer registro de campo!</p>
             </div>
-        </div>
+        {% endif %}
+    </div>
+</div>
 
         <div class="tab-pane fade" id="consolidado">
             {% if not consolidado %}
