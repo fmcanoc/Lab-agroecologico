@@ -103,7 +103,7 @@
                 <li class="nav-item"><button class="nav-link" id="mop-tab" data-bs-toggle="tab" data-bs-target="#mop" type="button">MOP</button></li>
                 <li class="nav-item"><button class="nav-link" id="estab-tab" data-bs-toggle="tab" data-bs-target="#estab" type="button">Agregados</button></li>
                 <li class="nav-item"><button class="nav-link text-warning" id="macrofauna-tab" data-bs-toggle="tab" data-bs-target="#macrofauna" type="button">Macrofauna</button></li>
-                <li class="nav-item ms-md-auto"><button class="nav-link text-agro" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-1"></i> Dashboard</button></li>
+                <li class="nav-item ms-md-auto"><button class="nav-link text-agro" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-1"></i> Resultados</button></li>
             </ul>
         </div>
     </div>
@@ -153,18 +153,37 @@
                         <input type="hidden" name="form_type" value="macrofauna">
                         <div class="section-card h-100 d-flex flex-column">
                             <h5 class="text-dark fw-bold mb-4"><i class="bi bi-camera text-muted me-2"></i> Captura en Campo</h5>
-                            <div class="mb-4"><label class="form-label fw-bold small text-secondary">1. Seleccionar Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-secondary">1. Seleccionar Muestra</label>
+                                <select class="form-select selector-memoria" name="muestra_id" required>
+                                    <option value="">-- Elija una muestra --</option>
+                                    {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            
                             <div class="mb-4 flex-grow-1 position-relative">
                                 <label class="form-label fw-bold small text-secondary d-block">2. Toma Fotográfica</label>
-                                <div id="offline-camera-warning" class="bg-light border border-warning border-dashed rounded-4 p-4 text-center" style="display: none !important;"><i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i><h6 class="text-dark fw-bold">Sin Conexión</h6><p class="small text-muted mb-0">Toma la foto con la cámara de tu celular y súbela aquí cuando tengas Wi-Fi.</p></div>
-                                <div id="camera-controls"><input type="file" id="input_foto_macrofauna" accept="image/*" capture="environment" style="display: none;"><input type="hidden" name="foto_macrofauna" id="hidden_url_foto" required><label for="input_foto_macrofauna" class="btn btn-outline-warning text-dark w-100 py-4 mb-2 shadow-sm rounded-4" style="cursor: pointer; border-width: 2px; border-style: dashed;"><i class="bi bi-camera-fill fs-2 d-block mb-2 text-warning"></i> <span class="fw-bold">Abrir Cámara</span></label><div id="foto_preview_container" class="mt-3 text-center" style="display: none;"><img id="foto_preview" src="" alt="Macrofauna" class="img-fluid rounded-4 border border-warning border-2" style="max-height: 200px; object-fit: cover;"><span class="d-block badge border border-success text-success mt-2 p-2 rounded-pill"><i class="bi bi-check-circle me-1"></i> Imagen adjuntada</span></div><div id="foto_loading" style="display: none;" class="text-center text-muted small py-4 bg-light rounded-4 border mt-2"><div class="spinner-border text-warning mb-2" role="status"></div><br>Subiendo...</div></div>
+                                
+                                <div id="offline-camera-warning" class="bg-light border border-warning border-dashed rounded-4 p-4 text-center" style="display: none !important;">
+                                    <i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i>
+                                    <h6 class="text-dark fw-bold">Sin Conexión</h6>
+                                    <p class="small text-muted mb-0">Toma la foto con la cámara normal de tu celular. Podrás adjuntarla aquí desde la galería cuando tengas Wi-Fi.</p>
+                                </div>
+
+                                <div id="camera-controls">
+                                    <input type="file" id="input_foto_macrofauna" accept="image/*" style="display: none;">
+                                    <input type="hidden" name="foto_macrofauna" id="hidden_url_foto" required>
+                                    <label for="input_foto_macrofauna" class="btn btn-outline-warning text-dark w-100 py-4 mb-2 shadow-sm rounded-4" style="cursor: pointer; border-width: 2px; border-style: dashed;"><i class="bi bi-camera-fill fs-2 d-block mb-2 text-warning"></i> <span class="fw-bold">Cámara / Galería</span></label>
+                                    <div id="foto_preview_container" class="mt-3 text-center" style="display: none;"><img id="foto_preview" src="" alt="Macrofauna" class="img-fluid rounded-4 border border-warning border-2" style="max-height: 200px; object-fit: cover;"><span class="d-block badge border border-success text-success mt-2 p-2 rounded-pill"><i class="bi bi-check-circle me-1"></i> Imagen adjuntada</span></div>
+                                    <div id="foto_loading" style="display: none;" class="text-center text-muted small py-4 bg-light rounded-4 border mt-2"><div class="spinner-border text-warning mb-2" role="status"></div><br>Subiendo...</div>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-warning w-100 fw-bold text-dark rounded-pill py-3 shadow-sm mt-auto"><i class="bi bi-cloud-upload me-2"></i> Guardar</button>
                         </div>
                     </form>
                 </div>
             </div>
-            <div class="section-card"><h5 class="text-dark fw-bold mb-4"><i class="bi bi-images text-muted me-2"></i> Galería de Biodiversidad</h5><div class="row g-3">{% set fotos = consolidado | selectattr('foto_macrofauna') | list %}{% if fotos %}{% for fila in fotos %}<div class="col-6 col-md-3 col-lg-2 position-relative"><div class="gallery-card h-100 d-flex flex-column"><a href="{{ fila.foto_macrofauna }}" target="_blank" style="overflow: hidden; display: block; flex-grow: 1;"><img src="{{ fila.foto_macrofauna }}" class="gallery-img h-100" alt="Macrofauna"></a><div class="p-2 bg-light border-top text-center"><small class="fw-bold d-block text-truncate text-secondary" title="{{ fila.nombre_muestra }}">{{ fila.nombre_muestra }}</small></div><form action="/eliminar_foto/{{ fila.id }}" method="POST" class="position-absolute top-0 end-0 m-2"><button type="submit" class="btn btn-sm btn-danger rounded-circle p-1 lh-1 shadow border border-white" onclick="return confirm('¿Borrar foto?');"><i class="bi bi-x fw-bold"></i></button></form></div></div>{% endfor %}{% else %}<div class="col-12 text-center text-muted py-5 bg-light rounded-4 border border-dashed"><i class="bi bi-camera-slash" style="font-size: 3rem; color: #dee2e6;"></i><h6 class="mt-3 fw-bold">Galería Vacía</h6><p class="small mb-0">Toma una foto en el campo.</p></div>{% endif %}</div></div>
+            <div class="section-card"><h5 class="text-dark fw-bold mb-4"><i class="bi bi-images text-muted me-2"></i> Galería de Biodiversidad</h5><div class="row g-3">{% set fotos = consolidado | selectattr('foto_macrofauna') | list %}{% if fotos %}{% for fila in fotos %}<div class="col-6 col-md-3 col-lg-2 position-relative"><div class="gallery-card h-100 d-flex flex-column"><a href="{{ fila.foto_macrofauna }}" target="_blank" style="overflow: hidden; display: block; flex-grow: 1;"><img src="{{ fila.foto_macrofauna }}" class="gallery-img h-100" alt="Macrofauna"></a><div class="p-2 bg-light border-top text-center"><small class="fw-bold d-block text-truncate text-secondary" title="{{ fila.nombre_muestra }}">{{ fila.nombre_muestra }}</small></div><form action="/eliminar_foto/{{ fila.id }}" method="POST" class="position-absolute top-0 end-0 m-2"><button type="submit" class="btn btn-sm btn-danger rounded-circle p-1 lh-1 shadow border border-white" onclick="return confirm('¿Borrar foto?');"><i class="bi bi-x fw-bold"></i></button></form></div></div>{% endfor %}{% else %}<div class="col-12 text-center text-muted py-5 bg-light rounded-4 border border-dashed"><i class="bi bi-camera-slash" style="font-size: 3rem; color: #dee2e6;"></i><h6 class="mt-3 fw-bold">Galería Vacía</h6><p class="small mb-0">Toma o sube una foto.</p></div>{% endif %}</div></div>
         </div>
 
         <div class="tab-pane fade" id="consolidado">
@@ -210,9 +229,11 @@
                                 <th class="text-start px-4">Lote</th>
                                 <th>Textura</th>
                                 <th>pH</th>
+                                <th>Cond. CE</th>
                                 <th>POXC</th>
                                 <th>Fósforo</th>
                                 <th>MOP %</th>
+                                <th>Agreg. %</th>
                                 <th>Opciones</th>
                             </tr>
                         </thead>
@@ -222,9 +243,11 @@
                                 <td class="fw-bold text-start px-4 text-dark">{{ fila.nombre_muestra }}</td>
                                 <td><span class="text-muted small">{{ fila.textura or '-' }}</span></td>
                                 <td><span class="text-muted fst-italic">{{ fila.ph or '-' }}</span></td>
+                                <td><span class="text-muted fst-italic">{{ fila.conductividad or '-' }}</span></td>
                                 <td>{% if fila.resultado_carbono %}<strong>{{ "%.2f"|format(fila.resultado_carbono) }}</strong>{% else %}-{% endif %}</td>
                                 <td>{% if fila.fosforo %}<span class="badge border border-primary text-primary px-3 py-1 rounded-pill">{{ "%.2f"|format(fila.fosforo) }}</span>{% else %}-{% endif %}</td>
                                 <td>{% if fila.mop %}<span class="badge border border-warning text-dark px-3 py-1 rounded-pill">{{ "%.2f"|format(fila.mop) }}</span>{% else %}-{% endif %}</td>
+                                <td>{% if fila.porcentaje_mayor_2mm %}<span class="badge border border-info text-dark px-3 py-1 rounded-pill">{{ "%.1f"|format(fila.porcentaje_mayor_2mm) }}</span>{% else %}-{% endif %}</td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle" data-bs-toggle="modal" data-bs-target="#modal-{{ fila.id }}"><i class="bi bi-eye"></i></button>
                                 </td>
@@ -262,7 +285,6 @@
                 btn.addEventListener('shown.bs.tab', e => { localStorage.setItem('pestañaActiva', e.target.id); window.history.replaceState(null, null, e.target.getAttribute('data-bs-target')); }); 
             });
 
-            // LA CURA AL BUG DE LAS LISTAS OFFLINE
             document.querySelectorAll('.selector-memoria').forEach(select => {
                 select.addEventListener('change', function() {
                     const id = this.value; const form = this.closest('form'); const tab = form.dataset.tab;
@@ -273,16 +295,14 @@
                         return; 
                     }
                     
-                    // Si elegimos una muestra Offline, limpiamos los inputs pero VOLVEMOS a seleccionar la muestra
                     if (id.startsWith('offline_')) {
                         form.reset();
-                        this.value = id; // <- ¡ESTA ES LA LÍNEA MÁGICA QUE ARREGLA EL PROBLEMA!
+                        this.value = id; 
                         form.dataset.modificando = "false";
                         if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; 
                         return;
                     }
 
-                    // Si tiene internet y no es offline, busca en la BD como siempre
                     fetch('/api/datos_crudos/' + id).then(r => r.json()).then(data => {
                         let tieneDatos = false;
                         if(tab === 'registro') { form.querySelector('[name="nombre"]').value = data.nombre || ''; form.querySelector('[name="cultivo"]').value = data.cultivo || ''; form.querySelector('[name="textura"]').value = data.textura || ''; form.querySelector('[name="latitud"]').value = data.latitud || ''; form.querySelector('[name="longitud"]').value = data.longitud || ''; form.querySelector('[name="descripcion"]').value = data.descripcion || ''; form.querySelector('[name="info"]').value = data.info || ''; tieneDatos = true; }
