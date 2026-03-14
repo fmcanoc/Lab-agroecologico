@@ -134,7 +134,6 @@ def inicio():
         if request.method == 'POST':
             tipo_formulario = request.form.get('form_type')
             
-            # INTELIGENCIA PARA IDENTIFICAR MUESTRAS OFFLINE
             muestra_id_raw = request.form.get('muestra_id')
             muestra_id = None
             if muestra_id_raw:
@@ -173,7 +172,6 @@ def inicio():
                 conexion.commit()
                 return redirect(url_for('inicio') + '#muestras')
                 
-            # Evita fallos si el offline ID no se procesó a tiempo
             if not muestra_id and tipo_formulario != 'registro_muestra':
                  return redirect(url_for('inicio'))
 
@@ -467,18 +465,25 @@ def manifest():
     response.headers["Content-Type"] = "application/json"
     return response
 
-# ESTE ES EL NUEVO SERVICE WORKER QUE GUARDA LA PÁGINA EN CACHÉ PARA RECARGAS OFFLINE
+# PRE-CACHE INTELIGENTE: Guarda la página principal apenas entras para garantizar acceso offline
 @app.route('/sw.js')
 def sw():
     sw_content = """
-    const CACHE_NAME = 'agro-cache-v2';
-    self.addEventListener('install', (e) => { self.skipWaiting(); }); 
+    const CACHE_NAME = 'agro-cache-v4';
+    const urlsToCache = ['/']; // Obligamos a guardar la página principal
+
+    self.addEventListener('install', (e) => { 
+        e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)));
+        self.skipWaiting(); 
+    }); 
+    
     self.addEventListener('activate', (e) => {
         e.waitUntil(caches.keys().then(keyList => {
             return Promise.all(keyList.map(key => { if(key !== CACHE_NAME) return caches.delete(key); }));
         }));
         self.clients.claim();
     });
+    
     self.addEventListener('fetch', (e) => { 
         if (e.request.method !== 'GET') return;
         e.respondWith(
@@ -488,7 +493,7 @@ def sw():
                 caches.open(CACHE_NAME).then(cache => cache.put(e.request, resClone));
                 return response;
             })
-            .catch(() => caches.match(e.request))
+            .catch(() => caches.match(e.request).then(res => res || caches.match('/')))
         );
     });
     """
