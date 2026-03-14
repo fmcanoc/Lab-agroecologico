@@ -134,6 +134,19 @@ def inicio():
         if request.method == 'POST':
             tipo_formulario = request.form.get('form_type')
             
+            # INTELIGENCIA PARA IDENTIFICAR MUESTRAS OFFLINE
+            muestra_id_raw = request.form.get('muestra_id')
+            muestra_id = None
+            if muestra_id_raw:
+                if str(muestra_id_raw).startswith('offline_'):
+                    nombre_m = muestra_id_raw.replace('offline_', '')
+                    cur.execute('SELECT id FROM muestras WHERE nombre_muestra = %s AND usuario_id = %s', (nombre_m, usuario_id))
+                    res = cur.fetchone()
+                    if res:
+                        muestra_id = res['id']
+                else:
+                    muestra_id = muestra_id_raw
+            
             if tipo_formulario == 'registro_muestra':
                 nombre = request.form['nombre']
                 cultivo = request.form['cultivo']
@@ -160,8 +173,11 @@ def inicio():
                 conexion.commit()
                 return redirect(url_for('inicio') + '#muestras')
                 
-            elif tipo_formulario == 'textura_suelo':
-                muestra_id = request.form['muestra_id']
+            # Evita fallos si el offline ID no se procesó a tiempo
+            if not muestra_id and tipo_formulario != 'registro_muestra':
+                 return redirect(url_for('inicio'))
+
+            if tipo_formulario == 'textura_suelo':
                 textura = request.form['textura']
                 cur.execute('UPDATE muestras SET textura = %s WHERE id = %s AND usuario_id = %s', (textura, muestra_id, usuario_id))
                 conexion.commit()
@@ -169,7 +185,6 @@ def inicio():
                 return redirect(url_for('inicio') + '#textura')
 
             elif tipo_formulario == 'carbono_activo':
-                muestra_id = request.form['muestra_id']
                 peso_g = float(request.form.get('peso_suelo_carbono', 2.5))
                 peso_kg = peso_g / 1000
                 a1, a2, a3, a4 = float(request.form['abs_1']), float(request.form['abs_2']), float(request.form['abs_3']), float(request.form['abs_4'])
@@ -187,7 +202,6 @@ def inicio():
                 return redirect(url_for('inicio') + '#carbono')
 
             elif tipo_formulario == 'fosforo_olsen':
-                muestra_id = request.form['muestra_id']
                 peso_g = float(request.form.get('peso_suelo', 2.5))
                 vol_ext = float(request.form.get('vol_extracto', 7.0))
                 vol_dil = float(request.form.get('vol_dilucion', 20.0))
@@ -209,7 +223,6 @@ def inicio():
                 return redirect(url_for('inicio') + '#fosforo')
 
             elif tipo_formulario == 'ph_conductividad':
-                muestra_id = request.form['muestra_id']
                 cur.execute('DELETE FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
                 cur.execute('INSERT INTO ph_conductividad (muestra_id, ph, conductividad) VALUES (%s, %s, %s)', (muestra_id, float(request.form['ph']), float(request.form['conductividad'])))
                 conexion.commit()
@@ -217,7 +230,6 @@ def inicio():
                 return redirect(url_for('inicio') + '#ph')
 
             elif tipo_formulario == 'materia_organica':
-                muestra_id = request.form['muestra_id']
                 pf_mop = float(request.form['peso_filtro_mop'])
                 pm_filtro = float(request.form['peso_muestra_con_filtro'])
                 ps = float(request.form['peso_suelo'])
@@ -231,7 +243,6 @@ def inicio():
                 return redirect(url_for('inicio') + '#mop')
 
             elif tipo_formulario == 'estabilidad_agregados':
-                muestra_id = request.form['muestra_id']
                 pi = float(request.form['peso_inicial'])
                 pf = float(request.form['peso_filtro'])
                 tara_piedras = float(request.form['peso_recipiente_piedras'])
@@ -251,7 +262,6 @@ def inicio():
                 return redirect(url_for('inicio') + '#estab')
 
             elif tipo_formulario == 'macrofauna':
-                muestra_id = request.form.get('muestra_id')
                 url_foto_manual = request.form.get('foto_macrofauna')
                 if not url_foto_manual:
                     flash('Debes esperar a que la foto termine de subirse.', 'danger')
@@ -457,9 +467,31 @@ def manifest():
     response.headers["Content-Type"] = "application/json"
     return response
 
+# ESTE ES EL NUEVO SERVICE WORKER QUE GUARDA LA PÁGINA EN CACHÉ PARA RECARGAS OFFLINE
 @app.route('/sw.js')
 def sw():
-    sw_content = "self.addEventListener('install', (e) => { console.log('[Service Worker] Instalado'); }); self.addEventListener('fetch', (e) => { });"
+    sw_content = """
+    const CACHE_NAME = 'agro-cache-v2';
+    self.addEventListener('install', (e) => { self.skipWaiting(); }); 
+    self.addEventListener('activate', (e) => {
+        e.waitUntil(caches.keys().then(keyList => {
+            return Promise.all(keyList.map(key => { if(key !== CACHE_NAME) return caches.delete(key); }));
+        }));
+        self.clients.claim();
+    });
+    self.addEventListener('fetch', (e) => { 
+        if (e.request.method !== 'GET') return;
+        e.respondWith(
+            fetch(e.request)
+            .then(response => {
+                const resClone = response.clone();
+                caches.open(CACHE_NAME).then(cache => cache.put(e.request, resClone));
+                return response;
+            })
+            .catch(() => caches.match(e.request))
+        );
+    });
+    """
     response = make_response(sw_content)
     response.headers['Content-Type'] = 'application/javascript'
     return response
