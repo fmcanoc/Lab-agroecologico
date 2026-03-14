@@ -103,7 +103,7 @@
                 <li class="nav-item"><button class="nav-link" id="mop-tab" data-bs-toggle="tab" data-bs-target="#mop" type="button">MOP</button></li>
                 <li class="nav-item"><button class="nav-link" id="estab-tab" data-bs-toggle="tab" data-bs-target="#estab" type="button">Agregados</button></li>
                 <li class="nav-item"><button class="nav-link text-warning" id="macrofauna-tab" data-bs-toggle="tab" data-bs-target="#macrofauna" type="button">Macrofauna</button></li>
-                <li class="nav-item ms-md-auto"><button class="nav-link text-agro" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-1"></i> Resultados</button></li>
+                <li class="nav-item ms-md-auto"><button class="nav-link text-agro" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-1"></i> Dashboard</button></li>
             </ul>
         </div>
     </div>
@@ -262,10 +262,27 @@
                 btn.addEventListener('shown.bs.tab', e => { localStorage.setItem('pestañaActiva', e.target.id); window.history.replaceState(null, null, e.target.getAttribute('data-bs-target')); }); 
             });
 
+            // LA CURA AL BUG DE LAS LISTAS OFFLINE
             document.querySelectorAll('.selector-memoria').forEach(select => {
                 select.addEventListener('change', function() {
                     const id = this.value; const form = this.closest('form'); const tab = form.dataset.tab;
-                    if (!id || id.startsWith('offline_')) { form.reset(); form.dataset.modificando = "false"; if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; return; }
+                    
+                    if (!id) { 
+                        form.reset(); form.dataset.modificando = "false"; 
+                        if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; 
+                        return; 
+                    }
+                    
+                    // Si elegimos una muestra Offline, limpiamos los inputs pero VOLVEMOS a seleccionar la muestra
+                    if (id.startsWith('offline_')) {
+                        form.reset();
+                        this.value = id; // <- ¡ESTA ES LA LÍNEA MÁGICA QUE ARREGLA EL PROBLEMA!
+                        form.dataset.modificando = "false";
+                        if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; 
+                        return;
+                    }
+
+                    // Si tiene internet y no es offline, busca en la BD como siempre
                     fetch('/api/datos_crudos/' + id).then(r => r.json()).then(data => {
                         let tieneDatos = false;
                         if(tab === 'registro') { form.querySelector('[name="nombre"]').value = data.nombre || ''; form.querySelector('[name="cultivo"]').value = data.cultivo || ''; form.querySelector('[name="textura"]').value = data.textura || ''; form.querySelector('[name="latitud"]').value = data.latitud || ''; form.querySelector('[name="longitud"]').value = data.longitud || ''; form.querySelector('[name="descripcion"]').value = data.descripcion || ''; form.querySelector('[name="info"]').value = data.info || ''; tieneDatos = true; }
@@ -325,9 +342,6 @@
                 });
             }
 
-            // =========================================================
-            // EL MOTOR OFFLINE (LA MOCHILA VIRTUAL) Y RESTAURACIÓN
-            // =========================================================
             const offlineBanner = document.getElementById('offline-banner');
             const syncBtnContainer = document.getElementById('sync-btn-container');
             const syncBtn = document.getElementById('btn-sync-mochila');
@@ -339,7 +353,6 @@
                     if (dataObj.form_type === 'registro_muestra' && !dataObj.muestra_id_editar) {
                         const newName = dataObj.nombre;
                         document.querySelectorAll('.selector-memoria').forEach(sel => {
-                            // Evitar duplicados si se recarga la página
                             if(![...sel.options].some(opt => opt.value === `offline_${newName}`)) {
                                 const opt = new Option(`*NUEVO* ${newName}`, `offline_${newName}`);
                                 opt.style.color = '#2d6a4f';
@@ -350,7 +363,6 @@
                     }
                 });
             }
-            // Ejecutar al cargar la página por si recargó estando offline
             restoreOfflineDropdowns();
 
             function updateNetworkStatus() {
@@ -392,7 +404,6 @@
                         mochila.push(dataObj);
                         localStorage.setItem('mochilaAgro', JSON.stringify(mochila));
                         
-                        // Si era un lote nuevo, lo inyectamos en los selects para poder seguir usándolo
                         if (dataObj.form_type === 'registro_muestra' && !dataObj.muestra_id_editar) {
                             const newName = dataObj.nombre;
                             document.querySelectorAll('.selector-memoria').forEach(sel => {
@@ -419,7 +430,6 @@
                     syncBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Subiendo...';
                     syncBtn.disabled = true;
 
-                    // Ordenamos la mochila para enviar "registro_muestra" primero
                     mochila.sort((a, b) => {
                         if (a.form_type === 'registro_muestra') return -1;
                         if (b.form_type === 'registro_muestra') return 1;
@@ -444,9 +454,6 @@
             window.addEventListener('offline', updateNetworkStatus);
             updateNetworkStatus();
 
-            // =========================================================
-            // MOTOR ANALÍTICO DINÁMICO (ECHARTS)
-            // =========================================================
             {% if consolidado %}
                 let map = L.map('miMapa').setView([-32.89, -68.82], 5);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
