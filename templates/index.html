@@ -18,9 +18,7 @@
         h3, h4, h5, h6 { color: #2b2b2b; font-weight: 600; }
         .text-agro { color: var(--r-accent) !important; }
         
-        /* BANNER OFFLINE GLOBAL */
         #offline-banner { display: none; position: sticky; top: 0; z-index: 1060; font-size: 0.9rem; letter-spacing: 0.5px; }
-
         .header-bar { background-color: var(--r-dark-bg); color: #ffffff; padding: 1.5rem 0; margin-bottom: 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .lab-title { color: var(--r-highlight); font-weight: 700; letter-spacing: 0.05em; }
         .user-info { color: rgba(255,255,255,0.7); }
@@ -82,13 +80,11 @@
         <div class="container d-flex justify-content-between align-items-center flex-wrap gap-3">
             <h3 class="m-0 d-flex align-items-center lab-title"><i class="bi bi-tree-fill me-2"></i> LAB AGROECOLÓGICO</h3>
             <div class="d-flex align-items-center">
-                
                 <div id="sync-btn-container" style="display:none;" class="me-3">
                     <button id="btn-sync-mochila" class="btn btn-warning btn-sm fw-bold px-3 rounded-pill shadow-sm">
                         <i class="bi bi-cloud-arrow-up-fill me-1"></i> <span id="sync-count">0</span> Sincronizar
                     </button>
                 </div>
-
                 <div id="google_translate_element" class="me-3 goog-te-gadget-simple-dark"></div>
                 <div class="me-3 text-end d-none d-sm-block user-info border-start ps-3 border-secondary"><small class="text-white-50 d-block lh-1" style="font-size: 0.7rem;">Sesión activa</small><strong>{{ username }}</strong></div>
                 <a href="/logout" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold"><i class="bi bi-box-arrow-right"></i></a>
@@ -100,14 +96,12 @@
         <div class="container">
             <ul class="nav nav-tabs" id="misPestanas" role="tablist">
                 <li class="nav-item"><button class="nav-link active" id="muestras-tab" data-bs-toggle="tab" data-bs-target="#muestras" type="button">Lotes</button></li>
-                
                 <li class="nav-item"><button class="nav-link" id="textura-tab" data-bs-toggle="tab" data-bs-target="#textura" type="button">Textura</button></li>
-                
                 <li class="nav-item"><button class="nav-link" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button">POXC</button></li>
                 <li class="nav-item"><button class="nav-link" id="fosforo-tab" data-bs-toggle="tab" data-bs-target="#fosforo" type="button">Fósforo</button></li>
                 <li class="nav-item"><button class="nav-link" id="ph-tab" data-bs-toggle="tab" data-bs-target="#ph" type="button">pH / CE</button></li>
-                <li class="nav-item"><button class="nav-link" id="mop-tab" data-bs-toggle="tab" data-bs-target="#mop" type="button">MO Particulada</button></li>
-                <li class="nav-item"><button class="nav-link" id="estab-tab" data-bs-toggle="tab" data-bs-target="#estab" type="button">EstabilidadaAgregados</button></li>
+                <li class="nav-item"><button class="nav-link" id="mop-tab" data-bs-toggle="tab" data-bs-target="#mop" type="button">MOP</button></li>
+                <li class="nav-item"><button class="nav-link" id="estab-tab" data-bs-toggle="tab" data-bs-target="#estab" type="button">Agregados</button></li>
                 <li class="nav-item"><button class="nav-link text-warning" id="macrofauna-tab" data-bs-toggle="tab" data-bs-target="#macrofauna" type="button">Macrofauna</button></li>
                 <li class="nav-item ms-md-auto"><button class="nav-link text-agro" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-1"></i> Resultados</button></li>
             </ul>
@@ -118,81 +112,30 @@
         
         <div class="tab-pane fade show active" id="muestras">
             <div class="section-card bg-white d-flex justify-content-between align-items-center border border-primary border-opacity-10 flex-wrap gap-3 p-4 mb-4">
-                <div class="d-flex align-items-center">
-                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3 d-none d-sm-block"><i class="bi bi-cloud-arrow-down-fill fs-3 text-primary"></i></div>
-                    <div><h5 class="text-primary fw-bold m-0">Sincronizar SurveyStack</h5><p class="text-muted small m-0 mt-1">Importa las mediciones offline desde tu teléfono.</p></div>
-                </div>
+                <div class="d-flex align-items-center"><div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3 d-none d-sm-block"><i class="bi bi-cloud-arrow-down-fill fs-3 text-primary"></i></div><div><h5 class="text-primary fw-bold m-0">Sincronizar SurveyStack</h5><p class="text-muted small m-0 mt-1">Importa mediciones offline.</p></div></div>
                 <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#modalSync">Conectar <i class="bi bi-arrow-right ms-1"></i></button>
             </div>
-            <div class="modal fade" id="modalSync" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-agro text-white border-0 rounded-top-4"><h5 class="modal-title fw-bold">Autenticación SurveyStack</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><form action="/sincronizar_api" method="POST"><div class="modal-body p-4 text-start"><div class="mb-3"><label class="form-label fw-bold text-secondary small">ID de la Encuesta (Survey ID)</label><input type="text" class="form-control" name="survey_id" value="64c114078e8b2200011f0494" required></div><div class="mb-3"><label class="form-label fw-bold text-secondary small">Email de SurveyStack</label><input type="email" class="form-control" name="ss_email" required></div><div class="mb-4"><label class="form-label fw-bold text-secondary small">Contraseña</label><input type="password" class="form-control" name="ss_password" required></div></div><div class="modal-footer bg-light border-0 rounded-bottom-4"><button type="button" class="btn btn-light rounded-pill px-4 text-secondary fw-bold" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-agro rounded-pill px-4"><i class="bi bi-cloud-download me-2"></i> Importar</button></div></form></div></div></div>
+            <div class="modal fade" id="modalSync" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-agro text-white border-0 rounded-top-4"><h5 class="modal-title fw-bold">Autenticación SurveyStack</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><form action="/sincronizar_api" method="POST"><div class="modal-body p-4 text-start"><div class="mb-3"><label class="form-label fw-bold text-secondary small">ID Encuesta</label><input type="text" class="form-control" name="survey_id" value="64c114078e8b2200011f0494" required></div><div class="mb-3"><label class="form-label fw-bold text-secondary small">Email</label><input type="email" class="form-control" name="ss_email" required></div><div class="mb-4"><label class="form-label fw-bold text-secondary small">Contraseña</label><input type="password" class="form-control" name="ss_password" required></div></div><div class="modal-footer bg-light border-0 rounded-bottom-4"><button type="button" class="btn btn-light rounded-pill px-4 text-secondary fw-bold" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-agro rounded-pill px-4"><i class="bi bi-cloud-download me-2"></i> Importar</button></div></form></div></div></div>
             <form action="/" method="POST" class="form-memoria" data-tab="registro">
                 <input type="hidden" name="form_type" value="registro_muestra">
                 <div class="section-card">
                     <h5 class="mb-4 text-dark fw-bold"><i class="bi bi-pencil-square text-muted me-2"></i> Registro de Lote</h5>
                     <div class="mb-4 bg-light p-4 rounded-3 border"><label class="form-label small fw-bold text-muted mb-2 d-block text-uppercase">¿Editar lote existente?</label><select class="form-select selector-memoria shadow-sm border-0 bg-white" name="muestra_id_editar"><option value="">-- No, crear un Lote Nuevo --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold text-secondary small d-flex justify-content-between align-items-center">ID del Lote *<button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill" id="btn-scan-qr"><i class="bi bi-qr-code-scan"></i></button></label>
-                            <input type="text" class="form-control" name="nombre" id="input_nombre_qr" required>
-                            <div id="qr-reader" style="display:none; width:100%; margin-top:10px; border-radius: 12px; overflow: hidden; border: 1px solid var(--r-accent);"></div>
-                        </div>
-                        <div class="col-md-4"><label class="form-label fw-bold text-secondary small">Cultivo Principal</label><input type="text" class="form-control" name="cultivo"></div>
-                        <div class="col-md-4"><label class="form-label fw-bold text-secondary small">Textura del Suelo</label><input type="text" class="form-control" name="textura"></div>
-                    </div>
+                    <div class="row g-3 mb-4"><div class="col-md-4"><label class="form-label fw-bold text-secondary small d-flex justify-content-between align-items-center">ID del Lote *<button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill" id="btn-scan-qr"><i class="bi bi-qr-code-scan"></i></button></label><input type="text" class="form-control" name="nombre" id="input_nombre_qr" required><div id="qr-reader" style="display:none; width:100%; margin-top:10px; border-radius: 12px; overflow: hidden; border: 1px solid var(--r-accent);"></div></div><div class="col-md-4"><label class="form-label fw-bold text-secondary small">Cultivo Principal</label><input type="text" class="form-control" name="cultivo"></div><div class="col-md-4"><label class="form-label fw-bold text-secondary small">Textura del Suelo</label><input type="text" class="form-control" name="textura"></div></div>
                 </div>
-                <div class="row g-4"><div class="col-md-6"><div class="section-card h-100"><h6 class="text-secondary fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Ubicación Geográfica</h6><div class="row g-3"><div class="col-sm-6"><label class="small text-muted fw-bold">Latitud</label><input type="number" step="any" class="form-control" name="latitud"></div><div class="col-sm-6"><label class="small text-muted fw-bold">Longitud</label><input type="number" step="any" class="form-control" name="longitud"></div></div></div></div><div class="col-md-6"><div class="section-card h-100"><h6 class="text-secondary fw-bold mb-3"><i class="bi bi-card-text text-info me-2"></i>Detalles Cualitativos</h6><div class="mb-3"><input type="text" class="form-control" name="descripcion" placeholder="Descripción breve"></div><div><textarea class="form-control" name="info" rows="2" placeholder="Observaciones..."></textarea></div></div></div></div>
+                <div class="row g-4"><div class="col-md-6"><div class="section-card h-100"><h6 class="text-secondary fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Ubicación</h6><div class="row g-3"><div class="col-sm-6"><label class="small text-muted fw-bold">Latitud</label><input type="number" step="any" class="form-control" name="latitud"></div><div class="col-sm-6"><label class="small text-muted fw-bold">Longitud</label><input type="number" step="any" class="form-control" name="longitud"></div></div></div></div><div class="col-md-6"><div class="section-card h-100"><h6 class="text-secondary fw-bold mb-3"><i class="bi bi-card-text text-info me-2"></i>Detalles</h6><div class="mb-3"><input type="text" class="form-control" name="descripcion" placeholder="Descripción breve"></div><div><textarea class="form-control" name="info" rows="2" placeholder="Observaciones..."></textarea></div></div></div></div>
                 <div class="text-end mt-4"><button type="submit" class="btn btn-agro btn-lg px-5 rounded-pill shadow-sm"><i class="bi bi-save me-2"></i> Guardar Lote</button></div>
             </form>
         </div>
 
         <div class="tab-pane fade" id="textura">
             <div class="row g-4 mb-4">
-                <div class="col-lg-6">
-                    <div class="section-card h-100 p-0 overflow-hidden text-center bg-white d-flex align-items-center justify-content-center border border-dashed">
-                        <img src="{{ url_for('static', filename='textura.png') }}" class="img-fluid w-100 h-100" style="object-fit: contain;" alt="Esquema Textura">
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="section-card h-100">
-                        <h5 class="text-dark fw-bold mb-4"><i class="bi bi-info-circle text-muted me-2"></i> Determinación al Tacto</h5>
-                        <ol class="text-muted small ps-3 mb-0 lh-lg">
-                            <li class="mb-2"><strong>Preparación:</strong> Toma una porción de tierra sin restos. Añade agua poco a poco y amasa hasta alcanzar la capacidad de campo (moldeable como plastilina, sin gotear).</li>
-                            <li class="mb-2"><strong>Formación del "Gusanito":</strong> Rueda la masa entre tus manos para intentar formar un cilindro fino de unos 3 milímetros de grosor y 10 cm de largo.</li>
-                            <li><strong>Interpretación:</strong>
-                                <ul class="ps-3 mt-2 list-unstyled">
-                                    <li><i class="bi bi-arrow-right-short text-primary"></i> Se desmorona / sin cohesión: <strong>Arenosa</strong></li>
-                                    <li><i class="bi bi-arrow-right-short text-primary"></i> Grueso o se rompe al afinar: <strong>Franco arenosa</strong></li>
-                                    <li><i class="bi bi-arrow-right-short text-primary"></i> Fino (1mm) pero se rompe al curvar: <strong>Franca</strong></li>
-                                    <li><i class="bi bi-arrow-right-short text-primary"></i> Fino pero se agrieta al curvar: <strong>Franco limosa a limosa</strong></li>
-                                    <li><i class="bi bi-arrow-right-short text-primary"></i> Anillo perfecto y flexible: <strong>Franco arcillosa a arcillosa</strong></li>
-                                </ul>
-                            </li>
-                        </ol>
-                    </div>
-                </div>
+                <div class="col-lg-6"><div class="section-card h-100 p-0 overflow-hidden text-center bg-white d-flex align-items-center justify-content-center border border-dashed"><img src="{{ url_for('static', filename='textura.png') }}" class="img-fluid w-100 h-100" style="object-fit: contain;" alt="Esquema Textura"></div></div>
+                <div class="col-lg-6"><div class="section-card h-100"><h5 class="text-dark fw-bold mb-4"><i class="bi bi-info-circle text-muted me-2"></i> Determinación al Tacto</h5><ol class="text-muted small ps-3 mb-0 lh-lg"><li class="mb-2"><strong>Preparación:</strong> Toma una porción de tierra sin restos. Añade agua poco a poco y amasa hasta alcanzar la capacidad de campo.</li><li class="mb-2"><strong>Formación del "Gusanito":</strong> Rueda la masa entre tus manos para formar un cilindro de 3mm grosor x 10cm de largo.</li><li><strong>Interpretación:</strong><ul class="ps-3 mt-2 list-unstyled"><li><i class="bi bi-arrow-right-short text-primary"></i> Se desmorona: <strong>Arenosa</strong></li><li><i class="bi bi-arrow-right-short text-primary"></i> Se rompe al afinar: <strong>Franco arenosa</strong></li><li><i class="bi bi-arrow-right-short text-primary"></i> Se rompe al curvar: <strong>Franca</strong></li><li><i class="bi bi-arrow-right-short text-primary"></i> Se agrieta al curvar: <strong>Franco limosa a limosa</strong></li><li><i class="bi bi-arrow-right-short text-primary"></i> Anillo perfecto: <strong>Franco arcillosa a arcillosa</strong></li></ul></li></ol></div></div>
             </div>
-            
             <form action="/" method="POST" class="form-memoria" data-tab="textura">
                 <input type="hidden" name="form_type" value="textura_suelo">
-                <div class="section-card">
-                    <h5 class="text-dark fw-bold mb-4">Ingresar Textura</h5>
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-5">
-                            <label class="form-label fw-bold small text-secondary">Muestra Analizada</label>
-                            <select class="form-select selector-memoria bg-white shadow-sm" name="muestra_id" required>
-                                <option value="">-- Elija una muestra --</option>
-                                {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-5">
-                            <label class="form-label fw-bold small text-secondary">Textura Resultante</label>
-                            <input type="text" class="form-control" name="textura" placeholder="Ej: Franco arcillosa" required>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-agro w-100 py-2"><i class="bi bi-save me-2"></i> Guardar</button>
-                        </div>
-                    </div>
-                </div>
+                <div class="section-card"><h5 class="text-dark fw-bold mb-4">Ingresar Textura</h5><div class="row g-3 align-items-end"><div class="col-md-5"><label class="form-label fw-bold small text-secondary">Muestra Analizada</label><select class="form-select selector-memoria bg-white shadow-sm" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="col-md-5"><label class="form-label fw-bold small text-secondary">Textura Resultante</label><input type="text" class="form-control" name="textura" placeholder="Ej: Franco arcillosa" required></div><div class="col-md-2"><button type="submit" class="btn btn-agro w-100 py-2"><i class="bi bi-save me-2"></i> Guardar</button></div></div></div>
             </form>
         </div>
 
@@ -204,47 +147,23 @@
         
         <div class="tab-pane fade" id="macrofauna">
             <div class="row g-4 mb-4">
-                <div class="col-lg-6">
-                    <div class="section-card h-100 p-0 overflow-hidden text-center bg-white d-flex align-items-center justify-content-center border border-dashed">
-                        <img src="{{ url_for('static', filename='infografia_macrofauna.png') }}" class="img-fluid w-100 h-100" style="object-fit: contain;" alt="Guía">
-                    </div>
-                </div>
+                <div class="col-lg-6"><div class="section-card h-100 p-0 overflow-hidden text-center bg-white d-flex align-items-center justify-content-center border border-dashed"><img src="{{ url_for('static', filename='infografia_macrofauna.png') }}" class="img-fluid w-100 h-100" style="object-fit: contain;" alt="Guía"></div></div>
                 <div class="col-lg-6">
                     <form action="/" method="POST" class="form-memoria" data-tab="macrofauna">
                         <input type="hidden" name="form_type" value="macrofauna">
                         <div class="section-card h-100 d-flex flex-column">
                             <h5 class="text-dark fw-bold mb-4"><i class="bi bi-camera text-muted me-2"></i> Captura en Campo</h5>
-                            <div class="mb-4">
-                                <label class="form-label fw-bold small text-secondary">1. Seleccionar Muestra</label>
-                                <select class="form-select selector-memoria" name="muestra_id" required>
-                                    <option value="">-- Elija una muestra --</option>
-                                    {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
-                                </select>
-                            </div>
-                            
+                            <div class="mb-4"><label class="form-label fw-bold small text-secondary">1. Seleccionar Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
                             <div class="mb-4 flex-grow-1 position-relative">
                                 <label class="form-label fw-bold small text-secondary d-block">2. Toma Fotográfica</label>
-                                
-                                <div id="offline-camera-warning" class="bg-light border border-warning border-dashed rounded-4 p-4 text-center" style="display: none !important;">
-                                    <i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i>
-                                    <h6 class="text-dark fw-bold">Sin Conexión</h6>
-                                    <p class="small text-muted mb-0">Toma la foto con la cámara normal de tu celular. Podrás adjuntarla aquí cuando tengas Wi-Fi.</p>
-                                </div>
-
-                                <div id="camera-controls">
-                                    <input type="file" id="input_foto_macrofauna" accept="image/*" capture="environment" style="display: none;">
-                                    <input type="hidden" name="foto_macrofauna" id="hidden_url_foto" required>
-                                    <label for="input_foto_macrofauna" class="btn btn-outline-warning text-dark w-100 py-4 mb-2 shadow-sm rounded-4" style="cursor: pointer; border-width: 2px; border-style: dashed;"><i class="bi bi-camera-fill fs-2 d-block mb-2 text-warning"></i> <span class="fw-bold">Abrir Cámara</span></label>
-                                    <div id="foto_preview_container" class="mt-3 text-center" style="display: none;"><img id="foto_preview" src="" alt="Macrofauna" class="img-fluid rounded-4 border border-warning border-2" style="max-height: 200px; object-fit: cover;"><span class="d-block badge border border-success text-success mt-2 p-2 rounded-pill"><i class="bi bi-check-circle me-1"></i> Imagen adjuntada</span></div>
-                                    <div id="foto_loading" style="display: none;" class="text-center text-muted small py-4 bg-light rounded-4 border mt-2"><div class="spinner-border text-warning mb-2" role="status"></div><br>Subiendo...</div>
-                                </div>
+                                <div id="offline-camera-warning" class="bg-light border border-warning border-dashed rounded-4 p-4 text-center" style="display: none !important;"><i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i><h6 class="text-dark fw-bold">Sin Conexión</h6><p class="small text-muted mb-0">Toma la foto con la cámara de tu celular y súbela aquí cuando tengas Wi-Fi.</p></div>
+                                <div id="camera-controls"><input type="file" id="input_foto_macrofauna" accept="image/*" capture="environment" style="display: none;"><input type="hidden" name="foto_macrofauna" id="hidden_url_foto" required><label for="input_foto_macrofauna" class="btn btn-outline-warning text-dark w-100 py-4 mb-2 shadow-sm rounded-4" style="cursor: pointer; border-width: 2px; border-style: dashed;"><i class="bi bi-camera-fill fs-2 d-block mb-2 text-warning"></i> <span class="fw-bold">Abrir Cámara</span></label><div id="foto_preview_container" class="mt-3 text-center" style="display: none;"><img id="foto_preview" src="" alt="Macrofauna" class="img-fluid rounded-4 border border-warning border-2" style="max-height: 200px; object-fit: cover;"><span class="d-block badge border border-success text-success mt-2 p-2 rounded-pill"><i class="bi bi-check-circle me-1"></i> Imagen adjuntada</span></div><div id="foto_loading" style="display: none;" class="text-center text-muted small py-4 bg-light rounded-4 border mt-2"><div class="spinner-border text-warning mb-2" role="status"></div><br>Subiendo...</div></div>
                             </div>
                             <button type="submit" class="btn btn-warning w-100 fw-bold text-dark rounded-pill py-3 shadow-sm mt-auto"><i class="bi bi-cloud-upload me-2"></i> Guardar</button>
                         </div>
                     </form>
                 </div>
             </div>
-            
             <div class="section-card"><h5 class="text-dark fw-bold mb-4"><i class="bi bi-images text-muted me-2"></i> Galería de Biodiversidad</h5><div class="row g-3">{% set fotos = consolidado | selectattr('foto_macrofauna') | list %}{% if fotos %}{% for fila in fotos %}<div class="col-6 col-md-3 col-lg-2 position-relative"><div class="gallery-card h-100 d-flex flex-column"><a href="{{ fila.foto_macrofauna }}" target="_blank" style="overflow: hidden; display: block; flex-grow: 1;"><img src="{{ fila.foto_macrofauna }}" class="gallery-img h-100" alt="Macrofauna"></a><div class="p-2 bg-light border-top text-center"><small class="fw-bold d-block text-truncate text-secondary" title="{{ fila.nombre_muestra }}">{{ fila.nombre_muestra }}</small></div><form action="/eliminar_foto/{{ fila.id }}" method="POST" class="position-absolute top-0 end-0 m-2"><button type="submit" class="btn btn-sm btn-danger rounded-circle p-1 lh-1 shadow border border-white" onclick="return confirm('¿Borrar foto?');"><i class="bi bi-x fw-bold"></i></button></form></div></div>{% endfor %}{% else %}<div class="col-12 text-center text-muted py-5 bg-light rounded-4 border border-dashed"><i class="bi bi-camera-slash" style="font-size: 3rem; color: #dee2e6;"></i><h6 class="mt-3 fw-bold">Galería Vacía</h6><p class="small mb-0">Toma una foto en el campo.</p></div>{% endif %}</div></div>
         </div>
 
@@ -272,11 +191,7 @@
             <div class="row g-4 mb-4">
                 <div class="col-lg-5">
                     <div class="section-card h-100 p-2 map-container shadow-sm position-relative">
-                        <div id="offline-map-warning" class="position-absolute top-0 start-0 w-100 h-100 bg-light d-flex flex-column align-items-center justify-content-center text-center p-4 z-3" style="display: none !important;">
-                            <i class="bi bi-wifi-off text-muted mb-2" style="font-size: 2.5rem;"></i>
-                            <h6 class="text-secondary fw-bold">Modo Offline Activo</h6>
-                            <p class="small text-muted mb-0">El mapa satelital requiere conexión a internet para ser visualizado.</p>
-                        </div>
+                        <div id="offline-map-warning" class="position-absolute top-0 start-0 w-100 h-100 bg-light d-flex flex-column align-items-center justify-content-center text-center p-4 z-3" style="display: none !important;"><i class="bi bi-wifi-off text-muted mb-2" style="font-size: 2.5rem;"></i><h6 class="text-secondary fw-bold">Modo Offline Activo</h6><p class="small text-muted mb-0">El mapa requiere conexión a internet.</p></div>
                         <div id="miMapa" style="height: 400px; width: 100%; border-radius: 8px;"></div>
                     </div>
                 </div>
@@ -350,11 +265,10 @@
             document.querySelectorAll('.selector-memoria').forEach(select => {
                 select.addEventListener('change', function() {
                     const id = this.value; const form = this.closest('form'); const tab = form.dataset.tab;
-                    if (!id) { form.reset(); form.dataset.modificando = "false"; if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; return; }
+                    if (!id || id.startsWith('offline_')) { form.reset(); form.dataset.modificando = "false"; if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; return; }
                     fetch('/api/datos_crudos/' + id).then(r => r.json()).then(data => {
                         let tieneDatos = false;
                         if(tab === 'registro') { form.querySelector('[name="nombre"]').value = data.nombre || ''; form.querySelector('[name="cultivo"]').value = data.cultivo || ''; form.querySelector('[name="textura"]').value = data.textura || ''; form.querySelector('[name="latitud"]').value = data.latitud || ''; form.querySelector('[name="longitud"]').value = data.longitud || ''; form.querySelector('[name="descripcion"]').value = data.descripcion || ''; form.querySelector('[name="info"]').value = data.info || ''; tieneDatos = true; }
-                        // Nuevo autocompletado para textura
                         if(tab === 'textura') { form.querySelector('[name="textura"]').value = data.textura || ''; tieneDatos = true; }
                         if(tab === 'ph' && data.ph !== undefined && data.ph !== null) { form.querySelector('[name="ph"]').value = data.ph; form.querySelector('[name="conductividad"]').value = data.conductividad; tieneDatos = true; }
                         if(tab === 'carbono' && data.c_abs !== undefined && data.c_abs !== null) { form.querySelector('[name="peso_suelo_carbono"]').value = data.c_peso || '2.5'; form.querySelector('[name="abs_muestra"]').value = data.c_abs; form.querySelector('[name="abs_1"]').value = data.c_a1 || ''; form.querySelector('[name="abs_2"]').value = data.c_a2 || ''; form.querySelector('[name="abs_3"]').value = data.c_a3 || ''; form.querySelector('[name="abs_4"]').value = data.c_a4 || ''; tieneDatos = true; }
@@ -369,7 +283,6 @@
 
             if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(err => {}); }
 
-            // LECTOR QR
             const btnScan = document.getElementById('btn-scan-qr');
             const qrReaderDiv = document.getElementById('qr-reader');
             const inputNombre = document.getElementById('input_nombre_qr');
@@ -388,7 +301,6 @@
                 });
             }
 
-            // FOTO MACROFAUNA
             const inputFoto = document.getElementById('input_foto_macrofauna');
             const hiddenUrlFoto = document.getElementById('hidden_url_foto');
             const fotoPreviewContainer = document.getElementById('foto_preview_container');
@@ -414,12 +326,32 @@
             }
 
             // =========================================================
-            // EL MOTOR OFFLINE (LA MOCHILA VIRTUAL)
+            // EL MOTOR OFFLINE (LA MOCHILA VIRTUAL) Y RESTAURACIÓN
             // =========================================================
             const offlineBanner = document.getElementById('offline-banner');
             const syncBtnContainer = document.getElementById('sync-btn-container');
             const syncBtn = document.getElementById('btn-sync-mochila');
             const syncCount = document.getElementById('sync-count');
+
+            function restoreOfflineDropdowns() {
+                let mochila = JSON.parse(localStorage.getItem('mochilaAgro') || '[]');
+                mochila.forEach(dataObj => {
+                    if (dataObj.form_type === 'registro_muestra' && !dataObj.muestra_id_editar) {
+                        const newName = dataObj.nombre;
+                        document.querySelectorAll('.selector-memoria').forEach(sel => {
+                            // Evitar duplicados si se recarga la página
+                            if(![...sel.options].some(opt => opt.value === `offline_${newName}`)) {
+                                const opt = new Option(`*NUEVO* ${newName}`, `offline_${newName}`);
+                                opt.style.color = '#2d6a4f';
+                                opt.style.fontWeight = 'bold';
+                                sel.add(opt);
+                            }
+                        });
+                    }
+                });
+            }
+            // Ejecutar al cargar la página por si recargó estando offline
+            restoreOfflineDropdowns();
 
             function updateNetworkStatus() {
                 const isOnline = navigator.onLine;
@@ -447,11 +379,10 @@
                 }
             }
 
-            // Interceptar el botón "Guardar" de cualquier formulario si estamos offline
             document.querySelectorAll('.form-memoria').forEach(form => {
                 form.addEventListener('submit', function(e) {
                     if (!navigator.onLine) {
-                        e.preventDefault(); // Detenemos el envío a la nube
+                        e.preventDefault(); 
                         
                         const formData = new FormData(form);
                         const dataObj = {};
@@ -461,6 +392,17 @@
                         mochila.push(dataObj);
                         localStorage.setItem('mochilaAgro', JSON.stringify(mochila));
                         
+                        // Si era un lote nuevo, lo inyectamos en los selects para poder seguir usándolo
+                        if (dataObj.form_type === 'registro_muestra' && !dataObj.muestra_id_editar) {
+                            const newName = dataObj.nombre;
+                            document.querySelectorAll('.selector-memoria').forEach(sel => {
+                                const opt = new Option(`*NUEVO* ${newName}`, `offline_${newName}`);
+                                opt.style.color = '#2d6a4f';
+                                opt.style.fontWeight = 'bold';
+                                sel.add(opt);
+                            });
+                        }
+                        
                         form.reset();
                         updateMochilaUI();
                         alert("¡Dato guardado en tu teléfono! Sincronízalo cuando encuentres Wi-Fi o 4G.");
@@ -468,36 +410,31 @@
                 });
             });
 
-            // Botón de sincronización
             if (syncBtn) {
                 syncBtn.addEventListener('click', async () => {
-                    if (!navigator.onLine) {
-                        alert("Aún no tienes conexión a internet.");
-                        return;
-                    }
+                    if (!navigator.onLine) { alert("Aún no tienes conexión a internet."); return; }
                     let mochila = JSON.parse(localStorage.getItem('mochilaAgro') || '[]');
                     if (mochila.length === 0) return;
                     
                     syncBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Subiendo...';
                     syncBtn.disabled = true;
 
-                    // Mandamos los datos uno por uno
+                    // Ordenamos la mochila para enviar "registro_muestra" primero
+                    mochila.sort((a, b) => {
+                        if (a.form_type === 'registro_muestra') return -1;
+                        if (b.form_type === 'registro_muestra') return 1;
+                        return 0;
+                    });
+
                     for (let dataObj of mochila) {
                         const formParams = new URLSearchParams();
                         for (const key in dataObj) { formParams.append(key, dataObj[key]); }
                         
                         try {
-                            await fetch('/', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                body: formParams.toString()
-                            });
-                        } catch (err) {
-                            console.error('Error enviando dato:', err);
-                        }
+                            await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formParams.toString() });
+                        } catch (err) { console.error('Error enviando dato:', err); }
                     }
                     
-                    // Vaciamos la mochila y recargamos para ver los resultados calculados
                     localStorage.removeItem('mochilaAgro');
                     window.location.reload();
                 });
