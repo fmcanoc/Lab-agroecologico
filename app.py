@@ -9,7 +9,7 @@ import csv
 import json
 import urllib.request
 import urllib.error
-import pandas as pd # <--- NUEVA LIBRERÍA PARA LEER EL CSV DE RESPIRACIÓN
+import pandas as pd # <--- NUEVA LIBRERÍA PARA LEER EL CSV DE Cam Respiración
 
 import psycopg
 from psycopg.rows import dict_row
