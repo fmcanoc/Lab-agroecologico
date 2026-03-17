@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laboratorio Agroecológico</title>
+    <title>Lab Agroecológico - Trazabilidad Abierta</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -20,7 +20,10 @@
         
         #offline-banner { display: none; position: sticky; top: 0; z-index: 1060; font-size: 0.9rem; letter-spacing: 0.5px; }
         .header-bar { background-color: var(--r-dark-bg); color: #ffffff; padding: 1.5rem 0; margin-bottom: 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .lab-title { color: var(--r-highlight); font-weight: 700; letter-spacing: 0.05em; }
+        
+        /* CAMBIO DE COLOR DEL TÍTULO A CREMA/BLANCO */
+        .lab-title { color: #fcfbf5; font-weight: 700; letter-spacing: 0.05em; }
+        
         .user-info { color: rgba(255,255,255,0.7); }
         .user-info strong { color: #ffffff; }
 
@@ -78,7 +81,7 @@
 
     <div class="header-bar">
         <div class="container d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <h3 class="m-0 d-flex align-items-center lab-title"><i class="bi bi-tree-fill me-2"></i> LAB AGROECOLÓGICO</h3>
+            <h3 class="m-0 d-flex align-items-center lab-title"><i class="bi bi-tree-fill me-2" style="color:var(--r-accent);"></i> LAB AGROECOLÓGICO</h3>
             <div class="d-flex align-items-center">
                 <div id="sync-btn-container" style="display:none;" class="me-3">
                     <button id="btn-sync-mochila" class="btn btn-warning btn-sm fw-bold px-3 rounded-pill shadow-sm">
@@ -95,7 +98,7 @@
     <div class="nav-tabs-container">
         <div class="container">
             <ul class="nav nav-tabs" id="misPestanas" role="tablist">
-                <li class="nav-item"><button class="nav-link active" id="muestras-tab" data-bs-toggle="tab" data-bs-target="#muestras" type="button">Muestras</button></li>
+                <li class="nav-item"><button class="nav-link active" id="muestras-tab" data-bs-toggle="tab" data-bs-target="#muestras" type="button">Lotes</button></li>
                 <li class="nav-item"><button class="nav-link" id="textura-tab" data-bs-toggle="tab" data-bs-target="#textura" type="button">Textura</button></li>
                 <li class="nav-item"><button class="nav-link" id="respiracion-tab" data-bs-toggle="tab" data-bs-target="#respiracion" type="button">Respiración</button></li>
                 <li class="nav-item"><button class="nav-link" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button">POXC</button></li>
@@ -145,35 +148,13 @@
                 <input type="hidden" name="form_type" value="respiracion_suelo">
                 <div class="section-card">
                     <h5 class="text-dark fw-bold mb-4"><i class="bi bi-wind text-muted me-2"></i> Respiración Basal del Suelo</h5>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Seleccionar Muestra</label>
-                            <select class="form-select selector-memoria bg-white shadow-sm" name="muestra_id" required>
-                                <option value="">-- Elija una muestra --</option>
-                                {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Peso de Suelo Analizado (g)</label>
-                            <input type="number" step="any" class="form-control bg-white" name="peso_suelo" value="30" required>
-                        </div>
-                    </div>
-                    
+                    <div class="row g-3 mb-4"><div class="col-md-6"><label class="form-label fw-bold small text-secondary">Seleccionar Muestra</label><select class="form-select selector-memoria bg-white shadow-sm" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="col-md-6"><label class="form-label fw-bold small text-secondary">Peso de Suelo Analizado (g)</label><input type="number" step="any" class="form-control bg-white" name="peso_suelo" value="30" required></div></div>
                     <div class="mb-4">
                         <label class="form-label fw-bold small text-secondary d-block">Archivo de Datos de la Cámara (.csv)</label>
-                        
-                        <div id="offline-csv-warning" class="bg-light border border-warning border-dashed rounded-4 p-4 text-center" style="display: none !important;">
-                            <i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i>
-                            <h6 class="text-dark fw-bold">Sin Conexión</h6>
-                            <p class="small text-muted mb-0">Subir archivos pesados requiere conexión a internet para ser procesados por la nube.</p>
-                        </div>
-
-                        <div id="csv-controls">
-                            <input class="form-control form-control-lg bg-light" type="file" name="archivo_csv" accept=".csv" required>
-                            <small class="text-muted mt-2 d-block">El archivo debe contener las columnas de la cámara SCD41: <i>timestamp, co2, temperature, humidity</i></small>
-                        </div>
+                        <div id="offline-csv-warning" class="bg-light border border-warning border-dashed rounded-4 p-4 text-center" style="display: none !important;"><i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i><h6 class="text-dark fw-bold">Sin Conexión</h6><p class="small text-muted mb-0">Subir archivos pesados requiere conexión a internet para ser procesados por la nube.</p></div>
+                        <div id="csv-controls"><input class="form-control form-control-lg bg-light" type="file" name="archivo_csv" accept=".csv" required><small class="text-muted mt-2 d-block">El archivo debe contener las columnas: <i>timestamp, co2, temperature, humidity</i></small></div>
                     </div>
-                    <button type="submit" class="btn btn-agro px-5 py-2 rounded-pill" id="btn-submit-csv"><i class="bi bi-calculator me-2"></i> Procesar y Graficar Curva</button>
+                    <button type="submit" class="btn btn-agro px-5 py-2 rounded-pill" id="btn-submit-csv"><i class="bi bi-calculator me-2"></i> Procesar y Graficar</button>
                 </div>
             </form>
         </div>
@@ -192,23 +173,10 @@
                         <input type="hidden" name="form_type" value="macrofauna">
                         <div class="section-card h-100 d-flex flex-column">
                             <h5 class="text-dark fw-bold mb-4"><i class="bi bi-camera text-muted me-2"></i> Captura en Campo</h5>
-                            <div class="mb-4">
-                                <label class="form-label fw-bold small text-secondary">1. Seleccionar Muestra</label>
-                                <select class="form-select selector-memoria" name="muestra_id" required>
-                                    <option value="">-- Elija una muestra --</option>
-                                    {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
-                                </select>
-                            </div>
-                            
+                            <div class="mb-4"><label class="form-label fw-bold small text-secondary">1. Seleccionar Muestra</label><select class="form-select selector-memoria" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
                             <div class="mb-4 flex-grow-1 position-relative">
                                 <label class="form-label fw-bold small text-secondary d-block">2. Toma Fotográfica</label>
-                                
-                                <div id="offline-camera-warning" class="bg-light border border-warning border-dashed rounded-4 p-4 text-center" style="display: none !important;">
-                                    <i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i>
-                                    <h6 class="text-dark fw-bold">Sin Conexión</h6>
-                                    <p class="small text-muted mb-0">Toma la foto con la cámara normal de tu celular. Podrás adjuntarla aquí desde la galería cuando tengas Wi-Fi.</p>
-                                </div>
-
+                                <div id="offline-camera-warning" class="bg-light border border-warning border-dashed rounded-4 p-4 text-center" style="display: none !important;"><i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i><h6 class="text-dark fw-bold">Sin Conexión</h6><p class="small text-muted mb-0">Sube fotos a la galería cuando tengas Wi-Fi.</p></div>
                                 <div id="camera-controls">
                                     <input type="file" id="input_foto_macrofauna" accept="image/*" style="display: none;">
                                     <input type="hidden" name="foto_macrofauna" id="hidden_url_foto" required>
@@ -235,13 +203,21 @@
                 <a href="/descargar_csv" class="btn btn-success rounded-pill px-4 py-2 fw-bold w-sm-100"><i class="bi bi-file-earmark-excel me-2"></i> Descargar Datos</a>
             </div>
 
+            <div class="section-card mb-4" id="resp-card" style="display:none;">
+                <div class="pb-3 mb-3 border-bottom">
+                    <h5 class="text-dark fw-bold m-0">Dinámica de Respiración del Suelo (Trazabilidad SRC)</h5>
+                    <p class="text-muted small m-0 mt-1">Diagrama de dispersión de CO2 (ppm) vs Tiempo (min) para todos los lotes con datos procesados.</p>
+                </div>
+                <div id="chart-respiracion-all" style="height: 480px; width: 100%;"></div>
+            </div>
+
             <div class="section-card mb-4">
                 <div class="pb-3 mb-3 border-bottom"><h5 class="text-dark fw-bold m-0">Descubridor de Patrones</h5><p class="text-muted small m-0 mt-1">Usa los selectores para cruzar variables y encontrar relaciones en tus suelos.</p></div>
                 <div class="row g-3 mb-4 bg-light p-3 rounded-4 border">
-                    <div class="col-md-3 col-6"><label class="small fw-bold text-secondary mb-1">Eje X (Horizontal)</label><select id="sel-x" class="form-select form-select-sm border-primary bg-white fw-bold text-primary"><option value="p" selected>Fósforo (mg/kg)</option><option value="poxc">Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados >2mm %</option><option value="conductividad">Conductividad</option></select></div>
-                    <div class="col-md-3 col-6"><label class="small fw-bold text-secondary mb-1">Eje Y (Vertical)</label><select id="sel-y" class="form-select form-select-sm border-primary bg-white fw-bold text-primary"><option value="p">Fósforo (mg/kg)</option><option value="poxc" selected>Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados >2mm %</option><option value="conductividad">Conductividad</option></select></div>
-                    <div class="col-md-3 col-6"><label class="small fw-bold text-secondary mb-1">Tamaño Burbuja</label><select id="sel-size" class="form-select form-select-sm bg-white"><option value="p">Fósforo</option><option value="poxc">Carbono</option><option value="ph">pH</option><option value="mop" selected>Materia Orgánica</option><option value="agregados">Agregados</option><option value="conductividad">Conductividad</option></select></div>
-                    <div class="col-md-3 col-6"><label class="small fw-bold text-secondary mb-1">Color Burbuja</label><select id="sel-color" class="form-select form-select-sm bg-white"><option value="p">Fósforo</option><option value="poxc">Carbono</option><option value="ph" selected>Nivel de pH</option><option value="mop">Materia Orgánica</option><option value="agregados">Agregados</option><option value="conductividad">Conductividad</option></select></div>
+                    <div class="col-md-3 col-6"><label class="small fw-bold text-secondary mb-1">Eje X (Horizontal)</label><select id="sel-x" class="form-select form-select-sm border-primary bg-white fw-bold text-primary"><option value="p" selected>Fósforo (mg/kg)</option><option value="poxc">Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados >2mm %</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración (ugC/g)</option></select></div>
+                    <div class="col-md-3 col-6"><label class="small fw-bold text-secondary mb-1">Eje Y (Vertical)</label><select id="sel-y" class="form-select form-select-sm border-primary bg-white fw-bold text-primary"><option value="p">Fósforo (mg/kg)</option><option value="poxc" selected>Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados >2mm %</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración (ugC/g)</option></select></div>
+                    <div class="col-md-3 col-6"><label class="small fw-bold text-secondary mb-1">Tamaño Burbuja</label><select id="sel-size" class="form-select form-select-sm bg-white"><option value="p">Fósforo</option><option value="poxc">Carbono</option><option value="ph">pH</option><option value="mop" selected>Materia Orgánica</option><option value="agregados">Agregados</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración</option></select></div>
+                    <div class="col-md-3 col-6"><label class="small fw-bold text-secondary mb-1">Color Burbuja</label><select id="sel-color" class="form-select form-select-sm bg-white"><option value="p">Fósforo</option><option value="poxc">Carbono</option><option value="ph" selected>Nivel de pH</option><option value="mop">Materia Orgánica</option><option value="agregados">Agregados</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración</option></select></div>
                 </div>
                 <div id="chart-bubble" style="height: 480px; width: 100%;"></div>
             </div>
@@ -266,8 +242,9 @@
                         <thead>
                             <tr>
                                 <th class="text-start px-4">Lote</th>
+                                <th>Textura</th>
                                 <th>pH</th>
-                                <th>Cond.</th>
+                                <th>Cond. CE</th>
                                 <th>POXC</th>
                                 <th>Fósforo</th>
                                 <th>Resp. (μgC/g)</th>
@@ -280,6 +257,7 @@
                             {% for fila in consolidado %}
                             <tr>
                                 <td class="fw-bold text-start px-4 text-dark">{{ fila.nombre_muestra }}</td>
+                                <td><span class="text-muted small">{{ fila.textura or '-' }}</span></td>
                                 <td><span class="text-muted fst-italic">{{ fila.ph or '-' }}</span></td>
                                 <td><span class="text-muted fst-italic">{{ fila.conductividad or '-' }}</span></td>
                                 <td>{% if fila.resultado_carbono %}<strong>{{ "%.2f"|format(fila.resultado_carbono) }}</strong>{% else %}-{% endif %}</td>
@@ -292,7 +270,7 @@
                                 </td>
                             </tr>
                             
-                            <div class="modal fade" id="modal-{{ fila.id }}" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-light border-0 rounded-top-4"><h5 class="modal-title fw-bold text-dark">{{ fila.nombre_muestra }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-start p-4"><div class="row mb-3"><div class="col-6"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Cultivo</small><span class="text-dark">{{ fila.cultivo or 'N/A' }}</span></div><div class="col-6"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Textura</small><span class="text-dark">{{ fila.textura or 'N/A' }}</span></div></div><div class="mb-3"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Descripción</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.descripcion or 'Sin descripción' }}</p></div><div class="mb-3"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Observaciones</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.informacion_relevante or '-' }}</p></div><div><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Coordenadas</small>{% if fila.latitud %}<span class="text-danger small fw-bold"><i class="bi bi-geo-alt-fill me-1"></i> {{ fila.latitud }}, {{ fila.longitud }}</span>{% else %}<span class="text-muted small fst-italic">No registradas</span>{% endif %}</div>{% if fila.fosforo or fila.fosforo_ppm %}<div class="mb-3 mt-3 pt-3 border-top"><small class="text-muted d-block text-uppercase fw-bold mb-2" style="font-size: 0.7rem;"><i class="bi bi-moisture me-1"></i> Fósforo (Olsen)</small><div class="d-flex flex-wrap gap-2"><span class="badge border border-primary text-primary">{{ "%.2f"|format(fila.fosforo_ppm) }} ppm</span><span class="badge bg-primary text-white">{{ "%.2f"|format(fila.fosforo) }} mg/kg</span></div></div>{% endif %}{% if fila.respiracion %}<div class="mb-3 mt-3 pt-3 border-top"><small class="text-muted d-block text-uppercase fw-bold mb-2" style="font-size: 0.7rem;"><i class="bi bi-wind me-1"></i> Respiración Basal (24h)</small><div class="d-flex flex-wrap gap-2 mb-3"><span class="badge border border-success text-success">Inicial: {{ "%.0f"|format(fila.co2_initial) }} ppm</span><span class="badge border border-danger text-danger">Final: {{ "%.0f"|format(fila.co2_final) }} ppm</span><span class="badge bg-success text-white">Emisión: {{ "%.2f"|format(fila.respiracion) }} μgC/g</span></div><div id="chart-resp-{{ fila.id }}" style="height: 200px; width: 100%;"></div></div>{% endif %}</div></div></div></div>
+                            <div class="modal fade" id="modal-{{ fila.id }}" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-light border-0 rounded-top-4"><h5 class="modal-title fw-bold text-dark">{{ fila.nombre_muestra }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-start p-4"><div class="row mb-3"><div class="col-6"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Cultivo</small><span class="text-dark">{{ fila.cultivo or 'N/A' }}</span></div><div class="col-6"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Textura</small><span class="text-dark">{{ fila.textura or 'N/A' }}</span></div></div><div class="mb-3"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Descripción</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.descripcion or 'Sin descripción' }}</p></div><div class="mb-3"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Observaciones</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.informacion_relevante or '-' }}</p></div><div><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Coordenadas</small>{% if fila.latitud %}<span class="text-danger small fw-bold"><i class="bi bi-geo-alt-fill me-1"></i> {{ fila.latitud }}, {{ fila.longitud }}</span>{% else %}<span class="text-muted small fst-italic">No registradas</span>{% endif %}</div>{% if fila.fosforo or fila.fosforo_ppm %}<div class="mb-3 mt-3 pt-3 border-top"><small class="text-muted d-block text-uppercase fw-bold mb-2" style="font-size: 0.7rem;"><i class="bi bi-moisture me-1"></i> Fósforo (Olsen)</small><div class="d-flex flex-wrap gap-2"><span class="badge border border-primary text-primary">{{ "%.2f"|format(fila.fosforo_ppm) }} ppm</span><span class="badge bg-primary text-white">{{ "%.2f"|format(fila.fosforo) }} mg/kg</span></div></div>{% endif %}{% if fila.respiracion %}<div class="mb-3 mt-3 pt-3 border-top"><small class="text-muted d-block text-uppercase fw-bold mb-2" style="font-size: 0.7rem;"><i class="bi bi-wind me-1"></i> Respiración Basal (24h)</small><div class="d-flex flex-wrap gap-2 mb-3"><span class="badge border border-success text-success">Inicial: {{ "%.0f"|format(fila.co2_initial) }} ppm</span><span class="badge border border-danger text-danger">Final: {{ "%.0f"|format(fila.co2_final) }} ppm</span><span class="badge bg-success text-white">Emisión: {{ "%.2f"|format(fila.respiracion) }} μgC/g</span></div><div id="chart-resp-modal-{{ fila.id }}" style="height: 200px; width: 100%;"></div></div>{% endif %}</div></div></div></div>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -456,7 +434,6 @@
 
             document.querySelectorAll('.form-memoria').forEach(form => {
                 form.addEventListener('submit', function(e) {
-                    // Evitar que el interceptor bloquee formularios que envian archivos
                     if (!navigator.onLine && form.dataset.tab !== 'respiracion') {
                         e.preventDefault(); 
                         
@@ -520,24 +497,67 @@
 
             {% if consolidado %}
                 
-                // GRAFICA LA CURVA DE RESPIRACIÓN DENTRO DEL MODAL
+                // GRAFICA LA CURVA INDIVIDUAL EN EL MODAL DE CADA MUESTRA
                 {% for f in consolidado %}
                     {% if f.curva_tiempo %}
                     document.getElementById('modal-{{ f.id }}').addEventListener('shown.bs.modal', function () {
-                        let chartResp = echarts.getInstanceByDom(document.getElementById('chart-resp-{{ f.id }}'));
-                        if (!chartResp) {
-                            chartResp = echarts.init(document.getElementById('chart-resp-{{ f.id }}'));
-                            chartResp.setOption({
+                        let chartRespModal = echarts.getInstanceByDom(document.getElementById('chart-resp-modal-{{ f.id }}'));
+                        if (!chartRespModal) {
+                            chartRespModal = echarts.init(document.getElementById('chart-resp-modal-{{ f.id }}'));
+                            chartRespModal.setOption({
                                 tooltip: { trigger: 'axis', formatter: 'Tiempo: {b} min<br/>CO2: {c} ppm' },
                                 xAxis: { type: 'category', data: {{ f.curva_tiempo|safe }}, boundaryGap: false, splitLine: { show: false } },
                                 yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { type: 'dashed', color: '#eee' } } },
                                 series: [{ data: {{ f.curva_co2|safe }}, type: 'line', smooth: true, showSymbol: false, areaStyle: { color: 'rgba(45, 106, 79, 0.1)' }, lineStyle: { color: '#2d6a4f', width: 2 }, itemStyle: { color: '#2d6a4f' } }]
                             });
                         }
-                        chartResp.resize();
+                        chartRespModal.resize();
                     });
                     {% endif %}
                 {% endfor %}
+
+                // CREADOR DE LA CURVA GLOBAL DE RESPIRACIÓN (SCATTER PLOT)
+                let seriesDataResp = [];
+                let legendDataResp = [];
+
+                {% for f in consolidado %}
+                    {% if f.curva_tiempo and f.curva_co2 %}
+                        (function(){
+                            let tiempos = {{ f.curva_tiempo | safe }};
+                            let co2 = {{ f.curva_co2 | safe }};
+                            let points = [];
+                            for(let i=0; i<tiempos.length; i++) {
+                                points.push([tiempos[i], co2[i]]);
+                            }
+                            seriesDataResp.push({
+                                name: "{{ f.nombre_muestra }}",
+                                type: 'scatter',
+                                symbolSize: 5,
+                                itemStyle: { opacity: 0.6 },
+                                data: points
+                            });
+                            legendDataResp.push("{{ f.nombre_muestra }}");
+                        })();
+                    {% endif %}
+                {% endfor %}
+
+                if(seriesDataResp.length > 0) {
+                    document.getElementById('resp-card').style.display = 'block';
+                    let chartRespAll = echarts.init(document.getElementById('chart-respiracion-all'));
+                    chartRespAll.setOption({
+                        textStyle: { fontFamily: 'Montserrat, sans-serif' },
+                        tooltip: { trigger: 'item', formatter: '<b>{a}</b><br/>Tiempo: {c[0]} min<br/>CO2: {c[1]} ppm' },
+                        legend: { type: 'scroll', orient: 'vertical', right: 10, top: 40, data: legendDataResp },
+                        grid: { left: '8%', right: '18%', bottom: '10%', containLabel: true },
+                        xAxis: { type: 'value', name: 'Tiempo (min)', nameLocation: 'middle', nameGap: 30, splitLine: { show: true, lineStyle: {type: 'dashed', color: '#eee'} } },
+                        yAxis: { type: 'value', name: 'CO2 (ppm)', scale: true, splitLine: { show: true, lineStyle: {type: 'dashed', color: '#eee'} } },
+                        series: seriesDataResp
+                    });
+                    
+                    document.getElementById('consolidado-tab').addEventListener('shown.bs.tab', function () { chartRespAll.resize(); });
+                    window.addEventListener('resize', function() { chartRespAll.resize(); });
+                }
+
 
                 let map = L.map('miMapa').setView([-32.89, -68.82], 5);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
@@ -547,11 +567,11 @@
 
                 const datosSuelo = [
                     {% for f in consolidado %}
-                    { name: "{{ f.nombre_muestra }}", ph: {{ f.ph or 0 }}, poxc: {{ f.resultado_carbono or 0 }}, p: {{ f.fosforo or 0 }}, mop: {{ f.mop or 0 }}, agregados: {{ f.porcentaje_mayor_2mm or 0 }}, conductividad: {{ f.conductividad or 0 }} },
+                    { name: "{{ f.nombre_muestra }}", ph: {{ f.ph or 0 }}, poxc: {{ f.resultado_carbono or 0 }}, p: {{ f.fosforo or 0 }}, mop: {{ f.mop or 0 }}, agregados: {{ f.porcentaje_mayor_2mm or 0 }}, conductividad: {{ f.conductividad or 0 }}, respiracion: {{ f.respiracion or 0 }} },
                     {% endfor %}
                 ];
 
-                const dictVars = { 'ph': { label: 'pH', unit: '' }, 'poxc': { label: 'Carbono Activo', unit: 'mg/kg' }, 'p': { label: 'Fósforo', unit: 'mg/kg' }, 'mop': { label: 'Materia Orgánica', unit: '%' }, 'agregados': { label: 'Agregados', unit: '%' }, 'conductividad': { label: 'Conductividad', unit: 'dS/m' } };
+                const dictVars = { 'ph': { label: 'pH', unit: '' }, 'poxc': { label: 'Carbono Activo', unit: 'mg/kg' }, 'p': { label: 'Fósforo', unit: 'mg/kg' }, 'mop': { label: 'Materia Orgánica', unit: '%' }, 'agregados': { label: 'Agregados', unit: '%' }, 'conductividad': { label: 'Conductividad', unit: 'dS/m' }, 'respiracion': { label: 'Respiración', unit: 'μgC/g' } };
                 const maxValues = { ph: 14, poxc: Math.max(...datosSuelo.map(d=>d.poxc), 800), p: Math.max(...datosSuelo.map(d=>d.p), 50), mop: Math.max(...datosSuelo.map(d=>d.mop), 5), agregados: Math.max(...datosSuelo.map(d=>d.agregados), 100) };
 
                 let chartRadar = echarts.init(document.getElementById('chart-radar'));
@@ -593,8 +613,6 @@
     </script>
 </body>
 </html>
-
-
 
 
 
