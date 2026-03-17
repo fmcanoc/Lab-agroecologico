@@ -9,6 +9,7 @@ import csv
 import json
 import urllib.request
 import urllib.error
+import pandas as pd # <--- NUEVA LIBRERÍA PARA LEER EL CSV DE RESPIRACIÓN
 
 import psycopg
 from psycopg.rows import dict_row
@@ -59,6 +60,12 @@ def crear_tablas():
                             resultado_ppm NUMERIC, resultado_mg_kg NUMERIC, peso_suelo NUMERIC, 
                             vol_extracto NUMERIC, vol_dilucion NUMERIC, abs_muestra NUMERIC, 
                             abs_0 NUMERIC, abs_05 NUMERIC, abs_1 NUMERIC, abs_15 NUMERIC, abs_2 NUMERIC)''')
+            
+            # NUEVA TABLA: RESPIRACIÓN
+            cur.execute('''CREATE TABLE IF NOT EXISTS respiracion_suelo (
+                            id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
+                            peso_suelo NUMERIC, co2_initial NUMERIC, co2_final NUMERIC, horas NUMERIC, ugc_gsoil NUMERIC, 
+                            curva_tiempo TEXT, curva_co2 TEXT)''')
             conexion.commit()
 
             try:
@@ -179,8 +186,80 @@ def inicio():
                 textura = request.form['textura']
                 cur.execute('UPDATE muestras SET textura = %s WHERE id = %s AND usuario_id = %s', (textura, muestra_id, usuario_id))
                 conexion.commit()
-                flash('Textura del suelo guardada exitosamente.', 'success')
+                flash('Textura guardada exitosamente.', 'success')
                 return redirect(url_for('inicio') + '#textura')
+
+            # ==========================================
+            # NUEVO MÓDULO: RESPIRACIÓN CON PANDAS
+            # ==========================================
+            elif tipo_formulario == 'respiracion_suelo':
+                peso_g = float(request.form.get('peso_suelo', 30.0))
+                archivo = request.files.get('archivo_csv')
+
+                if archivo and archivo.filename.endswith('.csv'):
+                    try:
+                        # Leer primera linea para detectar separador (; o ,)
+                        header = archivo.readline().decode('utf-8')
+                        archivo.seek(0)
+                        sep = ';' if ';' in header else ','
+                        
+                        df = pd.read_csv(archivo, sep=sep)
+                        df.columns = df.columns.str.strip().str.lower()
+                        
+                        if 'timestamp' in df.columns and 'co2' in df.columns:
+                            # Formatear tiempo (traducido de tu R)
+                            df['timestamp'] = pd.to_datetime(df['timestamp'], format='%d-%b-%y %H:%M:%S', errors='coerce')
+                            df = df.dropna(subset=['timestamp', 'co2']).sort_values('timestamp')
+                            
+                            if not df.empty:
+                                # Calcular minutos transcurridos
+                                df['minutes'] = (df['timestamp'] - df['timestamp'].iloc[0]).dt.total_seconds() / 60.0
+                                
+                                # CONSTANTES DE TU R STUDIO
+                                jar_vol = 472 # 473 - 1
+                                soil_vol = 32
+                                headspace = jar_vol - soil_vol
+                                temp = 298
+                                Rconst = 82.05
+                                conversionFactor2 = 12000
+                                
+                                # CÁLCULO MATEMÁTICO
+                                co2_initial = float(df['co2'].iloc[:2].mean())
+                                t0 = df['minutes'].iloc[0]
+                                
+                                # Buscar el minuto más cercano a las 24 horas (1440 mins)
+                                idx_final = (df['minutes'] - (t0 + 1440)).abs().idxmin()
+                                t_final = float(df['minutes'].loc[idx_final])
+                                co2_final = float(df['co2'].loc[idx_final])
+                                
+                                hours = (t_final - t0) / 60.0
+                                if hours <= 0: hours = 1.0 # Evitar div/0
+                                
+                                co2_increase = (co2_final - co2_initial) * (24.0 / hours)
+                                ugc_gsoil = ((co2_increase * headspace) / (peso_g * 1000.0) / (temp * Rconst)) * conversionFactor2
+                                
+                                # Simplificar la curva a máximo 100 puntos para que el navegador no se trabe al graficar
+                                step = max(1, len(df) // 100)
+                                df_plot = df.iloc[::step]
+                                curva_tiempo = json.dumps(df_plot['minutes'].round(1).tolist())
+                                curva_co2 = json.dumps(df_plot['co2'].round(1).tolist())
+                                
+                                cur.execute('DELETE FROM respiracion_suelo WHERE muestra_id = %s', (muestra_id,))
+                                cur.execute('''INSERT INTO respiracion_suelo 
+                                               (muestra_id, peso_suelo, co2_initial, co2_final, horas, ugc_gsoil, curva_tiempo, curva_co2) 
+                                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', 
+                                            (muestra_id, peso_g, co2_initial, co2_final, hours, ugc_gsoil, curva_tiempo, curva_co2))
+                                conexion.commit()
+                                flash('Curva de respiración procesada y graficada con éxito.', 'success')
+                            else:
+                                flash('El CSV no tiene datos temporales válidos.', 'danger')
+                        else:
+                            flash('El archivo no tiene las columnas "timestamp" y "co2".', 'danger')
+                    except Exception as e:
+                        flash(f'Error al procesar el CSV: {str(e)}', 'danger')
+                else:
+                    flash('Por favor sube un archivo .csv válido.', 'warning')
+                return redirect(url_for('inicio') + '#respiracion')
 
             elif tipo_formulario == 'carbono_activo':
                 peso_g = float(request.form.get('peso_suelo_carbono', 2.5))
@@ -217,7 +296,7 @@ def inicio():
                 cur.execute('DELETE FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
                 cur.execute('''INSERT INTO fosforo_olsen (muestra_id, resultado_ppm, resultado_mg_kg, peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_05, abs_1, abs_15, abs_2) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, ppm, p_disponible, peso_g, vol_ext, vol_dil, abs_m, a0, a05, a1, a15, a2))
                 conexion.commit()
-                flash('Fósforo calculado correctamente.', 'success')
+                flash('Fósforo calculado.', 'success')
                 return redirect(url_for('inicio') + '#fosforo')
 
             elif tipo_formulario == 'ph_conductividad':
@@ -262,26 +341,29 @@ def inicio():
             elif tipo_formulario == 'macrofauna':
                 url_foto_manual = request.form.get('foto_macrofauna')
                 if not url_foto_manual:
-                    flash('Debes esperar a que la foto termine de subirse.', 'danger')
+                    flash('Debes esperar a que la foto suba.', 'danger')
                     return redirect(url_for('inicio') + '#macrofauna')
 
                 cur.execute('''UPDATE muestras SET foto_macrofauna = %s WHERE id = %s AND usuario_id = %s''', (url_foto_manual, muestra_id, usuario_id))
                 conexion.commit()
-                flash('Foto de macrofauna guardada en la galería.', 'success')
+                flash('Foto guardada.', 'success')
                 return redirect(url_for('inicio') + '#macrofauna')
 
         cur.execute('SELECT id, nombre_muestra FROM muestras WHERE usuario_id = %s ORDER BY id DESC', (usuario_id,))
         muestras_db = cur.fetchall()
         
+        # CONSULTA ACTUALIZADA PARA INCLUIR RESPIRACIÓN
         consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, m.foto_macrofauna, 
                                   c.resultado_carbono, p.ph, p.conductividad, mo.resultado_porcentaje AS mop, 
-                                  ea.porcentaje_mayor_2mm, ea.porcentaje_250_2mm, fo.resultado_mg_kg AS fosforo, fo.resultado_ppm AS fosforo_ppm 
+                                  ea.porcentaje_mayor_2mm, ea.porcentaje_250_2mm, fo.resultado_mg_kg AS fosforo, fo.resultado_ppm AS fosforo_ppm,
+                                  rs.ugc_gsoil AS respiracion, rs.co2_initial, rs.co2_final, rs.curva_tiempo, rs.curva_co2
                                   FROM muestras m 
                                   LEFT JOIN carbono_activo c ON m.id = c.muestra_id 
                                   LEFT JOIN ph_conductividad p ON m.id = p.muestra_id 
                                   LEFT JOIN materia_organica mo ON m.id = mo.muestra_id 
                                   LEFT JOIN estabilidad_agregados ea ON m.id = ea.muestra_id 
                                   LEFT JOIN fosforo_olsen fo ON m.id = fo.muestra_id
+                                  LEFT JOIN respiracion_suelo rs ON m.id = rs.muestra_id
                                   WHERE m.usuario_id = %s ORDER BY m.id DESC'''
         cur.execute(consulta_consolidado, (usuario_id,))
         consolidado_db = cur.fetchall()
@@ -338,6 +420,7 @@ def eliminar_muestra(muestra_id):
         cur.execute('DELETE FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
         cur.execute('DELETE FROM materia_organica WHERE muestra_id = %s', (muestra_id,))
         cur.execute('DELETE FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
+        cur.execute('DELETE FROM respiracion_suelo WHERE muestra_id = %s', (muestra_id,))
         cur.execute('DELETE FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         conexion.commit()
     finally: 
@@ -365,14 +448,17 @@ def descargar_csv():
     conexion = obtener_conexion()
     cur = conexion.cursor()
     consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion", m.foto_macrofauna AS "Foto_Macrofauna", 
-                  c.resultado_carbono AS "Carbono_Activo", fo.resultado_ppm AS "Fosforo_ppm", fo.resultado_mg_kg AS "Fosforo_mg_kg", p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc", 
-                  ea.porcentaje_mayor_2mm AS "Agregados_Mayor_2mm_Porc", ea.porcentaje_250_2mm AS "Agregados_250_2mm_Porc" 
+                  c.resultado_carbono AS "Carbono_Activo", fo.resultado_ppm AS "Fosforo_ppm", fo.resultado_mg_kg AS "Fosforo_mg_kg", 
+                  p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc", 
+                  ea.porcentaje_mayor_2mm AS "Agregados_Mayor_2mm_Porc", ea.porcentaje_250_2mm AS "Agregados_250_2mm_Porc",
+                  rs.ugc_gsoil AS "Respiracion_ugC_g"
                   FROM muestras m 
                   LEFT JOIN carbono_activo c ON m.id = c.muestra_id 
                   LEFT JOIN fosforo_olsen fo ON m.id = fo.muestra_id 
                   LEFT JOIN ph_conductividad p ON m.id = p.muestra_id 
                   LEFT JOIN materia_organica mo ON m.id = mo.muestra_id 
                   LEFT JOIN estabilidad_agregados ea ON m.id = ea.muestra_id 
+                  LEFT JOIN respiracion_suelo rs ON m.id = rs.muestra_id
                   WHERE m.usuario_id = %s'''
     cur.execute(consulta, (session['usuario_id'],))
     filas = cur.fetchall()
@@ -465,25 +551,21 @@ def manifest():
     response.headers["Content-Type"] = "application/json"
     return response
 
-# PRE-CACHE INTELIGENTE: Guarda la página principal apenas entras para garantizar acceso offline
 @app.route('/sw.js')
 def sw():
     sw_content = """
-    const CACHE_NAME = 'agro-cache-v4';
-    const urlsToCache = ['/']; // Obligamos a guardar la página principal
-
+    const CACHE_NAME = 'agro-cache-v5';
+    const urlsToCache = ['/'];
     self.addEventListener('install', (e) => { 
         e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)));
         self.skipWaiting(); 
     }); 
-    
     self.addEventListener('activate', (e) => {
         e.waitUntil(caches.keys().then(keyList => {
             return Promise.all(keyList.map(key => { if(key !== CACHE_NAME) return caches.delete(key); }));
         }));
         self.clients.claim();
     });
-    
     self.addEventListener('fetch', (e) => { 
         if (e.request.method !== 'GET') return;
         e.respondWith(
