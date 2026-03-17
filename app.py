@@ -9,7 +9,7 @@ import csv
 import json
 import urllib.request
 import urllib.error
-import pandas as pd # <--- NUEVA LIBRERÍA PARA LEER EL CSV DE Cam Respiración
+import pandas as pd
 
 import psycopg
 from psycopg.rows import dict_row
@@ -60,21 +60,17 @@ def crear_tablas():
                             resultado_ppm NUMERIC, resultado_mg_kg NUMERIC, peso_suelo NUMERIC, 
                             vol_extracto NUMERIC, vol_dilucion NUMERIC, abs_muestra NUMERIC, 
                             abs_0 NUMERIC, abs_05 NUMERIC, abs_1 NUMERIC, abs_15 NUMERIC, abs_2 NUMERIC)''')
-            
-            # NUEVA TABLA: RESPIRACIÓN
             cur.execute('''CREATE TABLE IF NOT EXISTS respiracion_suelo (
                             id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
                             peso_suelo NUMERIC, co2_initial NUMERIC, co2_final NUMERIC, horas NUMERIC, ugc_gsoil NUMERIC, 
                             curva_tiempo TEXT, curva_co2 TEXT)''')
             conexion.commit()
-
             try:
                 cur.execute("ALTER TABLE muestras ADD COLUMN foto_macrofauna TEXT;")
             except Exception:
                 conexion.rollback()
             else:
                 conexion.commit()
-            
             cur.close()
         except Exception as e:
             print("Error al crear tablas:", e)
@@ -113,7 +109,6 @@ def login():
         user = cur.fetchone()
         cur.close()
         conexion.close()
-        
         if user and check_password_hash(user['password'], password):
             session['usuario_id'] = user['id']
             session['username'] = user['username']
@@ -129,18 +124,14 @@ def logout():
 
 @app.route('/', methods=['GET', 'POST'])
 def inicio():
-    if 'usuario_id' not in session: 
-        return redirect(url_for('login'))
-        
+    if 'usuario_id' not in session: return redirect(url_for('login'))
     usuario_id = session['usuario_id']
     username = session['username']
     conexion = obtener_conexion()
     cur = conexion.cursor()
-    
     try:
         if request.method == 'POST':
             tipo_formulario = request.form.get('form_type')
-            
             muestra_id_raw = request.form.get('muestra_id')
             muestra_id = None
             if muestra_id_raw:
@@ -148,23 +139,17 @@ def inicio():
                     nombre_m = muestra_id_raw.replace('offline_', '')
                     cur.execute('SELECT id FROM muestras WHERE nombre_muestra = %s AND usuario_id = %s', (nombre_m, usuario_id))
                     res = cur.fetchone()
-                    if res:
-                        muestra_id = res['id']
+                    if res: muestra_id = res['id']
                 else:
                     muestra_id = muestra_id_raw
             
             if tipo_formulario == 'registro_muestra':
-                nombre = request.form['nombre']
-                cultivo = request.form['cultivo']
-                descripcion = request.form['descripcion']
-                info = request.form['info']
+                nombre, cultivo, descripcion, info = request.form['nombre'], request.form['cultivo'], request.form['descripcion'], request.form['info']
                 textura = request.form.get('textura')
-                lat_str = request.form.get('latitud')
-                lon_str = request.form.get('longitud')
+                lat_str, lon_str = request.form.get('latitud'), request.form.get('longitud')
                 latitud = float(lat_str) if lat_str else None
                 longitud = float(lon_str) if lon_str else None
                 muestra_id_editar = request.form.get('muestra_id_editar')
-
                 if muestra_id_editar:
                     cur.execute('''UPDATE muestras SET nombre_muestra=%s, cultivo=%s, textura=%s, latitud=%s, longitud=%s, descripcion=%s, informacion_relevante=%s WHERE id=%s AND usuario_id=%s''', (nombre, cultivo, textura, latitud, longitud, descripcion, info, muestra_id_editar, usuario_id))
                     flash('Muestra actualizada exitosamente.', 'info')
@@ -183,116 +168,72 @@ def inicio():
                  return redirect(url_for('inicio'))
 
             if tipo_formulario == 'textura_suelo':
-                textura = request.form['textura']
-                cur.execute('UPDATE muestras SET textura = %s WHERE id = %s AND usuario_id = %s', (textura, muestra_id, usuario_id))
+                cur.execute('UPDATE muestras SET textura = %s WHERE id = %s AND usuario_id = %s', (request.form['textura'], muestra_id, usuario_id))
                 conexion.commit()
                 flash('Textura guardada exitosamente.', 'success')
                 return redirect(url_for('inicio') + '#textura')
 
-            # ==========================================
-            # NUEVO MÓDULO: RESPIRACIÓN CON PANDAS
-            # ==========================================
             elif tipo_formulario == 'respiracion_suelo':
                 peso_g = float(request.form.get('peso_suelo', 30.0))
                 archivo = request.files.get('archivo_csv')
-
                 if archivo and archivo.filename.endswith('.csv'):
                     try:
-                        # Leer primera linea para detectar separador (; o ,)
                         header = archivo.readline().decode('utf-8')
                         archivo.seek(0)
                         sep = ';' if ';' in header else ','
-                        
                         df = pd.read_csv(archivo, sep=sep)
                         df.columns = df.columns.str.strip().str.lower()
-                        
                         if 'timestamp' in df.columns and 'co2' in df.columns:
-                            # Formatear tiempo (traducido de tu R)
                             df['timestamp'] = pd.to_datetime(df['timestamp'], format='%d-%b-%y %H:%M:%S', errors='coerce')
                             df = df.dropna(subset=['timestamp', 'co2']).sort_values('timestamp')
-                            
                             if not df.empty:
-                                # Calcular minutos transcurridos
                                 df['minutes'] = (df['timestamp'] - df['timestamp'].iloc[0]).dt.total_seconds() / 60.0
-                                
-                                # CONSTANTES DE TU R STUDIO
-                                jar_vol = 472 # 473 - 1
-                                soil_vol = 32
+                                jar_vol, soil_vol, temp, Rconst, conversionFactor2 = 472, 32, 298, 82.05, 12000
                                 headspace = jar_vol - soil_vol
-                                temp = 298
-                                Rconst = 82.05
-                                conversionFactor2 = 12000
-                                
-                                # CÁLCULO MATEMÁTICO
                                 co2_initial = float(df['co2'].iloc[:2].mean())
                                 t0 = df['minutes'].iloc[0]
-                                
-                                # Buscar el minuto más cercano a las 24 horas (1440 mins)
                                 idx_final = (df['minutes'] - (t0 + 1440)).abs().idxmin()
                                 t_final = float(df['minutes'].loc[idx_final])
                                 co2_final = float(df['co2'].loc[idx_final])
-                                
                                 hours = (t_final - t0) / 60.0
-                                if hours <= 0: hours = 1.0 # Evitar div/0
-                                
+                                if hours <= 0: hours = 1.0 
                                 co2_increase = (co2_final - co2_initial) * (24.0 / hours)
                                 ugc_gsoil = ((co2_increase * headspace) / (peso_g * 1000.0) / (temp * Rconst)) * conversionFactor2
-                                
-                                # Simplificar la curva a máximo 100 puntos para que el navegador no se trabe al graficar
                                 step = max(1, len(df) // 100)
                                 df_plot = df.iloc[::step]
                                 curva_tiempo = json.dumps(df_plot['minutes'].round(1).tolist())
                                 curva_co2 = json.dumps(df_plot['co2'].round(1).tolist())
-                                
                                 cur.execute('DELETE FROM respiracion_suelo WHERE muestra_id = %s', (muestra_id,))
-                                cur.execute('''INSERT INTO respiracion_suelo 
-                                               (muestra_id, peso_suelo, co2_initial, co2_final, horas, ugc_gsoil, curva_tiempo, curva_co2) 
-                                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', 
-                                            (muestra_id, peso_g, co2_initial, co2_final, hours, ugc_gsoil, curva_tiempo, curva_co2))
+                                cur.execute('''INSERT INTO respiracion_suelo (muestra_id, peso_suelo, co2_initial, co2_final, horas, ugc_gsoil, curva_tiempo, curva_co2) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, peso_g, co2_initial, co2_final, hours, ugc_gsoil, curva_tiempo, curva_co2))
                                 conexion.commit()
                                 flash('Curva de respiración procesada y graficada con éxito.', 'success')
-                            else:
-                                flash('El CSV no tiene datos temporales válidos.', 'danger')
-                        else:
-                            flash('El archivo no tiene las columnas "timestamp" y "co2".', 'danger')
-                    except Exception as e:
-                        flash(f'Error al procesar el CSV: {str(e)}', 'danger')
-                else:
-                    flash('Por favor sube un archivo .csv válido.', 'warning')
+                            else: flash('El CSV no tiene datos temporales válidos.', 'danger')
+                        else: flash('El archivo no tiene las columnas "timestamp" y "co2".', 'danger')
+                    except Exception as e: flash(f'Error al procesar el CSV: {str(e)}', 'danger')
+                else: flash('Por favor sube un archivo .csv válido.', 'warning')
                 return redirect(url_for('inicio') + '#respiracion')
 
             elif tipo_formulario == 'carbono_activo':
-                peso_g = float(request.form.get('peso_suelo_carbono', 2.5))
-                peso_kg = peso_g / 1000
-                a1, a2, a3, a4 = float(request.form['abs_1']), float(request.form['abs_2']), float(request.form['abs_3']), float(request.form['abs_4'])
-                abs_m = float(request.form['abs_muestra'])
-                
+                peso_kg = float(request.form.get('peso_suelo_carbono', 2.5)) / 1000
+                a1, a2, a3, a4, abs_m = float(request.form['abs_1']), float(request.form['abs_2']), float(request.form['abs_3']), float(request.form['abs_4']), float(request.form['abs_muestra'])
                 conc = np.array([0.005, 0.01, 0.015, 0.02])
                 absor = np.array([a1, a2, a3, a4])
                 resultado = stats.linregress(absor, conc)
                 poxc = (0.02 - (resultado.intercept + (resultado.slope * abs_m))) * 9000 * (0.02 / peso_kg)
-                
                 cur.execute('DELETE FROM carbono_activo WHERE muestra_id = %s', (muestra_id,))
-                cur.execute('''INSERT INTO carbono_activo (muestra_id, resultado_carbono, peso_suelo, abs_muestra, abs_1, abs_2, abs_3, abs_4) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, poxc, peso_g, abs_m, a1, a2, a3, a4))
+                cur.execute('''INSERT INTO carbono_activo (muestra_id, resultado_carbono, peso_suelo, abs_muestra, abs_1, abs_2, abs_3, abs_4) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, poxc, peso_kg*1000, abs_m, a1, a2, a3, a4))
                 conexion.commit()
                 flash('POXC Calculado.', 'success')
                 return redirect(url_for('inicio') + '#carbono')
 
             elif tipo_formulario == 'fosforo_olsen':
-                peso_g = float(request.form.get('peso_suelo', 2.5))
-                vol_ext = float(request.form.get('vol_extracto', 7.0))
-                vol_dil = float(request.form.get('vol_dilucion', 20.0))
-                abs_m = float(request.form['abs_muestra'])
-                a0, a05, a1, a15, a2 = float(request.form['abs_0']), float(request.form['abs_05']), float(request.form['abs_1']), float(request.form['abs_15']), float(request.form['abs_2'])
-                
+                peso_g, vol_ext, vol_dil = float(request.form.get('peso_suelo', 2.5)), float(request.form.get('vol_extracto', 7.0)), float(request.form.get('vol_dilucion', 20.0))
+                abs_m, a0, a05, a1, a15, a2 = float(request.form['abs_muestra']), float(request.form['abs_0']), float(request.form['abs_05']), float(request.form['abs_1']), float(request.form['abs_15']), float(request.form['abs_2'])
                 conc = np.array([0.0, 0.5, 1.0, 1.5, 2.0])
                 absor = np.array([a0, a05, a1, a15, a2])
                 resultado = stats.linregress(conc, absor)
-                pendiente = resultado.slope
-                
-                ppm = abs_m / pendiente if pendiente != 0 else 0
+                ppm = abs_m / resultado.slope if resultado.slope != 0 else 0
                 p_disponible = (((ppm * 0.0559) - 0.052) * (vol_dil / vol_ext) * 0.025) / (peso_g / 1000)
-                
                 cur.execute('DELETE FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
                 cur.execute('''INSERT INTO fosforo_olsen (muestra_id, resultado_ppm, resultado_mg_kg, peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_05, abs_1, abs_15, abs_2) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, ppm, p_disponible, peso_g, vol_ext, vol_dil, abs_m, a0, a05, a1, a15, a2))
                 conexion.commit()
@@ -307,12 +248,9 @@ def inicio():
                 return redirect(url_for('inicio') + '#ph')
 
             elif tipo_formulario == 'materia_organica':
-                pf_mop = float(request.form['peso_filtro_mop'])
-                pm_filtro = float(request.form['peso_muestra_con_filtro'])
-                ps = float(request.form['peso_suelo'])
+                pf_mop, pm_filtro, ps = float(request.form['peso_filtro_mop']), float(request.form['peso_muestra_con_filtro']), float(request.form['peso_suelo'])
                 pp_neto = pm_filtro - pf_mop
                 mop_porcentaje = pp_neto / (ps * 10)
-                
                 cur.execute('DELETE FROM materia_organica WHERE muestra_id = %s', (muestra_id,))
                 cur.execute('''INSERT INTO materia_organica (muestra_id, resultado_porcentaje, peso_particulas, peso_suelo, peso_filtro, peso_muestra_con_filtro) VALUES (%s, %s, %s, %s, %s, %s)''', (muestra_id, mop_porcentaje, pp_neto, ps, pf_mop, pm_filtro))
                 conexion.commit()
@@ -320,18 +258,11 @@ def inicio():
                 return redirect(url_for('inicio') + '#mop')
 
             elif tipo_formulario == 'estabilidad_agregados':
-                pi = float(request.form['peso_inicial'])
-                pf = float(request.form['peso_filtro'])
-                tara_piedras = float(request.form['peso_recipiente_piedras'])
-                piedras_bruto = float(request.form['peso_piedras_con_recipiente'])
-                pm = float(request.form['peso_fraccion_mayor'])
-                p250 = float(request.form['peso_fraccion_250'])
-                
+                pi, pf, tara_piedras, piedras_bruto, pm, p250 = float(request.form['peso_inicial']), float(request.form['peso_filtro']), float(request.form['peso_recipiente_piedras']), float(request.form['peso_piedras_con_recipiente']), float(request.form['peso_fraccion_mayor']), float(request.form['peso_fraccion_250'])
                 ppd_neto = piedras_bruto - tara_piedras
                 denominador = pi - ppd_neto
                 porc_mayor = ((pm - pf) / denominador) * 100
                 porc_250 = ((p250 - pf) / denominador) * 100
-                
                 cur.execute('DELETE FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
                 cur.execute('''INSERT INTO estabilidad_agregados (muestra_id, porcentaje_mayor_2mm, porcentaje_250_2mm, peso_inicial, peso_filtro, peso_piedras, peso_fraccion_mayor, peso_fraccion_250, peso_recipiente_piedras, peso_piedras_con_recipiente) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, porc_mayor, porc_250, pi, pf, ppd_neto, pm, p250, tara_piedras, piedras_bruto))
                 conexion.commit()
@@ -343,7 +274,6 @@ def inicio():
                 if not url_foto_manual:
                     flash('Debes esperar a que la foto suba.', 'danger')
                     return redirect(url_for('inicio') + '#macrofauna')
-
                 cur.execute('''UPDATE muestras SET foto_macrofauna = %s WHERE id = %s AND usuario_id = %s''', (url_foto_manual, muestra_id, usuario_id))
                 conexion.commit()
                 flash('Foto guardada.', 'success')
@@ -351,8 +281,6 @@ def inicio():
 
         cur.execute('SELECT id, nombre_muestra FROM muestras WHERE usuario_id = %s ORDER BY id DESC', (usuario_id,))
         muestras_db = cur.fetchall()
-        
-        # CONSULTA ACTUALIZADA PARA INCLUIR RESPIRACIÓN
         consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, m.foto_macrofauna, 
                                   c.resultado_carbono, p.ph, p.conductividad, mo.resultado_porcentaje AS mop, 
                                   ea.porcentaje_mayor_2mm, ea.porcentaje_250_2mm, fo.resultado_mg_kg AS fosforo, fo.resultado_ppm AS fosforo_ppm,
@@ -367,7 +295,6 @@ def inicio():
                                   WHERE m.usuario_id = %s ORDER BY m.id DESC'''
         cur.execute(consulta_consolidado, (usuario_id,))
         consolidado_db = cur.fetchall()
-        
         return render_template('index.html', muestras=muestras_db, consolidado=consolidado_db, username=username)
     finally:
         cur.close()
@@ -383,27 +310,21 @@ def datos_crudos(muestra_id):
         cur.execute('SELECT nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         m_row = cur.fetchone()
         if m_row: datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante'], 'foto_macrofauna': m_row['foto_macrofauna']})
-            
         cur.execute('SELECT ph, conductividad FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
         ph_row = cur.fetchone()
         if ph_row: datos.update({'ph': ph_row['ph'], 'conductividad': ph_row['conductividad']})
-        
         cur.execute('SELECT peso_suelo, abs_muestra, abs_1, abs_2, abs_3, abs_4 FROM carbono_activo WHERE muestra_id = %s', (muestra_id,))
         c_row = cur.fetchone()
         if c_row: datos.update({'c_peso': c_row['peso_suelo'], 'c_abs': c_row['abs_muestra'], 'c_a1': c_row['abs_1'], 'c_a2': c_row['abs_2'], 'c_a3': c_row['abs_3'], 'c_a4': c_row['abs_4']})
-            
         cur.execute('SELECT peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_05, abs_1, abs_15, abs_2 FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
         p_row = cur.fetchone()
         if p_row: datos.update({'p_peso': p_row['peso_suelo'], 'p_volext': p_row['vol_extracto'], 'p_voldil': p_row['vol_dilucion'], 'p_abs': p_row['abs_muestra'], 'p_a0': p_row['abs_0'], 'p_a05': p_row['abs_05'], 'p_a1': p_row['abs_1'], 'p_a15': p_row['abs_15'], 'p_a2': p_row['abs_2']})
-        
         cur.execute('SELECT peso_suelo, peso_filtro, peso_muestra_con_filtro FROM materia_organica WHERE muestra_id = %s', (muestra_id,))
         mop_row = cur.fetchone()
         if mop_row: datos.update({'mop_suelo': mop_row['peso_suelo'], 'mop_pf': mop_row.get('peso_filtro'), 'mop_pmcf': mop_row.get('peso_muestra_con_filtro')})
-        
         cur.execute('SELECT peso_inicial, peso_filtro, peso_fraccion_mayor, peso_fraccion_250, peso_recipiente_piedras, peso_piedras_con_recipiente FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
         ea_row = cur.fetchone()
         if ea_row: datos.update({'ea_pi': ea_row['peso_inicial'], 'ea_pf': ea_row['peso_filtro'], 'ea_pm': ea_row['peso_fraccion_mayor'], 'ea_p250': ea_row['peso_fraccion_250'], 'ea_rec_p': ea_row.get('peso_recipiente_piedras'), 'ea_pcr': ea_row.get('peso_piedras_con_recipiente')})
-        
         return jsonify(datos)
     finally: 
         cur.close()
@@ -465,7 +386,6 @@ def descargar_csv():
     nombres_columnas = [col.name for col in cur.description]
     cur.close()
     conexion.close()
-    
     output = io.StringIO()
     output.write('\ufeff')
     writer = csv.writer(output, delimiter=';')
@@ -490,7 +410,7 @@ def sincronizar_api():
                     auth_data = json.loads(auth_res.read().decode('utf-8'))
                     token = auth_data.get('token')
             except urllib.error.HTTPError:
-                flash("Credenciales de SurveyStack incorrectas.", "danger")
+                flash("Credenciales incorrectas.", "danger")
                 return redirect(url_for('inicio') + '#muestras')
 
         url_api = f"https://app.surveystack.io/api/submissions?survey={survey_id}"
@@ -507,7 +427,6 @@ def sincronizar_api():
         cur = conexion.cursor()
         usuario_actual = session['usuario_id']
         contador = 0
-        
         for fila in datos_json:
             id_unico = fila.get('_id')
             if not id_unico: continue 
@@ -535,12 +454,10 @@ def sincronizar_api():
             
             cur.execute('''INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (usuario_id, nombre_muestra) DO UPDATE SET cultivo = COALESCE(EXCLUDED.cultivo, muestras.cultivo), textura = COALESCE(EXCLUDED.textura, muestras.textura), latitud = COALESCE(EXCLUDED.latitud, muestras.latitud), longitud = COALESCE(EXCLUDED.longitud, muestras.longitud), descripcion = COALESCE(EXCLUDED.descripcion, muestras.descripcion), informacion_relevante = COALESCE(EXCLUDED.informacion_relevante, muestras.informacion_relevante), foto_macrofauna = COALESCE(EXCLUDED.foto_macrofauna, muestras.foto_macrofauna)''', (usuario_actual, nombre_final, cultivo, textura, lat, lon, descripcion, info, url_foto))
             contador += 1
-            
         conexion.commit()
         cur.close()
         conexion.close()
-        flash(f'¡Sincronización exitosa! {contador} muestras importadas.', 'success')
-        
+        flash(f'Sincronización exitosa. {contador} muestras importadas.', 'success')
     except Exception as e: flash(f'Error al procesar: {str(e)}', 'danger')
     return redirect(url_for('inicio') + '#muestras')
 
@@ -554,7 +471,7 @@ def manifest():
 @app.route('/sw.js')
 def sw():
     sw_content = """
-    const CACHE_NAME = 'agro-cache-v5';
+    const CACHE_NAME = 'agro-cache-v6';
     const urlsToCache = ['/'];
     self.addEventListener('install', (e) => { 
         e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)));
