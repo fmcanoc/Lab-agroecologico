@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab Agroecológico - Trazabilidad Abierta</title>
+    <title>Laboratorio Agroecológico</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -95,8 +95,9 @@
     <div class="nav-tabs-container">
         <div class="container">
             <ul class="nav nav-tabs" id="misPestanas" role="tablist">
-                <li class="nav-item"><button class="nav-link active" id="muestras-tab" data-bs-toggle="tab" data-bs-target="#muestras" type="button">Lotes</button></li>
+                <li class="nav-item"><button class="nav-link active" id="muestras-tab" data-bs-toggle="tab" data-bs-target="#muestras" type="button">Muestras</button></li>
                 <li class="nav-item"><button class="nav-link" id="textura-tab" data-bs-toggle="tab" data-bs-target="#textura" type="button">Textura</button></li>
+                <li class="nav-item"><button class="nav-link" id="respiracion-tab" data-bs-toggle="tab" data-bs-target="#respiracion" type="button">Respiración</button></li>
                 <li class="nav-item"><button class="nav-link" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button">POXC</button></li>
                 <li class="nav-item"><button class="nav-link" id="fosforo-tab" data-bs-toggle="tab" data-bs-target="#fosforo" type="button">Fósforo</button></li>
                 <li class="nav-item"><button class="nav-link" id="ph-tab" data-bs-toggle="tab" data-bs-target="#ph" type="button">pH / CE</button></li>
@@ -136,6 +137,44 @@
             <form action="/" method="POST" class="form-memoria" data-tab="textura">
                 <input type="hidden" name="form_type" value="textura_suelo">
                 <div class="section-card"><h5 class="text-dark fw-bold mb-4">Ingresar Textura</h5><div class="row g-3 align-items-end"><div class="col-md-5"><label class="form-label fw-bold small text-secondary">Muestra Analizada</label><select class="form-select selector-memoria bg-white shadow-sm" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="col-md-5"><label class="form-label fw-bold small text-secondary">Textura Resultante</label><input type="text" class="form-control" name="textura" placeholder="Ej: Franco arcillosa" required></div><div class="col-md-2"><button type="submit" class="btn btn-agro w-100 py-2"><i class="bi bi-save me-2"></i> Guardar</button></div></div></div>
+            </form>
+        </div>
+
+        <div class="tab-pane fade" id="respiracion">
+            <form action="/" method="POST" enctype="multipart/form-data" class="form-memoria" data-tab="respiracion">
+                <input type="hidden" name="form_type" value="respiracion_suelo">
+                <div class="section-card">
+                    <h5 class="text-dark fw-bold mb-4"><i class="bi bi-wind text-muted me-2"></i> Respiración Basal del Suelo</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Seleccionar Muestra</label>
+                            <select class="form-select selector-memoria bg-white shadow-sm" name="muestra_id" required>
+                                <option value="">-- Elija una muestra --</option>
+                                {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Peso de Suelo Analizado (g)</label>
+                            <input type="number" step="any" class="form-control bg-white" name="peso_suelo" value="30" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-secondary d-block">Archivo de Datos de la Cámara (.csv)</label>
+                        
+                        <div id="offline-csv-warning" class="bg-light border border-warning border-dashed rounded-4 p-4 text-center" style="display: none !important;">
+                            <i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i>
+                            <h6 class="text-dark fw-bold">Sin Conexión</h6>
+                            <p class="small text-muted mb-0">Subir archivos pesados requiere conexión a internet para ser procesados por la nube.</p>
+                        </div>
+
+                        <div id="csv-controls">
+                            <input class="form-control form-control-lg bg-light" type="file" name="archivo_csv" accept=".csv" required>
+                            <small class="text-muted mt-2 d-block">El archivo debe contener las columnas de la cámara SCD41: <i>timestamp, co2, temperature, humidity</i></small>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-agro px-5 py-2 rounded-pill" id="btn-submit-csv"><i class="bi bi-calculator me-2"></i> Procesar y Graficar Curva</button>
+                </div>
             </form>
         </div>
 
@@ -227,11 +266,11 @@
                         <thead>
                             <tr>
                                 <th class="text-start px-4">Lote</th>
-                                <th>Textura</th>
                                 <th>pH</th>
-                                <th>Cond. CE</th>
+                                <th>Cond.</th>
                                 <th>POXC</th>
                                 <th>Fósforo</th>
+                                <th>Resp. (μgC/g)</th>
                                 <th>MOP %</th>
                                 <th>Agreg. %</th>
                                 <th>Opciones</th>
@@ -241,11 +280,11 @@
                             {% for fila in consolidado %}
                             <tr>
                                 <td class="fw-bold text-start px-4 text-dark">{{ fila.nombre_muestra }}</td>
-                                <td><span class="text-muted small">{{ fila.textura or '-' }}</span></td>
                                 <td><span class="text-muted fst-italic">{{ fila.ph or '-' }}</span></td>
                                 <td><span class="text-muted fst-italic">{{ fila.conductividad or '-' }}</span></td>
                                 <td>{% if fila.resultado_carbono %}<strong>{{ "%.2f"|format(fila.resultado_carbono) }}</strong>{% else %}-{% endif %}</td>
                                 <td>{% if fila.fosforo %}<span class="badge border border-primary text-primary px-3 py-1 rounded-pill">{{ "%.2f"|format(fila.fosforo) }}</span>{% else %}-{% endif %}</td>
+                                <td>{% if fila.respiracion %}<span class="badge border border-success text-success px-3 py-1 rounded-pill">{{ "%.2f"|format(fila.respiracion) }}</span>{% else %}-{% endif %}</td>
                                 <td>{% if fila.mop %}<span class="badge border border-warning text-dark px-3 py-1 rounded-pill">{{ "%.2f"|format(fila.mop) }}</span>{% else %}-{% endif %}</td>
                                 <td>{% if fila.porcentaje_mayor_2mm %}<span class="badge border border-info text-dark px-3 py-1 rounded-pill">{{ "%.1f"|format(fila.porcentaje_mayor_2mm) }}</span>{% else %}-{% endif %}</td>
                                 <td>
@@ -253,7 +292,7 @@
                                 </td>
                             </tr>
                             
-                            <div class="modal fade" id="modal-{{ fila.id }}" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-light border-0 rounded-top-4"><h5 class="modal-title fw-bold text-dark">{{ fila.nombre_muestra }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-start p-4"><div class="row mb-3"><div class="col-6"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Cultivo</small><span class="text-dark">{{ fila.cultivo or 'N/A' }}</span></div><div class="col-6"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Textura</small><span class="text-dark">{{ fila.textura or 'N/A' }}</span></div></div><div class="mb-3"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Descripción</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.descripcion or 'Sin descripción' }}</p></div><div class="mb-3"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Observaciones</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.informacion_relevante or '-' }}</p></div><div><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Coordenadas</small>{% if fila.latitud %}<span class="text-danger small fw-bold"><i class="bi bi-geo-alt-fill me-1"></i> {{ fila.latitud }}, {{ fila.longitud }}</span>{% else %}<span class="text-muted small fst-italic">No registradas</span>{% endif %}</div>{% if fila.fosforo or fila.fosforo_ppm %}<div class="mb-3 mt-3 pt-3 border-top"><small class="text-muted d-block text-uppercase fw-bold mb-2" style="font-size: 0.7rem;"><i class="bi bi-moisture me-1"></i> Fósforo (Olsen)</small><div class="d-flex flex-wrap gap-2"><span class="badge border border-primary text-primary">{{ "%.2f"|format(fila.fosforo_ppm) }} ppm</span><span class="badge bg-primary text-white">{{ "%.2f"|format(fila.fosforo) }} mg/kg</span></div></div>{% endif %}</div></div></div></div>
+                            <div class="modal fade" id="modal-{{ fila.id }}" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-light border-0 rounded-top-4"><h5 class="modal-title fw-bold text-dark">{{ fila.nombre_muestra }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-start p-4"><div class="row mb-3"><div class="col-6"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Cultivo</small><span class="text-dark">{{ fila.cultivo or 'N/A' }}</span></div><div class="col-6"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Textura</small><span class="text-dark">{{ fila.textura or 'N/A' }}</span></div></div><div class="mb-3"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Descripción</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.descripcion or 'Sin descripción' }}</p></div><div class="mb-3"><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Observaciones</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.informacion_relevante or '-' }}</p></div><div><small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Coordenadas</small>{% if fila.latitud %}<span class="text-danger small fw-bold"><i class="bi bi-geo-alt-fill me-1"></i> {{ fila.latitud }}, {{ fila.longitud }}</span>{% else %}<span class="text-muted small fst-italic">No registradas</span>{% endif %}</div>{% if fila.fosforo or fila.fosforo_ppm %}<div class="mb-3 mt-3 pt-3 border-top"><small class="text-muted d-block text-uppercase fw-bold mb-2" style="font-size: 0.7rem;"><i class="bi bi-moisture me-1"></i> Fósforo (Olsen)</small><div class="d-flex flex-wrap gap-2"><span class="badge border border-primary text-primary">{{ "%.2f"|format(fila.fosforo_ppm) }} ppm</span><span class="badge bg-primary text-white">{{ "%.2f"|format(fila.fosforo) }} mg/kg</span></div></div>{% endif %}{% if fila.respiracion %}<div class="mb-3 mt-3 pt-3 border-top"><small class="text-muted d-block text-uppercase fw-bold mb-2" style="font-size: 0.7rem;"><i class="bi bi-wind me-1"></i> Respiración Basal (24h)</small><div class="d-flex flex-wrap gap-2 mb-3"><span class="badge border border-success text-success">Inicial: {{ "%.0f"|format(fila.co2_initial) }} ppm</span><span class="badge border border-danger text-danger">Final: {{ "%.0f"|format(fila.co2_final) }} ppm</span><span class="badge bg-success text-white">Emisión: {{ "%.2f"|format(fila.respiracion) }} μgC/g</span></div><div id="chart-resp-{{ fila.id }}" style="height: 200px; width: 100%;"></div></div>{% endif %}</div></div></div></div>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -391,12 +430,16 @@
                     offlineBanner.style.display = 'block';
                     document.querySelectorAll('#offline-map-warning').forEach(el => el.style.setProperty('display', 'flex', 'important'));
                     document.querySelectorAll('#offline-camera-warning').forEach(el => el.style.setProperty('display', 'block', 'important'));
+                    document.querySelectorAll('#offline-csv-warning').forEach(el => el.style.setProperty('display', 'block', 'important'));
                     document.querySelectorAll('#camera-controls').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('#csv-controls, #btn-submit-csv').forEach(el => el.style.display = 'none');
                 } else {
                     offlineBanner.style.display = 'none';
                     document.querySelectorAll('#offline-map-warning').forEach(el => el.style.setProperty('display', 'none', 'important'));
                     document.querySelectorAll('#offline-camera-warning').forEach(el => el.style.setProperty('display', 'none', 'important'));
+                    document.querySelectorAll('#offline-csv-warning').forEach(el => el.style.setProperty('display', 'none', 'important'));
                     document.querySelectorAll('#camera-controls').forEach(el => el.style.display = 'block');
+                    document.querySelectorAll('#csv-controls, #btn-submit-csv').forEach(el => el.style.display = 'block');
                 }
                 updateMochilaUI();
             }
@@ -413,7 +456,8 @@
 
             document.querySelectorAll('.form-memoria').forEach(form => {
                 form.addEventListener('submit', function(e) {
-                    if (!navigator.onLine) {
+                    // Evitar que el interceptor bloquee formularios que envian archivos
+                    if (!navigator.onLine && form.dataset.tab !== 'respiracion') {
                         e.preventDefault(); 
                         
                         const formData = new FormData(form);
@@ -475,6 +519,26 @@
             updateNetworkStatus();
 
             {% if consolidado %}
+                
+                // GRAFICA LA CURVA DE RESPIRACIÓN DENTRO DEL MODAL
+                {% for f in consolidado %}
+                    {% if f.curva_tiempo %}
+                    document.getElementById('modal-{{ f.id }}').addEventListener('shown.bs.modal', function () {
+                        let chartResp = echarts.getInstanceByDom(document.getElementById('chart-resp-{{ f.id }}'));
+                        if (!chartResp) {
+                            chartResp = echarts.init(document.getElementById('chart-resp-{{ f.id }}'));
+                            chartResp.setOption({
+                                tooltip: { trigger: 'axis', formatter: 'Tiempo: {b} min<br/>CO2: {c} ppm' },
+                                xAxis: { type: 'category', data: {{ f.curva_tiempo|safe }}, boundaryGap: false, splitLine: { show: false } },
+                                yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { type: 'dashed', color: '#eee' } } },
+                                series: [{ data: {{ f.curva_co2|safe }}, type: 'line', smooth: true, showSymbol: false, areaStyle: { color: 'rgba(45, 106, 79, 0.1)' }, lineStyle: { color: '#2d6a4f', width: 2 }, itemStyle: { color: '#2d6a4f' } }]
+                            });
+                        }
+                        chartResp.resize();
+                    });
+                    {% endif %}
+                {% endfor %}
+
                 let map = L.map('miMapa').setView([-32.89, -68.82], 5);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
                 let markers = [];
