@@ -2,50 +2,186 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Ingresar - Lab agroecológico</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingresar - Lab Agroecológico</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        /* ========================================= */
+        /* PALETA UX/UI HOMOLOGADA                   */
+        /* ========================================= */
+        :root { 
+            --r-bg: #f7f9fa;            
+            --r-surface: #ffffff;       
+            --r-text-main: #333333;     
+            --r-text-muted: #6c757d;    
+            --r-dark-bg: #212529;       
+            --r-highlight: #d4ff00;     
+            --r-accent: #2d6a4f;        
+            --r-divider: #e9ecef;       
+            --r-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06); 
+        }
+
+        body { 
+            background-color: var(--r-bg); 
+            font-family: 'Montserrat', sans-serif; 
+            color: var(--r-text-main); 
+            font-size: 0.95rem; 
+        }
+
+        /* HEADER INSTITUCIONAL */
+        .header-bar { 
+            background-color: var(--r-dark-bg); 
+            color: #ffffff; 
+            padding: 1rem 1.5rem; 
+            position: fixed; 
+            top: 0; 
+            width: 100%;
+            z-index: 1050; 
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .lab-title { color: #fcfbf5; font-weight: 800; letter-spacing: 0.03em; font-size: 1.3rem; margin: 0;}
+
+        /* TARJETA DE LOGIN */
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px 20px 20px; /* Espacio para el header fijo */
+        }
+
+        .section-card { 
+            background: var(--r-surface); 
+            border: 1px solid var(--r-divider); 
+            border-radius: 16px; 
+            padding: 2.5rem; 
+            width: 100%;
+            max-width: 420px;
+            box-shadow: var(--r-shadow-card); 
+        }
+
+        /* TIPOGRAFÍA */
+        h4 { font-weight: 800; color: #1a1a1a; letter-spacing: -0.02em; }
+        .form-label { font-size: 0.75rem; font-weight: 700; color: #495057; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+
+        /* INPUTS */
+        .form-control { 
+            border-radius: 8px; 
+            background-color: #fcfcfc; 
+            border: 1px solid #ced4da; 
+            padding: 0.8rem 1rem; 
+            color: var(--r-text-main); 
+            font-size: 0.95rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-control:focus { 
+            border-color: var(--r-accent); 
+            box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.1); 
+            background-color: #ffffff;
+        }
+
+        /* BOTONES */
+        .btn-agro-solid {
+            background-color: var(--r-accent);
+            color: #ffffff;
+            border: none;
+            font-weight: 700;
+            border-radius: 8px;
+            padding: 0.8rem;
+            transition: all 0.2s ease;
+            letter-spacing: 0.02em;
+        }
+        .btn-agro-solid:hover {
+            background-color: #1b4332;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2);
+        }
+
+        .btn-outline-dark {
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 0.8rem;
+        }
+
+        hr { border-color: #dee2e6; margin: 2rem 0; }
+
+        /* ALERTAS SUAVES */
+        .alert { border-radius: 8px; font-size: 0.85rem; font-weight: 600; border: none; }
+        .alert-danger { background-color: #fff5f5; color: #e03131; }
+        .alert-success { background-color: #ebfbee; color: #2f9e44; }
+    </style>
 </head>
-<body class="bg-light d-flex align-items-center justify-content-center" style="height: 100vh;">
+<body>
 
-    <div class="card shadow p-4" style="width: 400px;">
-        <h3 class="text-center mb-4">Laboratorio agroecológico abierto</h3>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        <form action="/login" method="POST">
-            <div class="mb-3">
-                <label class="form-label">Usuario</label>
-                <input type="text" class="form-control" name="username" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Contraseña</label>
-                <input type="password" class="form-control" name="password" required>
-            </div>
-            <button type="submit" class="btn btn-primary w-100 mb-2">Iniciar Sesión</button>
-        </form>
-
-        <hr>
-        <p class="text-center small mb-0">¿No tienes cuenta?</p>
-        
-        <form action="/registro" method="POST" class="mt-2">
-            <div class="input-group input-group-sm">
-                <input type="text" class="form-control" name="new_username" placeholder="Nuevo usuario" required>
-                <input type="password" class="form-control" name="new_password" placeholder="Contraseña" required>
-                <button type="submit" class="btn btn-success">Registrar</button>
-            </div>
-        </form>
+    <div class="header-bar">
+        <h3 class="lab-title"><i class="bi bi-tree-fill me-2" style="color:var(--r-highlight);"></i> LAB AGROECOLÓGICO</h3>
     </div>
 
-<img src="{{ url_for('static', filename='logo_regosh.png') }}" 
-         alt="Logo REGOSH" 
-         style="position: fixed; bottom: 15px; right: 15px; width: 100px; height: auto; z-index: 1000; opacity: 0.9;">
+    <div class="login-wrapper">
+        <div class="section-card">
+            <div class="text-center mb-4">
+                <i class="bi bi-person-circle text-muted mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                <h4>Acceso a Plataforma</h4>
+                <p class="text-muted small">Trazabilidad de suelos abierta</p>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }} text-center p-3 mb-4"><i class="bi bi-info-circle-fill me-2"></i>{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
 
+            <form action="/login" method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Usuario</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0" name="username" placeholder="Ingresa tu usuario" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Contraseña</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
+                        <input type="password" class="form-control border-start-0 ps-0" name="password" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-agro-solid w-100 mb-2">Iniciar Sesión <i class="bi bi-arrow-right ms-2"></i></button>
+            </form>
+
+            <hr>
+
+            <div class="text-center mb-3">
+                <p class="form-label text-muted">¿No tienes cuenta? Crea una nueva</p>
+            </div>
+            
+            <form action="/registro" method="POST">
+                <div class="row g-2">
+                    <div class="col-12">
+                        <input type="text" class="form-control" name="new_username" placeholder="Nombre de nuevo usuario" required>
+                    </div>
+                    <div class="col-12">
+                        <input type="password" class="form-control" name="new_password" placeholder="Crear contraseña" required>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <button type="submit" class="btn btn-outline-dark w-100"><i class="bi bi-person-plus me-2"></i> Registrarme</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <img src="{{ url_for('static', filename='logo_regosh.png') }}" 
+         alt="Logo REGOSH" 
+         style="position: fixed; bottom: 20px; right: 20px; width: 100px; height: auto; z-index: 1000; opacity: 0.8; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
 
 </body>
 </html>
