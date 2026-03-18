@@ -65,12 +65,22 @@ def crear_tablas():
                             peso_suelo NUMERIC, co2_initial NUMERIC, co2_final NUMERIC, horas NUMERIC, ugc_gsoil NUMERIC, 
                             curva_tiempo TEXT, curva_co2 TEXT)''')
             conexion.commit()
+            
+            # Agregado de columnas para fotos si no existen
             try:
                 cur.execute("ALTER TABLE muestras ADD COLUMN foto_macrofauna TEXT;")
             except Exception:
                 conexion.rollback()
-            else:
-                conexion.commit()
+            try:
+                cur.execute("ALTER TABLE muestras ADD COLUMN foto_cromatografia TEXT;")
+            except Exception:
+                conexion.rollback()
+            try:
+                cur.execute("ALTER TABLE muestras ADD COLUMN obs_cromatografia TEXT;")
+            except Exception:
+                conexion.rollback()
+
+            conexion.commit()
             cur.close()
         except Exception as e:
             print("Error al crear tablas:", e)
@@ -276,12 +286,24 @@ def inicio():
                     return redirect(url_for('inicio') + '#macrofauna')
                 cur.execute('''UPDATE muestras SET foto_macrofauna = %s WHERE id = %s AND usuario_id = %s''', (url_foto_manual, muestra_id, usuario_id))
                 conexion.commit()
-                flash('Foto guardada.', 'success')
+                flash('Foto de macrofauna guardada.', 'success')
                 return redirect(url_for('inicio') + '#macrofauna')
+
+            elif tipo_formulario == 'cromatografia':
+                url_foto_cromo = request.form.get('foto_cromatografia')
+                obs_cromo = request.form.get('obs_cromatografia')
+                if not url_foto_cromo and not obs_cromo:
+                    flash('Debes adjuntar al menos una foto u observación.', 'danger')
+                    return redirect(url_for('inicio') + '#cromatografia')
+                cur.execute('''UPDATE muestras SET foto_cromatografia = %s, obs_cromatografia = %s WHERE id = %s AND usuario_id = %s''', (url_foto_cromo, obs_cromo, muestra_id, usuario_id))
+                conexion.commit()
+                flash('Registro de Cromatografía guardado.', 'success')
+                return redirect(url_for('inicio') + '#cromatografia')
 
         cur.execute('SELECT id, nombre_muestra FROM muestras WHERE usuario_id = %s ORDER BY id DESC', (usuario_id,))
         muestras_db = cur.fetchall()
         consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, m.foto_macrofauna, 
+                                  m.foto_cromatografia, m.obs_cromatografia,
                                   c.resultado_carbono, p.ph, p.conductividad, mo.resultado_porcentaje AS mop, 
                                   ea.porcentaje_mayor_2mm, ea.porcentaje_250_2mm, fo.resultado_mg_kg AS fosforo, fo.resultado_ppm AS fosforo_ppm,
                                   rs.ugc_gsoil AS respiracion, rs.co2_initial, rs.co2_final, rs.curva_tiempo, rs.curva_co2
@@ -307,9 +329,9 @@ def datos_crudos(muestra_id):
     cur = conexion.cursor()
     try:
         datos = {}
-        cur.execute('SELECT nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
+        cur.execute('SELECT nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna, foto_cromatografia, obs_cromatografia FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         m_row = cur.fetchone()
-        if m_row: datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante'], 'foto_macrofauna': m_row['foto_macrofauna']})
+        if m_row: datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante'], 'foto_macrofauna': m_row['foto_macrofauna'], 'foto_cromatografia': m_row['foto_cromatografia'], 'obs_cromatografia': m_row['obs_cromatografia']})
         cur.execute('SELECT ph, conductividad FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
         ph_row = cur.fetchone()
         if ph_row: datos.update({'ph': ph_row['ph'], 'conductividad': ph_row['conductividad']})
@@ -357,18 +379,33 @@ def eliminar_foto(muestra_id):
     try:
         cur.execute('UPDATE muestras SET foto_macrofauna = NULL WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         conexion.commit()
-        flash('Foto eliminada correctamente.', 'success')
+        flash('Foto de macrofauna eliminada correctamente.', 'success')
     finally: 
         cur.close()
         conexion.close()
     return redirect(url_for('inicio') + '#macrofauna')
+
+@app.route('/eliminar_cromo/<int:muestra_id>', methods=['POST'])
+def eliminar_cromo(muestra_id):
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    try:
+        cur.execute('UPDATE muestras SET foto_cromatografia = NULL, obs_cromatografia = NULL WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
+        conexion.commit()
+        flash('Cromatografía eliminada correctamente.', 'success')
+    finally: 
+        cur.close()
+        conexion.close()
+    return redirect(url_for('inicio') + '#cromatografia')
 
 @app.route('/descargar_csv')
 def descargar_csv():
     if 'usuario_id' not in session: return redirect(url_for('login'))
     conexion = obtener_conexion()
     cur = conexion.cursor()
-    consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion", m.foto_macrofauna AS "Foto_Macrofauna", 
+    consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion", 
+                  m.foto_macrofauna AS "Foto_Macrofauna", m.foto_cromatografia AS "Foto_Cromatografia", m.obs_cromatografia AS "Obs_Cromatografia",
                   c.resultado_carbono AS "Carbono_Activo", fo.resultado_ppm AS "Fosforo_ppm", fo.resultado_mg_kg AS "Fosforo_mg_kg", 
                   p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc", 
                   ea.porcentaje_mayor_2mm AS "Agregados_Mayor_2mm_Porc", ea.porcentaje_250_2mm AS "Agregados_250_2mm_Porc",
