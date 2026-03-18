@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laboratorio Agroecológico </title>
+    <title>Laboratorio Agroecológico</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -150,7 +150,7 @@
                     <h6 class="sidebar-heading">LABORATORIO</h6>
                     <button class="nav-link text-start" id="textura-tab" data-bs-toggle="tab" data-bs-target="#textura" type="button"><i class="bi bi-layers-half me-2"></i> Textura</button>
                     <button class="nav-link text-start" id="respiracion-tab" data-bs-toggle="tab" data-bs-target="#respiracion" type="button"><i class="bi bi-wind me-2"></i> Respiración</button>
-                    <button class="nav-link text-start" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button"><i class="bi bi-droplet-half me-2"></i> Carbono activo</button>
+                    <button class="nav-link text-start" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button"><i class="bi bi-droplet-half me-2"></i> POXC</button>
                     <button class="nav-link text-start" id="fosforo-tab" data-bs-toggle="tab" data-bs-target="#fosforo" type="button"><i class="bi bi-moisture me-2"></i> Fósforo</button>
                     <button class="nav-link text-start" id="ph-tab" data-bs-toggle="tab" data-bs-target="#ph" type="button"><i class="bi bi-speedometer2 me-2"></i> pH / CE</button>
                     <button class="nav-link text-start" id="mop-tab" data-bs-toggle="tab" data-bs-target="#mop" type="button"><i class="bi bi-basket me-2"></i> MOP</button>
@@ -158,6 +158,7 @@
                     
                     <h6 class="sidebar-heading">BIODIVERSIDAD</h6>
                     <button class="nav-link text-start" id="macrofauna-tab" data-bs-toggle="tab" data-bs-target="#macrofauna" type="button"><i class="bi bi-bug-fill me-2 text-warning"></i> Macrofauna</button>
+                    <button class="nav-link text-start" id="cromatografia-tab" data-bs-toggle="tab" data-bs-target="#cromatografia" type="button"><i class="bi bi-palette me-2 text-info"></i> Cromatografía</button>
                     
                     <h6 class="sidebar-heading">MÉTRICAS</h6>
                     <button class="nav-link text-start" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-2"></i> Resultados</button>
@@ -255,7 +256,7 @@
                                 <form action="/" method="POST" class="form-memoria" data-tab="macrofauna">
                                     <input type="hidden" name="form_type" value="macrofauna">
                                     <div class="section-card h-100 d-flex flex-column">
-                                        <h5 class="fw-bold mb-4"><i class="bi bi-camera text-muted me-2"></i> Registro Fotográfico</h5>
+                                        <h5 class="fw-bold mb-4"><i class="bi bi-bug-fill text-muted me-2"></i> Registro Fotográfico</h5>
                                         <div class="mb-4"><label class="form-label">Muestra a asociar</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Seleccione --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
                                         <div class="mb-4 flex-grow-1 position-relative">
                                             <div id="offline-camera-warning" class="bg-light border border-warning rounded-3 p-4 text-center" style="display: none !important;"><i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i><h6 class="text-dark fw-bold">Sin Conexión a Nube</h6><p class="small text-muted mb-0">Toma la foto con la app de cámara de tu celular. Podrás adjuntarla aquí desde la galería cuando recuperes señal.</p></div>
@@ -273,6 +274,41 @@
                             </div>
                         </div>
                         <div class="section-card"><h5 class="text-dark fw-bold mb-4"><i class="bi bi-images text-muted me-2"></i> Historial Visual</h5><div class="row g-3">{% set fotos = consolidado | selectattr('foto_macrofauna') | list %}{% if fotos %}{% for fila in fotos %}<div class="col-6 col-md-4 col-lg-3 position-relative"><div class="gallery-card h-100 d-flex flex-column"><a href="{{ fila.foto_macrofauna }}" target="_blank" style="overflow: hidden; display: block; flex-grow: 1;"><img src="{{ fila.foto_macrofauna }}" class="gallery-img h-100" alt="Macrofauna"></a><div class="p-2 bg-light border-top text-center"><small class="fw-bold d-block text-truncate text-secondary" title="{{ fila.nombre_muestra }}">{{ fila.nombre_muestra }}</small></div><form action="/eliminar_foto/{{ fila.id }}" method="POST" class="position-absolute top-0 end-0 m-2"><button type="submit" class="btn btn-sm btn-danger rounded-circle p-1 lh-1 shadow border border-white" onclick="return confirm('¿Eliminar foto permanentemente?');"><i class="bi bi-x fw-bold"></i></button></form></div></div>{% endfor %}{% else %}<div class="col-12 text-center text-muted py-5 bg-light rounded-3" style="border: 1px dashed #ccc;"><i class="bi bi-camera-slash" style="font-size: 3rem; color: #dee2e6;"></i><h6 class="mt-3 fw-bold">Banco de imágenes vacío</h6><p class="small mb-0">No hay fotografías de fauna registradas aún.</p></div>{% endif %}</div></div>
+                    </div>
+
+                    <div class="tab-pane fade" id="cromatografia">
+                        <div class="row g-4 mb-4">
+                            <div class="col-lg-6">
+                                <div class="section-card h-100 p-0 overflow-hidden text-center bg-light d-flex align-items-center justify-content-center" style="border: 1px solid #dee2e6; min-height: 250px;">
+                                    <div class="text-muted"><i class="bi bi-palette fs-1"></i><p class="mt-2">Cromatografía de Pfeiffer</p></div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <form action="/" method="POST" class="form-memoria" data-tab="cromatografia">
+                                    <input type="hidden" name="form_type" value="cromatografia">
+                                    <div class="section-card h-100 d-flex flex-column">
+                                        <h5 class="fw-bold mb-4"><i class="bi bi-palette text-info me-2"></i> Análisis Cualitativo</h5>
+                                        <div class="mb-4"><label class="form-label">Muestra a asociar</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Seleccione --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
+                                        <div class="mb-3 flex-grow-1 position-relative">
+                                            <div id="offline-cromo-warning" class="bg-light border border-warning rounded-3 p-4 text-center" style="display: none !important;"><i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i><h6 class="text-dark fw-bold">Sin Conexión a Nube</h6><p class="small text-muted mb-0">Guarda tus observaciones ahora y sube la foto del Croma cuando tengas Wi-Fi.</p></div>
+                                            <div id="cromo-controls">
+                                                <input type="file" id="input_foto_cromo" accept="image/*" style="display: none;">
+                                                <input type="hidden" name="foto_cromatografia" id="hidden_url_foto_cromo">
+                                                <label for="input_foto_cromo" class="btn bg-light text-dark w-100 py-3 mb-2 shadow-sm rounded-3" style="cursor: pointer; border: 2px dashed #ccc;"><i class="bi bi-camera-fill fs-3 d-block mb-1 text-muted"></i> <span class="fw-bold small">Subir Foto del Croma</span></label>
+                                                <div id="foto_preview_container_cromo" class="mt-2 text-center" style="display: none;"><img id="foto_preview_cromo" src="" alt="Cromatografía" class="img-fluid rounded-3 border border-2 border-info" style="max-height: 150px; object-fit: cover;"><span class="d-block badge bg-info mt-2 p-2 rounded-pill text-dark"><i class="bi bi-check-circle me-1"></i> Adjuntado</span></div>
+                                                <div id="foto_loading_cromo" style="display: none;" class="text-center text-muted small py-3 bg-light rounded-3 border mt-2"><div class="spinner-border spinner-border-sm text-info mb-2" role="status"></div><br>Cargando...</div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label class="form-label">Observaciones y Metodología</label>
+                                            <textarea class="form-control" name="obs_cromatografia" rows="2" placeholder="Filtro usado, % de AgNO3, etc..."></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-info w-100 py-2 mt-auto fw-bold text-dark"><i class="bi bi-save me-2"></i> Guardar Cromatografía</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="section-card"><h5 class="text-dark fw-bold mb-4"><i class="bi bi-images text-muted me-2"></i> Galería de Cromas</h5><div class="row g-3">{% set cromas = consolidado | selectattr('foto_cromatografia') | list %}{% if cromas %}{% for fila in cromas %}<div class="col-6 col-md-4 col-lg-3 position-relative"><div class="gallery-card h-100 d-flex flex-column"><a href="{{ fila.foto_cromatografia }}" target="_blank" style="overflow: hidden; display: block; flex-grow: 1;"><img src="{{ fila.foto_cromatografia }}" class="gallery-img h-100" alt="Cromatografía"></a><div class="p-2 bg-light border-top text-center"><small class="fw-bold d-block text-truncate text-secondary" title="{{ fila.nombre_muestra }}">{{ fila.nombre_muestra }}</small></div><form action="/eliminar_cromo/{{ fila.id }}" method="POST" class="position-absolute top-0 end-0 m-2"><button type="submit" class="btn btn-sm btn-danger rounded-circle p-1 lh-1 shadow border border-white" onclick="return confirm('¿Eliminar croma permanentemente?');"><i class="bi bi-x fw-bold"></i></button></form></div></div>{% endfor %}{% else %}<div class="col-12 text-center text-muted py-5 bg-light rounded-3" style="border: 1px dashed #ccc;"><i class="bi bi-camera-slash" style="font-size: 3rem; color: #dee2e6;"></i><h6 class="mt-3 fw-bold">Galería vacía</h6><p class="small mb-0">No hay cromatografías registradas aún.</p></div>{% endif %}</div></div>
                     </div>
 
                     <div class="tab-pane fade" id="consolidado">
@@ -340,6 +376,7 @@
                                             <th>Resp. (μg)</th>
                                             <th>MOP %</th>
                                             <th>Agreg. %</th>
+                                            <th>Croma.</th>
                                             <th>Info</th>
                                         </tr>
                                     </thead>
@@ -355,12 +392,13 @@
                                             <td data-label="Respiración">{% if fila.respiracion %}<span class="badge border border-success text-success">{{ "%.2f"|format(fila.respiracion) }}</span>{% else %}-{% endif %}</td>
                                             <td data-label="MOP %">{% if fila.mop %}<strong>{{ "%.2f"|format(fila.mop) }}</strong>{% else %}-{% endif %}</td>
                                             <td data-label="Agregados %">{% if fila.porcentaje_mayor_2mm %}<strong>{{ "%.1f"|format(fila.porcentaje_mayor_2mm) }}</strong>{% else %}-{% endif %}</td>
+                                            <td data-label="Croma">{% if fila.foto_cromatografia %}<i class="bi bi-check-circle-fill text-info"></i>{% else %}-{% endif %}</td>
                                             <td data-label="Opciones">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle" data-bs-toggle="modal" data-bs-target="#modal-{{ fila.id }}"><i class="bi bi-arrows-fullscreen"></i></button>
                                             </td>
                                         </tr>
                                         
-                                        <div class="modal fade" id="modal-{{ fila.id }}" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-dark border-0 rounded-top-4"><h5 class="modal-title fw-bold text-white"><i class="bi bi-file-earmark-text me-2"></i> {{ fila.nombre_muestra }}</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body text-start p-4"><div class="row mb-3"><div class="col-6"><small class="form-label">Cultivo Principal</small><span class="text-dark fw-bold d-block">{{ fila.cultivo or 'N/A' }}</span></div><div class="col-6"><small class="form-label">Clase Textural</small><span class="text-dark fw-bold d-block">{{ fila.textura or 'N/A' }}</span></div></div><div class="mb-3"><small class="form-label">Descripción de Campo</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.descripcion or 'Sin descripción registrada' }}</p></div><div class="mb-3"><small class="form-label">Notas de Manejo</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.informacion_relevante or '-' }}</p></div><div><small class="form-label d-block">Coordenadas</small>{% if fila.latitud %}<span class="badge bg-secondary rounded-pill px-3 py-2 fw-normal"><i class="bi bi-geo-alt-fill me-1"></i> {{ fila.latitud }}, {{ fila.longitud }}</span>{% else %}<span class="text-muted small fst-italic">Sin georeferenciar</span>{% endif %}</div>{% if fila.fosforo or fila.fosforo_ppm %}<div class="mb-3 mt-4 pt-4 border-top"><small class="form-label"><i class="bi bi-moisture me-1 text-primary"></i> Extracción de Fósforo (Olsen)</small><div class="d-flex flex-wrap gap-2"><span class="badge border border-primary text-primary fs-6">{{ "%.2f"|format(fila.fosforo_ppm) }} ppm</span><span class="badge bg-primary text-white fs-6">{{ "%.2f"|format(fila.fosforo) }} mg/kg</span></div></div>{% endif %}{% if fila.respiracion %}<div class="mb-3 mt-4 pt-4 border-top"><small class="form-label"><i class="bi bi-wind me-1 text-success"></i> Respiración Basal Acumulada (24h)</small><div class="d-flex flex-wrap gap-2 mb-3"><span class="badge border border-success text-success fs-6">Inicial: {{ "%.0f"|format(fila.co2_initial) }} ppm</span><span class="badge border border-danger text-danger fs-6">Final: {{ "%.0f"|format(fila.co2_final) }} ppm</span><span class="badge bg-success text-white fs-6">Emisión: {{ "%.2f"|format(fila.respiracion) }} μgC/g</span></div><div id="chart-resp-modal-{{ fila.id }}" style="height: 250px; width: 100%;"></div></div>{% endif %}</div></div></div></div>
+                                        <div class="modal fade" id="modal-{{ fila.id }}" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-dark border-0 rounded-top-4"><h5 class="modal-title fw-bold text-white"><i class="bi bi-file-earmark-text me-2"></i> {{ fila.nombre_muestra }}</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body text-start p-4"><div class="row mb-3"><div class="col-6"><small class="form-label">Cultivo Principal</small><span class="text-dark fw-bold d-block">{{ fila.cultivo or 'N/A' }}</span></div><div class="col-6"><small class="form-label">Clase Textural</small><span class="text-dark fw-bold d-block">{{ fila.textura or 'N/A' }}</span></div></div><div class="mb-3"><small class="form-label">Descripción de Campo</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.descripcion or 'Sin descripción registrada' }}</p></div><div class="mb-3"><small class="form-label">Notas de Manejo</small><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.informacion_relevante or '-' }}</p></div><div><small class="form-label d-block">Coordenadas</small>{% if fila.latitud %}<span class="badge bg-secondary rounded-pill px-3 py-2 fw-normal"><i class="bi bi-geo-alt-fill me-1"></i> {{ fila.latitud }}, {{ fila.longitud }}</span>{% else %}<span class="text-muted small fst-italic">Sin georeferenciar</span>{% endif %}</div>{% if fila.fosforo or fila.fosforo_ppm %}<div class="mb-3 mt-4 pt-4 border-top"><small class="form-label"><i class="bi bi-moisture me-1 text-primary"></i> Extracción de Fósforo (Olsen)</small><div class="d-flex flex-wrap gap-2"><span class="badge border border-primary text-primary fs-6">{{ "%.2f"|format(fila.fosforo_ppm) }} ppm</span><span class="badge bg-primary text-white fs-6">{{ "%.2f"|format(fila.fosforo) }} mg/kg</span></div></div>{% endif %}{% if fila.respiracion %}<div class="mb-3 mt-4 pt-4 border-top"><small class="form-label"><i class="bi bi-wind me-1 text-success"></i> Respiración Basal Acumulada (24h)</small><div class="d-flex flex-wrap gap-2 mb-3"><span class="badge border border-success text-success fs-6">Inicial: {{ "%.0f"|format(fila.co2_initial) }} ppm</span><span class="badge border border-danger text-danger fs-6">Final: {{ "%.0f"|format(fila.co2_final) }} ppm</span><span class="badge bg-success text-white fs-6">Emisión: {{ "%.2f"|format(fila.respiracion) }} μgC/g</span></div><div id="chart-resp-modal-{{ fila.id }}" style="height: 250px; width: 100%;"></div></div>{% endif %}{% if fila.foto_cromatografia %}<div class="mb-3 mt-4 pt-4 border-top"><small class="form-label"><i class="bi bi-palette me-1 text-info"></i> Cromatografía</small><div class="text-center bg-light p-2 rounded-3 mb-2"><img src="{{ fila.foto_cromatografia }}" class="img-fluid rounded-3" style="max-height: 200px; object-fit: cover;"></div><p class="m-0 bg-light p-3 rounded-3 border text-secondary small">{{ fila.obs_cromatografia or 'Sin observaciones metodológicas.' }}</p></div>{% endif %}</div></div></div></div>
                                         {% endfor %}
                                     </tbody>
                                 </table>
@@ -396,15 +434,25 @@
                 btn.addEventListener('shown.bs.tab', e => { 
                     localStorage.setItem('pestañaActiva', e.target.id); 
                     window.history.replaceState(null, null, e.target.getAttribute('data-bs-target')); 
-                    window.scrollTo(0, 0); // Hacer scroll arriba al cambiar de tab en celular
+                    window.scrollTo(0, 0);
                 }); 
             });
 
             document.querySelectorAll('.selector-memoria').forEach(select => {
                 select.addEventListener('change', function() {
                     const id = this.value; const form = this.closest('form'); const tab = form.dataset.tab;
-                    if (!id) { form.reset(); form.dataset.modificando = "false"; if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; return; }
-                    if (id.startsWith('offline_')) { form.reset(); this.value = id; form.dataset.modificando = "false"; if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; return; }
+                    if (!id) { 
+                        form.reset(); form.dataset.modificando = "false"; 
+                        if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; 
+                        if(document.getElementById('foto_preview_container_cromo')) document.getElementById('foto_preview_container_cromo').style.display='none';
+                        return; 
+                    }
+                    if (id.startsWith('offline_')) { 
+                        form.reset(); this.value = id; form.dataset.modificando = "false"; 
+                        if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; 
+                        if(document.getElementById('foto_preview_container_cromo')) document.getElementById('foto_preview_container_cromo').style.display='none';
+                        return; 
+                    }
                     fetch('/api/datos_crudos/' + id).then(r => r.json()).then(data => {
                         let tieneDatos = false;
                         if(tab === 'registro') { form.querySelector('[name="nombre"]').value = data.nombre || ''; form.querySelector('[name="cultivo"]').value = data.cultivo || ''; form.querySelector('[name="textura"]').value = data.textura || ''; form.querySelector('[name="latitud"]').value = data.latitud || ''; form.querySelector('[name="longitud"]').value = data.longitud || ''; form.querySelector('[name="descripcion"]').value = data.descripcion || ''; form.querySelector('[name="info"]').value = data.info || ''; tieneDatos = true; }
@@ -414,7 +462,14 @@
                         if(tab === 'fosforo' && data.p_abs !== undefined && data.p_abs !== null) { form.querySelector('[name="peso_suelo"]').value = data.p_peso || '2.5'; form.querySelector('[name="vol_extracto"]').value = data.p_volext || '7'; form.querySelector('[name="vol_dilucion"]').value = data.p_voldil || '20'; form.querySelector('[name="abs_muestra"]').value = data.p_abs; form.querySelector('[name="abs_0"]').value = data.p_a0 || ''; form.querySelector('[name="abs_05"]').value = data.p_a05 || ''; form.querySelector('[name="abs_1"]').value = data.p_a1 || ''; form.querySelector('[name="abs_15"]').value = data.p_a15 || ''; form.querySelector('[name="abs_2"]').value = data.p_a2 || ''; tieneDatos = true; }
                         if(tab === 'mop' && data.mop_suelo !== undefined && data.mop_suelo !== null) { form.querySelector('[name="peso_filtro_mop"]').value = data.mop_pf || ''; form.querySelector('[name="peso_muestra_con_filtro"]').value = data.mop_pmcf || ''; form.querySelector('[name="peso_suelo"]').value = data.mop_suelo || ''; tieneDatos = true; }
                         if(tab === 'estab' && data.ea_pi !== undefined && data.ea_pi !== null) { form.querySelector('[name="peso_inicial"]').value = data.ea_pi || ''; form.querySelector('[name="peso_filtro"]').value = data.ea_pf || ''; form.querySelector('[name="peso_recipiente_piedras"]').value = data.ea_rec_p || ''; form.querySelector('[name="peso_piedras_con_recipiente"]').value = data.ea_pcr || ''; form.querySelector('[name="peso_fraccion_mayor"]').value = data.ea_pm || ''; form.querySelector('[name="peso_fraccion_250"]').value = data.ea_p250 || ''; tieneDatos = true; }
-                        if(tab === 'macrofauna' && data.foto_macrofauna) { document.getElementById('hidden_url_foto').value = data.foto_macrofauna; document.getElementById('foto_preview').src = data.foto_macrofauna; document.getElementById('foto_preview_container').style.display = 'block'; tieneDatos = true; }
+                        if(tab === 'macrofauna') { 
+                            if(data.foto_macrofauna) { document.getElementById('hidden_url_foto').value = data.foto_macrofauna; document.getElementById('foto_preview').src = data.foto_macrofauna; document.getElementById('foto_preview_container').style.display = 'block'; tieneDatos = true; } else { document.getElementById('hidden_url_foto').value = ''; document.getElementById('foto_preview_container').style.display = 'none'; }
+                        }
+                        if(tab === 'cromatografia') {
+                            if(data.foto_cromatografia) { document.getElementById('hidden_url_foto_cromo').value = data.foto_cromatografia; document.getElementById('foto_preview_cromo').src = data.foto_cromatografia; document.getElementById('foto_preview_container_cromo').style.display = 'block'; tieneDatos = true; } else { document.getElementById('hidden_url_foto_cromo').value = ''; document.getElementById('foto_preview_container_cromo').style.display = 'none'; }
+                            form.querySelector('[name="obs_cromatografia"]').value = data.obs_cromatografia || '';
+                            tieneDatos = true;
+                        }
                         form.dataset.modificando = tieneDatos ? "true" : "false";
                     });
                 });
@@ -440,27 +495,36 @@
                 });
             }
 
-            const inputFoto = document.getElementById('input_foto_macrofauna');
-            const hiddenUrlFoto = document.getElementById('hidden_url_foto');
-            const fotoPreviewContainer = document.getElementById('foto_preview_container');
-            const fotoPreview = document.getElementById('foto_preview');
-            const fotoLoading = document.getElementById('foto_loading');
+            const apiKey = 'bc048a187cdb1e5cd17a3237a6f12125';
+            const uploadUrl = `https://api.imgbb.com/1/upload?key=${apiKey}`;
 
+            // Lógica Foto Macrofauna
+            const inputFoto = document.getElementById('input_foto_macrofauna');
             if (inputFoto) {
                 inputFoto.addEventListener('change', async function() {
-                    const file = this.files[0];
-                    if (!file) return;
-                    fotoPreviewContainer.style.display = 'none'; fotoLoading.style.display = 'block';
+                    const file = this.files[0]; if (!file) return;
+                    document.getElementById('foto_preview_container').style.display = 'none'; document.getElementById('foto_loading').style.display = 'block';
                     const formData = new FormData(); formData.append('image', file);
-                    const apiKey = 'bc048a187cdb1e5cd17a3237a6f12125';
-                    const uploadUrl = `https://api.imgbb.com/1/upload?key=${apiKey}`;
-
                     try {
-                        const response = await fetch(uploadUrl, { method: 'POST', body: formData });
-                        const data = await response.json();
-                        if (data.success) { hiddenUrlFoto.value = data.data.url; fotoPreview.src = data.data.url; fotoLoading.style.display = 'none'; fotoPreviewContainer.style.display = 'block'; } 
-                        else { alert('Error subida.'); fotoLoading.style.display = 'none'; }
-                    } catch (error) { alert("Error red."); fotoLoading.style.display = 'none'; }
+                        const response = await fetch(uploadUrl, { method: 'POST', body: formData }); const data = await response.json();
+                        if (data.success) { document.getElementById('hidden_url_foto').value = data.data.url; document.getElementById('foto_preview').src = data.data.url; document.getElementById('foto_loading').style.display = 'none'; document.getElementById('foto_preview_container').style.display = 'block'; } 
+                        else { alert('Error subida.'); document.getElementById('foto_loading').style.display = 'none'; }
+                    } catch (error) { alert("Error red."); document.getElementById('foto_loading').style.display = 'none'; }
+                });
+            }
+
+            // Lógica Foto Cromatografía
+            const inputFotoCromo = document.getElementById('input_foto_cromo');
+            if (inputFotoCromo) {
+                inputFotoCromo.addEventListener('change', async function() {
+                    const file = this.files[0]; if (!file) return;
+                    document.getElementById('foto_preview_container_cromo').style.display = 'none'; document.getElementById('foto_loading_cromo').style.display = 'block';
+                    const formData = new FormData(); formData.append('image', file);
+                    try {
+                        const response = await fetch(uploadUrl, { method: 'POST', body: formData }); const data = await response.json();
+                        if (data.success) { document.getElementById('hidden_url_foto_cromo').value = data.data.url; document.getElementById('foto_preview_cromo').src = data.data.url; document.getElementById('foto_loading_cromo').style.display = 'none'; document.getElementById('foto_preview_container_cromo').style.display = 'block'; } 
+                        else { alert('Error subida.'); document.getElementById('foto_loading_cromo').style.display = 'none'; }
+                    } catch (error) { alert("Error red."); document.getElementById('foto_loading_cromo').style.display = 'none'; }
                 });
             }
 
@@ -477,9 +541,7 @@
                         document.querySelectorAll('.selector-memoria').forEach(sel => {
                             if(![...sel.options].some(opt => opt.value === `offline_${newName}`)) {
                                 const opt = new Option(`*NUEVO* ${newName}`, `offline_${newName}`);
-                                opt.style.color = '#2d6a4f';
-                                opt.style.fontWeight = 'bold';
-                                sel.add(opt);
+                                opt.style.color = '#2d6a4f'; opt.style.fontWeight = 'bold'; sel.add(opt);
                             }
                         });
                     }
@@ -493,15 +555,19 @@
                     offlineBanner.style.display = 'block';
                     document.querySelectorAll('#offline-map-warning').forEach(el => el.style.setProperty('display', 'flex', 'important'));
                     document.querySelectorAll('#offline-camera-warning').forEach(el => el.style.setProperty('display', 'block', 'important'));
+                    document.querySelectorAll('#offline-cromo-warning').forEach(el => el.style.setProperty('display', 'block', 'important'));
                     document.querySelectorAll('#offline-csv-warning').forEach(el => el.style.setProperty('display', 'block', 'important'));
                     document.querySelectorAll('#camera-controls').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('#cromo-controls').forEach(el => el.style.display = 'none');
                     document.querySelectorAll('#csv-controls, #btn-submit-csv').forEach(el => el.style.display = 'none');
                 } else {
                     offlineBanner.style.display = 'none';
                     document.querySelectorAll('#offline-map-warning').forEach(el => el.style.setProperty('display', 'none', 'important'));
                     document.querySelectorAll('#offline-camera-warning').forEach(el => el.style.setProperty('display', 'none', 'important'));
+                    document.querySelectorAll('#offline-cromo-warning').forEach(el => el.style.setProperty('display', 'none', 'important'));
                     document.querySelectorAll('#offline-csv-warning').forEach(el => el.style.setProperty('display', 'none', 'important'));
                     document.querySelectorAll('#camera-controls').forEach(el => el.style.display = 'block');
+                    document.querySelectorAll('#cromo-controls').forEach(el => el.style.display = 'block');
                     document.querySelectorAll('#csv-controls, #btn-submit-csv').forEach(el => el.style.display = 'block');
                 }
                 updateMochilaUI();
