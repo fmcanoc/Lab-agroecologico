@@ -27,9 +27,6 @@
         .section-card { background: var(--r-surface); border: 1px solid var(--r-divider); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--r-shadow-card); transition: box-shadow 0.2s ease;}
         .section-card:hover { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06); }
 
-        /* ========================================= */
-        /* SIDEBAR / BOTTOM NAV (MAGIA MOBILE)       */
-        /* ========================================= */
         .sidebar-wrapper { z-index: 1040; background-color: var(--r-surface); }
         .side-menu { display: flex; flex-direction: row; flex-wrap: nowrap !important; overflow-x: auto; gap: 0.5rem; margin: 0; -webkit-overflow-scrolling: touch; }
         .side-menu::-webkit-scrollbar { height: 0px; display: none; }
@@ -38,22 +35,19 @@
         .side-menu .nav-link.active { background-color: var(--r-accent); color: #ffffff; }
         .sidebar-heading { font-size: 0.7rem; letter-spacing: 0.1em; color: #adb5bd; font-weight: 800; display: none; }
 
-        /* BOTÓN FLOTANTE OFFLINE (FAB) */
         .fab-container { display: none; position: fixed; right: 20px; z-index: 1060; }
         .fab-btn { border-radius: 50px; padding: 12px 24px; box-shadow: 0 6px 16px rgba(0,0,0,0.25); font-size: 1rem; }
 
-        /* MODO CELULAR */
         @media (max-width: 767px) {
             .sidebar-wrapper { position: fixed; bottom: 0; left: 0; width: 100%; border-top: 1px solid var(--r-divider); padding: 0 !important; height: 65px; box-shadow: 0 -4px 12px rgba(0,0,0,0.05);}
             .side-menu { padding: 0.5rem; align-items: center; }
             .side-menu .nav-link { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; padding: 0.3rem 0.8rem; font-size: 0.6rem; border-radius: 12px; }
             .side-menu .nav-link i { font-size: 1.3rem; margin-right: 0 !important; margin-bottom: 2px; }
-            .tab-content { padding-bottom: 80px; } /* Evita que el menú tape el contenido final */
-            .fab-container { bottom: 85px; } /* Flota arriba del menú inferior */
+            .tab-content { padding-bottom: 80px; }
+            .fab-container { bottom: 85px; }
             .section-card { padding: 1.2rem; }
         }
 
-        /* MODO COMPUTADORA */
         @media (min-width: 768px) {
             .sidebar-wrapper { position: sticky; top: 72px; height: calc(100vh - 72px); border-right: 1px solid var(--r-divider); overflow-y: auto; padding: 1.5rem 1rem !important; }
             .side-menu { flex-direction: column; padding: 0; }
@@ -62,9 +56,6 @@
             .fab-container { bottom: 30px; }
         }
 
-        /* ========================================= */
-        /* TABLAS CONVERTIDAS A TARJETAS (MOBILE)    */
-        /* ========================================= */
         .table { background-color: #ffffff; font-size: 0.85rem; vertical-align: middle; }
         .table > thead { border-bottom: 2px solid var(--r-divider); }
         .table > thead > tr > th { color: #868e96; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; padding: 1rem 0.5rem; border-bottom: none;}
@@ -82,14 +73,12 @@
             .table-mobile-cards td.lote-name::before { content: none; }
         }
 
-        /* INPUTS Y BOTONES */
         .btn-agro { background-color: transparent; color: var(--r-accent); border: 2px solid var(--r-accent); font-weight: 600; border-radius: 8px; padding: 0.6rem 1.5rem; transition: all 0.2s ease; }
         .btn-agro:hover { background-color: var(--r-accent); color: #ffffff; transform: translateY(-1px); }
         .form-label { font-size: 0.8rem; font-weight: 700; color: #495057; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.4rem; }
         .form-control, .form-select { border-radius: 8px; background-color: #fcfcfc; border: 1px solid #ced4da; padding: 0.75rem 1rem; color: var(--r-text-main); font-size: 0.95rem;}
         .form-control:focus, .form-select:focus { border-color: var(--r-accent); box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.1); background-color: #ffffff;}
 
-        /* Colores pastel para visual de laboratorio */
         .input-soft-danger { background-color: #fff5f5; border-color: #ffc9c9; }
         .input-soft-primary { background-color: #f3f8ff; border-color: #d0ebff; }
         .input-soft-info { background-color: #f3fafc; border-color: #c5f6fa; }
@@ -150,7 +139,7 @@
                     <h6 class="sidebar-heading">LABORATORIO</h6>
                     <button class="nav-link text-start" id="textura-tab" data-bs-toggle="tab" data-bs-target="#textura" type="button"><i class="bi bi-layers-half me-2"></i> Textura</button>
                     <button class="nav-link text-start" id="respiracion-tab" data-bs-toggle="tab" data-bs-target="#respiracion" type="button"><i class="bi bi-wind me-2"></i> Respiración</button>
-                    <button class="nav-link text-start" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button"><i class="bi bi-droplet-half me-2"></i> POXC</button>
+                    <button class="nav-link text-start" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button"><i class="bi bi-droplet-half me-2"></i> Carbono activo</button>
                     <button class="nav-link text-start" id="fosforo-tab" data-bs-toggle="tab" data-bs-target="#fosforo" type="button"><i class="bi bi-moisture me-2"></i> Fósforo</button>
                     <button class="nav-link text-start" id="ph-tab" data-bs-toggle="tab" data-bs-target="#ph" type="button"><i class="bi bi-speedometer2 me-2"></i> pH / CE</button>
                     <button class="nav-link text-start" id="mop-tab" data-bs-toggle="tab" data-bs-target="#mop" type="button"><i class="bi bi-basket me-2"></i> MOP</button>
@@ -211,6 +200,13 @@
                                 </div>
                                 <button type="submit" class="btn btn-agro px-5 py-2" id="btn-submit-csv"><i class="bi bi-graph-up-arrow me-2"></i> Calcular y Graficar</button>
                             </div>
+                            <div id="resp-result-card" class="section-card mt-4 shadow-sm border border-info border-opacity-25" style="display:none; background-color: #f3fafc;">
+                                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                                    <div><h6 class="fw-bold text-info mb-1"><i class="bi bi-graph-up-arrow me-2"></i> Resultado de Análisis</h6><small class="text-muted fw-bold" id="resp-info-text"></small></div>
+                                    <h4 class="fw-bold text-info m-0" id="resp-val-text"></h4>
+                                </div>
+                                <div id="resp-chart-individual" style="height: 250px; width: 100%;"></div>
+                            </div>
                         </form>
                     </div>
 
@@ -218,6 +214,13 @@
                         <form action="/" method="POST" class="form-memoria" data-tab="carbono">
                             <input type="hidden" name="form_type" value="carbono_activo">
                             <div class="section-card"><h5 class="fw-bold mb-4"><i class="bi bi-droplet-half text-muted me-2"></i> Carbono Activo (POXC)</h5><div class="col-md-6 mb-4"><label class="form-label">Muestra Analizada</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Seleccione --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="bg-light p-4 rounded-3 mb-4"><h6 class="fw-bold mb-4 border-bottom pb-2">Pesos y Lecturas</h6><div class="row g-3"><div class="col-md-6"><label class="form-label text-muted">Peso Suelo Seco (g)</label><input type="number" step="any" inputmode="decimal" class="form-control" name="peso_suelo_carbono" value="2.5"></div><div class="col-md-6"><label class="form-label text-primary">Absorbancia Muestra (Abs)</label><input type="number" step="any" inputmode="decimal" class="form-control input-soft-primary fw-bold" name="abs_muestra" required></div></div></div><div class="bg-white p-4 rounded-3 mb-4 border"><h6 class="fw-bold mb-4 border-bottom pb-2">Curva de calibración</h6><div class="row g-3"><div class="col-6 col-md-3"><label class="form-label text-muted">Abs 0.005M</label><input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_1" required></div><div class="col-6 col-md-3"><label class="form-label text-muted">Abs 0.010M</label><input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_2" required></div><div class="col-6 col-md-3"><label class="form-label text-muted">Abs 0.015M</label><input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_3" required></div><div class="col-6 col-md-3"><label class="form-label text-muted">Abs 0.020M</label><input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_4" required></div></div></div><button type="submit" class="btn btn-agro px-5 py-2"><i class="bi bi-calculator me-2"></i> Calcular POXC</button></div>
+                            <div id="poxc-result-card" class="section-card mt-4 shadow-sm border border-success border-opacity-25" style="display:none; background-color: #f8fff9;">
+                                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                                    <div><h6 class="fw-bold text-success mb-1"><i class="bi bi-graph-up-arrow me-2"></i> Resultado de Análisis</h6><small class="text-muted fw-bold" id="poxc-eq-text"></small></div>
+                                    <h4 class="fw-bold text-success m-0" id="poxc-val-text"></h4>
+                                </div>
+                                <div id="poxc-chart" style="height: 250px; width: 100%;"></div>
+                            </div>
                         </form>
                     </div>
 
@@ -225,6 +228,13 @@
                         <form action="/" method="POST" class="form-memoria" data-tab="fosforo">
                             <input type="hidden" name="form_type" value="fosforo_olsen">
                             <div class="section-card"><h5 class="fw-bold mb-4"><i class="bi bi-moisture text-muted me-2"></i> Fósforo Disponible (Olsen)</h5><div class="col-md-6 mb-4"><label class="form-label">Muestra Analizada</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Seleccione --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="bg-light p-4 rounded-3 mb-4"><h6 class="fw-bold mb-4 border-bottom pb-2">Parámetros de Extracción</h6><div class="row g-3"><div class="col-md-3"><label class="form-label text-muted">Peso suelo (g)</label><input type="number" step="any" inputmode="decimal" class="form-control" name="peso_suelo" value="2.5" required></div><div class="col-md-3"><label class="form-label text-muted">Vol. Extracto (mL)</label><input type="number" step="any" inputmode="decimal" class="form-control" name="vol_extracto" value="7" required></div><div class="col-md-3"><label class="form-label text-muted">Vol. Dilución (mL)</label><input type="number" step="any" inputmode="decimal" class="form-control" name="vol_dilucion" value="20" required></div><div class="col-md-3"><label class="form-label text-primary">Abs. Muestra</label><input type="number" step="any" inputmode="decimal" class="form-control input-soft-primary fw-bold" name="abs_muestra" required></div></div></div><div class="bg-white p-4 rounded-3 mb-4 border"><h6 class="fw-bold mb-4 border-bottom pb-2">Curva de calibración)</h6><div class="row g-3"><div class="col"><label class="form-label text-muted">0.0 ppm</label><input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_0" required></div><div class="col"><label class="form-label text-muted">0.5 ppm</label><input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_05" required></div><div class="col"><label class="form-label text-muted">1.0 ppm</label><input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_1" required></div><div class="col"><label class="form-label text-muted">1.5 ppm</label><input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_15" required></div><div class="col"><label class="form-label text-muted">2.0 ppm</label><input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_2" required></div></div></div><button type="submit" class="btn btn-agro px-5 py-2"><i class="bi bi-calculator me-2"></i> Calcular Fósforo</button></div>
+                            <div id="fosforo-result-card" class="section-card mt-4 shadow-sm border border-primary border-opacity-25" style="display:none; background-color: #f3f8ff;">
+                                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                                    <div><h6 class="fw-bold text-primary mb-1"><i class="bi bi-graph-up-arrow me-2"></i> Resultado de Análisis</h6><small class="text-muted fw-bold" id="fosforo-eq-text"></small></div>
+                                    <div class="text-end"><h4 class="fw-bold text-primary m-0" id="fosforo-val-text"></h4><small class="text-muted fw-bold" id="fosforo-ppm-text"></small></div>
+                                </div>
+                                <div id="fosforo-chart" style="height: 250px; width: 100%;"></div>
+                            </div>
                         </form>
                     </div>
 
@@ -256,7 +266,7 @@
                                 <form action="/" method="POST" class="form-memoria" data-tab="macrofauna">
                                     <input type="hidden" name="form_type" value="macrofauna">
                                     <div class="section-card h-100 d-flex flex-column">
-                                        <h5 class="fw-bold mb-4"><i class="bi bi-bug-fill text-muted me-2"></i> Registro Fotográfico</h5>
+                                        <h5 class="fw-bold mb-4"><i class="bi bi-camera text-muted me-2"></i> Registro Fotográfico</h5>
                                         <div class="mb-4"><label class="form-label">Muestra a asociar</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Seleccione --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
                                         <div class="mb-4 flex-grow-1 position-relative">
                                             <div id="offline-camera-warning" class="bg-light border border-warning rounded-3 p-4 text-center" style="display: none !important;"><i class="bi bi-cloud-slash text-warning mb-2" style="font-size: 2.5rem;"></i><h6 class="text-dark fw-bold">Sin Conexión a Nube</h6><p class="small text-muted mb-0">Toma la foto con la app de cámara de tu celular. Podrás adjuntarla aquí desde la galería cuando recuperes señal.</p></div>
@@ -303,7 +313,7 @@
                                             <label class="form-label">Observaciones y Metodología</label>
                                             <textarea class="form-control" name="obs_cromatografia" rows="2" placeholder="Filtro usado, % de AgNO3, etc..."></textarea>
                                         </div>
-                                        <button type="submit" class="btn btn-info w-100 py-2 mt-auto fw-bold text-dark"><i class="bi bi-save me-2"></i> Guardar Cromatografía</button>
+                                        <button type="submit" class="btn btn-info w-100 py-2 mt-auto fw-bold text-white"><i class="bi bi-save me-2"></i> Guardar Cromatografía</button>
                                     </div>
                                 </form>
                             </div>
@@ -335,8 +345,8 @@
                             <p class="text-muted small mb-3">Selecciona las variables en los ejes para encontrar correlaciones biológicas y físico-químicas.</p>
                             
                             <div class="row g-2 mb-3">
-                                <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Eje X (Horizontal)</label><select id="sel-x" class="form-select form-select-sm bg-light fw-bold text-primary"><option value="p" selected>Fósforo (mg/kg)</option><option value="poxc">Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados >2mm %</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración (ugC/g)</option></select></div>
-                                <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Eje Y (Vertical)</label><select id="sel-y" class="form-select form-select-sm bg-light fw-bold text-primary"><option value="p">Fósforo (mg/kg)</option><option value="poxc" selected>Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados >2mm %</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración (ugC/g)</option></select></div>
+                                <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Eje X (Horizontal)</label><select id="sel-x" class="form-select form-select-sm bg-light fw-bold text-primary border-0"><option value="p" selected>Fósforo (mg/kg)</option><option value="poxc">Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados >2mm %</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración (ugC/g)</option></select></div>
+                                <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Eje Y (Vertical)</label><select id="sel-y" class="form-select form-select-sm bg-light fw-bold text-primary border-0"><option value="p">Fósforo (mg/kg)</option><option value="poxc" selected>Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados >2mm %</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración (ugC/g)</option></select></div>
                                 <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Tamaño Burbuja</label><select id="sel-size" class="form-select form-select-sm"><option value="p">Fósforo</option><option value="poxc">Carbono</option><option value="ph">pH</option><option value="mop" selected>Materia Orgánica</option><option value="agregados">Agregados</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración</option></select></div>
                                 <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Color Burbuja</label><select id="sel-color" class="form-select form-select-sm"><option value="p">Fósforo</option><option value="poxc">Carbono</option><option value="ph" selected>Nivel de pH</option><option value="mop">Materia Orgánica</option><option value="agregados">Agregados</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración</option></select></div>
                             </div>
@@ -438,9 +448,29 @@
                 }); 
             });
 
+            // LÓGICA PARA LEER LA URL Y AUTO-SELECCIONAR LA MUESTRA
+            const urlParams = new URLSearchParams(window.location.search);
+            const autoMuestraId = urlParams.get('m');
+            if (autoMuestraId && activeTabId) {
+                const tabEl = document.getElementById(activeTabId.replace('-tab', ''));
+                if(tabEl) {
+                    const sel = tabEl.querySelector('.selector-memoria');
+                    if (sel) {
+                        sel.value = autoMuestraId;
+                        sel.dispatchEvent(new Event('change'));
+                    }
+                }
+            }
+
             document.querySelectorAll('.selector-memoria').forEach(select => {
                 select.addEventListener('change', function() {
                     const id = this.value; const form = this.closest('form'); const tab = form.dataset.tab;
+                    
+                    // Ocultar tarjetas de resultados en vivo
+                    if(document.getElementById('poxc-result-card')) document.getElementById('poxc-result-card').style.display = 'none';
+                    if(document.getElementById('fosforo-result-card')) document.getElementById('fosforo-result-card').style.display = 'none';
+                    if(document.getElementById('resp-result-card')) document.getElementById('resp-result-card').style.display = 'none';
+
                     if (!id) { 
                         form.reset(); form.dataset.modificando = "false"; 
                         if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; 
@@ -453,13 +483,80 @@
                         if(document.getElementById('foto_preview_container_cromo')) document.getElementById('foto_preview_container_cromo').style.display='none';
                         return; 
                     }
+                    
                     fetch('/api/datos_crudos/' + id).then(r => r.json()).then(data => {
                         let tieneDatos = false;
                         if(tab === 'registro') { form.querySelector('[name="nombre"]').value = data.nombre || ''; form.querySelector('[name="cultivo"]').value = data.cultivo || ''; form.querySelector('[name="textura"]').value = data.textura || ''; form.querySelector('[name="latitud"]').value = data.latitud || ''; form.querySelector('[name="longitud"]').value = data.longitud || ''; form.querySelector('[name="descripcion"]').value = data.descripcion || ''; form.querySelector('[name="info"]').value = data.info || ''; tieneDatos = true; }
                         if(tab === 'textura') { form.querySelector('[name="textura"]').value = data.textura || ''; tieneDatos = true; }
                         if(tab === 'ph' && data.ph !== undefined && data.ph !== null) { form.querySelector('[name="ph"]').value = data.ph; form.querySelector('[name="conductividad"]').value = data.conductividad; tieneDatos = true; }
-                        if(tab === 'carbono' && data.c_abs !== undefined && data.c_abs !== null) { form.querySelector('[name="peso_suelo_carbono"]').value = data.c_peso || '2.5'; form.querySelector('[name="abs_muestra"]').value = data.c_abs; form.querySelector('[name="abs_1"]').value = data.c_a1 || ''; form.querySelector('[name="abs_2"]').value = data.c_a2 || ''; form.querySelector('[name="abs_3"]').value = data.c_a3 || ''; form.querySelector('[name="abs_4"]').value = data.c_a4 || ''; tieneDatos = true; }
-                        if(tab === 'fosforo' && data.p_abs !== undefined && data.p_abs !== null) { form.querySelector('[name="peso_suelo"]').value = data.p_peso || '2.5'; form.querySelector('[name="vol_extracto"]').value = data.p_volext || '7'; form.querySelector('[name="vol_dilucion"]').value = data.p_voldil || '20'; form.querySelector('[name="abs_muestra"]').value = data.p_abs; form.querySelector('[name="abs_0"]').value = data.p_a0 || ''; form.querySelector('[name="abs_05"]').value = data.p_a05 || ''; form.querySelector('[name="abs_1"]').value = data.p_a1 || ''; form.querySelector('[name="abs_15"]').value = data.p_a15 || ''; form.querySelector('[name="abs_2"]').value = data.p_a2 || ''; tieneDatos = true; }
+                        
+                        if(tab === 'carbono' && data.c_abs !== undefined && data.c_abs !== null) { 
+                            form.querySelector('[name="peso_suelo_carbono"]').value = data.c_peso || '2.5'; form.querySelector('[name="abs_muestra"]').value = data.c_abs; form.querySelector('[name="abs_1"]').value = data.c_a1 || ''; form.querySelector('[name="abs_2"]').value = data.c_a2 || ''; form.querySelector('[name="abs_3"]').value = data.c_a3 || ''; form.querySelector('[name="abs_4"]').value = data.c_a4 || ''; tieneDatos = true; 
+                            
+                            // GRAFICADOR EN VIVO POXC
+                            if (data.c_res !== undefined && data.c_res !== null) {
+                                document.getElementById('poxc-result-card').style.display = 'block';
+                                document.getElementById('poxc-val-text').innerText = parseFloat(data.c_res).toFixed(2) + ' mg/kg';
+                                document.getElementById('poxc-eq-text').innerText = data.c_eq || '';
+                                
+                                let chart = echarts.getInstanceByDom(document.getElementById('poxc-chart')) || echarts.init(document.getElementById('poxc-chart'));
+                                let pts = [[data.c_a1, 0.005], [data.c_a2, 0.010], [data.c_a3, 0.015], [data.c_a4, 0.020]];
+                                let minX = Math.min(data.c_a1, data.c_a2, data.c_a3, data.c_a4); let maxX = Math.max(data.c_a1, data.c_a2, data.c_a3, data.c_a4);
+                                let lineData = [[minX, data.c_slope*minX + data.c_inter], [maxX, data.c_slope*maxX + data.c_inter]];
+                                let samplePt = [data.c_abs, data.c_slope*data.c_abs + data.c_inter];
+                                
+                                chart.setOption({
+                                    tooltip: {trigger: 'item'}, grid: {left: '15%', right: '5%', bottom: '15%', top: '10%'},
+                                    xAxis: {name: 'Absorbancia', nameLocation: 'middle', nameGap: 25, type: 'value'}, yAxis: {name: 'KMnO4 (M)', type: 'value'},
+                                    series: [ {name: 'Calibración', type: 'scatter', data: pts, itemStyle:{color: '#2d6a4f'}}, {name: 'Regresión', type: 'line', data: lineData, lineStyle: {type: 'dashed', color: '#2d6a4f'}, symbol: 'none'}, {name: 'Muestra Actual', type: 'scatter', data: [samplePt], symbolSize: 12, itemStyle:{color: '#d90429'}} ]
+                                });
+                                window.addEventListener('resize', function() { chart.resize(); });
+                            }
+                        }
+                        
+                        if(tab === 'fosforo' && data.p_abs !== undefined && data.p_abs !== null) { 
+                            form.querySelector('[name="peso_suelo"]').value = data.p_peso || '2.5'; form.querySelector('[name="vol_extracto"]').value = data.p_volext || '7'; form.querySelector('[name="vol_dilucion"]').value = data.p_voldil || '20'; form.querySelector('[name="abs_muestra"]').value = data.p_abs; form.querySelector('[name="abs_0"]').value = data.p_a0 || ''; form.querySelector('[name="abs_05"]').value = data.p_a05 || ''; form.querySelector('[name="abs_1"]').value = data.p_a1 || ''; form.querySelector('[name="abs_15"]').value = data.p_a15 || ''; form.querySelector('[name="abs_2"]').value = data.p_a2 || ''; tieneDatos = true; 
+                            
+                            // GRAFICADOR EN VIVO FOSFORO
+                            if (data.p_res_mg !== undefined && data.p_res_mg !== null) {
+                                document.getElementById('fosforo-result-card').style.display = 'block';
+                                document.getElementById('fosforo-val-text').innerText = parseFloat(data.p_res_mg).toFixed(2) + ' mg/kg';
+                                document.getElementById('fosforo-ppm-text').innerText = parseFloat(data.p_res_ppm).toFixed(2) + ' ppm (Extracto)';
+                                document.getElementById('fosforo-eq-text').innerText = data.p_eq || '';
+                                
+                                let chart = echarts.getInstanceByDom(document.getElementById('fosforo-chart')) || echarts.init(document.getElementById('fosforo-chart'));
+                                let pts = [[0, data.p_a0], [0.5, data.p_a05], [1.0, data.p_a1], [1.5, data.p_a15], [2.0, data.p_a2]];
+                                let lineData = [[0, data.p_inter], [2.0, data.p_slope*2.0 + data.p_inter]];
+                                let samplePt = [data.p_res_ppm, data.p_abs];
+                                
+                                chart.setOption({
+                                    tooltip: {trigger: 'item'}, grid: {left: '15%', right: '5%', bottom: '15%', top: '10%'},
+                                    xAxis: {name: 'Conc. (ppm)', nameLocation: 'middle', nameGap: 25, type: 'value'}, yAxis: {name: 'Absorbancia', type: 'value'},
+                                    series: [ {name: 'Calibración', type: 'scatter', data: pts, itemStyle:{color: '#0d6efd'}}, {name: 'Regresión', type: 'line', data: lineData, lineStyle: {type: 'dashed', color: '#0d6efd'}, symbol: 'none'}, {name: 'Muestra Actual', type: 'scatter', data: [samplePt], symbolSize: 12, itemStyle:{color: '#d90429'}} ]
+                                });
+                                window.addEventListener('resize', function() { chart.resize(); });
+                            }
+                        }
+
+                        if(tab === 'respiracion' && data.r_res !== undefined && data.r_res !== null) {
+                            form.querySelector('[name="peso_suelo"]').value = data.r_peso || '30'; tieneDatos = true;
+                            
+                            // GRAFICADOR EN VIVO RESPIRACION
+                            document.getElementById('resp-result-card').style.display = 'block';
+                            document.getElementById('resp-val-text').innerText = parseFloat(data.r_res).toFixed(2) + ' μgC/g';
+                            document.getElementById('resp-info-text').innerText = `Inicial: ${Math.round(data.r_ini)} ppm | Final: ${Math.round(data.r_fin)} ppm`;
+                            
+                            let chart = echarts.getInstanceByDom(document.getElementById('resp-chart-individual')) || echarts.init(document.getElementById('resp-chart-individual'));
+                            let t_arr = JSON.parse(data.r_tiempo); let c_arr = JSON.parse(data.r_co2);
+                            chart.setOption({
+                                tooltip: {trigger: 'axis'}, grid: {left: '15%', right: '5%', bottom: '15%', top: '10%'},
+                                xAxis: {name: 'Tiempo (min)', nameLocation: 'middle', nameGap: 25, type: 'category', data: t_arr, boundaryGap: false, splitLine:{show:false}},
+                                yAxis: {name: 'CO2 (ppm)', type: 'value', scale: true, splitLine:{lineStyle:{type:'dashed', color:'#eee'}}},
+                                series: [{name: 'CO2', type: 'line', data: c_arr, smooth: true, showSymbol: false, areaStyle:{color:'rgba(23, 162, 184, 0.1)'}, lineStyle:{color:'#17a2b8'}, itemStyle:{color:'#17a2b8'}}]
+                            });
+                            window.addEventListener('resize', function() { chart.resize(); });
+                        }
+
                         if(tab === 'mop' && data.mop_suelo !== undefined && data.mop_suelo !== null) { form.querySelector('[name="peso_filtro_mop"]').value = data.mop_pf || ''; form.querySelector('[name="peso_muestra_con_filtro"]').value = data.mop_pmcf || ''; form.querySelector('[name="peso_suelo"]').value = data.mop_suelo || ''; tieneDatos = true; }
                         if(tab === 'estab' && data.ea_pi !== undefined && data.ea_pi !== null) { form.querySelector('[name="peso_inicial"]').value = data.ea_pi || ''; form.querySelector('[name="peso_filtro"]').value = data.ea_pf || ''; form.querySelector('[name="peso_recipiente_piedras"]').value = data.ea_rec_p || ''; form.querySelector('[name="peso_piedras_con_recipiente"]').value = data.ea_pcr || ''; form.querySelector('[name="peso_fraccion_mayor"]').value = data.ea_pm || ''; form.querySelector('[name="peso_fraccion_250"]').value = data.ea_p250 || ''; tieneDatos = true; }
                         if(tab === 'macrofauna') { 
@@ -498,7 +595,6 @@
             const apiKey = 'bc048a187cdb1e5cd17a3237a6f12125';
             const uploadUrl = `https://api.imgbb.com/1/upload?key=${apiKey}`;
 
-            // Lógica Foto Macrofauna
             const inputFoto = document.getElementById('input_foto_macrofauna');
             if (inputFoto) {
                 inputFoto.addEventListener('change', async function() {
@@ -513,7 +609,6 @@
                 });
             }
 
-            // Lógica Foto Cromatografía
             const inputFotoCromo = document.getElementById('input_foto_cromo');
             if (inputFotoCromo) {
                 inputFotoCromo.addEventListener('change', async function() {
@@ -541,7 +636,9 @@
                         document.querySelectorAll('.selector-memoria').forEach(sel => {
                             if(![...sel.options].some(opt => opt.value === `offline_${newName}`)) {
                                 const opt = new Option(`*NUEVO* ${newName}`, `offline_${newName}`);
-                                opt.style.color = '#2d6a4f'; opt.style.fontWeight = 'bold'; sel.add(opt);
+                                opt.style.color = '#2d6a4f';
+                                opt.style.fontWeight = 'bold';
+                                sel.add(opt);
                             }
                         });
                     }
