@@ -66,7 +66,6 @@ def crear_tablas():
                             curva_tiempo TEXT, curva_co2 TEXT)''')
             conexion.commit()
             
-            # Agregado de columnas para fotos si no existen
             try:
                 cur.execute("ALTER TABLE muestras ADD COLUMN foto_macrofauna TEXT;")
             except Exception:
@@ -181,7 +180,7 @@ def inicio():
                 cur.execute('UPDATE muestras SET textura = %s WHERE id = %s AND usuario_id = %s', (request.form['textura'], muestra_id, usuario_id))
                 conexion.commit()
                 flash('Textura guardada exitosamente.', 'success')
-                return redirect(url_for('inicio') + '#textura')
+                return redirect(url_for('inicio', m=muestra_id) + '#textura')
 
             elif tipo_formulario == 'respiracion_suelo':
                 peso_g = float(request.form.get('peso_suelo', 30.0))
@@ -221,7 +220,7 @@ def inicio():
                         else: flash('El archivo no tiene las columnas "timestamp" y "co2".', 'danger')
                     except Exception as e: flash(f'Error al procesar el CSV: {str(e)}', 'danger')
                 else: flash('Por favor sube un archivo .csv válido.', 'warning')
-                return redirect(url_for('inicio') + '#respiracion')
+                return redirect(url_for('inicio', m=muestra_id) + '#respiracion')
 
             elif tipo_formulario == 'carbono_activo':
                 peso_kg = float(request.form.get('peso_suelo_carbono', 2.5)) / 1000
@@ -233,8 +232,8 @@ def inicio():
                 cur.execute('DELETE FROM carbono_activo WHERE muestra_id = %s', (muestra_id,))
                 cur.execute('''INSERT INTO carbono_activo (muestra_id, resultado_carbono, peso_suelo, abs_muestra, abs_1, abs_2, abs_3, abs_4) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, poxc, peso_kg*1000, abs_m, a1, a2, a3, a4))
                 conexion.commit()
-                flash('POXC Calculado.', 'success')
-                return redirect(url_for('inicio') + '#carbono')
+                flash('POXC Calculado exitosamente.', 'success')
+                return redirect(url_for('inicio', m=muestra_id) + '#carbono')
 
             elif tipo_formulario == 'fosforo_olsen':
                 peso_g, vol_ext, vol_dil = float(request.form.get('peso_suelo', 2.5)), float(request.form.get('vol_extracto', 7.0)), float(request.form.get('vol_dilucion', 20.0))
@@ -247,15 +246,15 @@ def inicio():
                 cur.execute('DELETE FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
                 cur.execute('''INSERT INTO fosforo_olsen (muestra_id, resultado_ppm, resultado_mg_kg, peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_05, abs_1, abs_15, abs_2) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, ppm, p_disponible, peso_g, vol_ext, vol_dil, abs_m, a0, a05, a1, a15, a2))
                 conexion.commit()
-                flash('Fósforo calculado.', 'success')
-                return redirect(url_for('inicio') + '#fosforo')
+                flash('Fósforo calculado exitosamente.', 'success')
+                return redirect(url_for('inicio', m=muestra_id) + '#fosforo')
 
             elif tipo_formulario == 'ph_conductividad':
                 cur.execute('DELETE FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
                 cur.execute('INSERT INTO ph_conductividad (muestra_id, ph, conductividad) VALUES (%s, %s, %s)', (muestra_id, float(request.form['ph']), float(request.form['conductividad'])))
                 conexion.commit()
                 flash('pH y Conductividad guardados.', 'success')
-                return redirect(url_for('inicio') + '#ph')
+                return redirect(url_for('inicio', m=muestra_id) + '#ph')
 
             elif tipo_formulario == 'materia_organica':
                 pf_mop, pm_filtro, ps = float(request.form['peso_filtro_mop']), float(request.form['peso_muestra_con_filtro']), float(request.form['peso_suelo'])
@@ -265,7 +264,7 @@ def inicio():
                 cur.execute('''INSERT INTO materia_organica (muestra_id, resultado_porcentaje, peso_particulas, peso_suelo, peso_filtro, peso_muestra_con_filtro) VALUES (%s, %s, %s, %s, %s, %s)''', (muestra_id, mop_porcentaje, pp_neto, ps, pf_mop, pm_filtro))
                 conexion.commit()
                 flash('MOP calculado.', 'success')
-                return redirect(url_for('inicio') + '#mop')
+                return redirect(url_for('inicio', m=muestra_id) + '#mop')
 
             elif tipo_formulario == 'estabilidad_agregados':
                 pi, pf, tara_piedras, piedras_bruto, pm, p250 = float(request.form['peso_inicial']), float(request.form['peso_filtro']), float(request.form['peso_recipiente_piedras']), float(request.form['peso_piedras_con_recipiente']), float(request.form['peso_fraccion_mayor']), float(request.form['peso_fraccion_250'])
@@ -277,28 +276,28 @@ def inicio():
                 cur.execute('''INSERT INTO estabilidad_agregados (muestra_id, porcentaje_mayor_2mm, porcentaje_250_2mm, peso_inicial, peso_filtro, peso_piedras, peso_fraccion_mayor, peso_fraccion_250, peso_recipiente_piedras, peso_piedras_con_recipiente) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, porc_mayor, porc_250, pi, pf, ppd_neto, pm, p250, tara_piedras, piedras_bruto))
                 conexion.commit()
                 flash('Estabilidad calculada.', 'success')
-                return redirect(url_for('inicio') + '#estab')
+                return redirect(url_for('inicio', m=muestra_id) + '#estab')
 
             elif tipo_formulario == 'macrofauna':
                 url_foto_manual = request.form.get('foto_macrofauna')
                 if not url_foto_manual:
                     flash('Debes esperar a que la foto suba.', 'danger')
-                    return redirect(url_for('inicio') + '#macrofauna')
+                    return redirect(url_for('inicio', m=muestra_id) + '#macrofauna')
                 cur.execute('''UPDATE muestras SET foto_macrofauna = %s WHERE id = %s AND usuario_id = %s''', (url_foto_manual, muestra_id, usuario_id))
                 conexion.commit()
-                flash('Foto de macrofauna guardada.', 'success')
-                return redirect(url_for('inicio') + '#macrofauna')
+                flash('Foto guardada.', 'success')
+                return redirect(url_for('inicio', m=muestra_id) + '#macrofauna')
 
             elif tipo_formulario == 'cromatografia':
                 url_foto_cromo = request.form.get('foto_cromatografia')
                 obs_cromo = request.form.get('obs_cromatografia')
                 if not url_foto_cromo and not obs_cromo:
                     flash('Debes adjuntar al menos una foto u observación.', 'danger')
-                    return redirect(url_for('inicio') + '#cromatografia')
+                    return redirect(url_for('inicio', m=muestra_id) + '#cromatografia')
                 cur.execute('''UPDATE muestras SET foto_cromatografia = %s, obs_cromatografia = %s WHERE id = %s AND usuario_id = %s''', (url_foto_cromo, obs_cromo, muestra_id, usuario_id))
                 conexion.commit()
                 flash('Registro de Cromatografía guardado.', 'success')
-                return redirect(url_for('inicio') + '#cromatografia')
+                return redirect(url_for('inicio', m=muestra_id) + '#cromatografia')
 
         cur.execute('SELECT id, nombre_muestra FROM muestras WHERE usuario_id = %s ORDER BY id DESC', (usuario_id,))
         muestras_db = cur.fetchall()
@@ -332,21 +331,53 @@ def datos_crudos(muestra_id):
         cur.execute('SELECT nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna, foto_cromatografia, obs_cromatografia FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         m_row = cur.fetchone()
         if m_row: datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante'], 'foto_macrofauna': m_row['foto_macrofauna'], 'foto_cromatografia': m_row['foto_cromatografia'], 'obs_cromatografia': m_row['obs_cromatografia']})
+        
         cur.execute('SELECT ph, conductividad FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
         ph_row = cur.fetchone()
         if ph_row: datos.update({'ph': ph_row['ph'], 'conductividad': ph_row['conductividad']})
-        cur.execute('SELECT peso_suelo, abs_muestra, abs_1, abs_2, abs_3, abs_4 FROM carbono_activo WHERE muestra_id = %s', (muestra_id,))
+        
+        # OBTENEMOS DATOS DE POXC Y CALCULAMOS REGRESIÓN PARA LA API
+        cur.execute('SELECT resultado_carbono, peso_suelo, abs_muestra, abs_1, abs_2, abs_3, abs_4 FROM carbono_activo WHERE muestra_id = %s', (muestra_id,))
         c_row = cur.fetchone()
-        if c_row: datos.update({'c_peso': c_row['peso_suelo'], 'c_abs': c_row['abs_muestra'], 'c_a1': c_row['abs_1'], 'c_a2': c_row['abs_2'], 'c_a3': c_row['abs_3'], 'c_a4': c_row['abs_4']})
-        cur.execute('SELECT peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_05, abs_1, abs_15, abs_2 FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
+        if c_row: 
+            datos.update({'c_peso': c_row['peso_suelo'], 'c_abs': c_row['abs_muestra'], 'c_a1': c_row['abs_1'], 'c_a2': c_row['abs_2'], 'c_a3': c_row['abs_3'], 'c_a4': c_row['abs_4'], 'c_res': c_row['resultado_carbono']})
+            try:
+                conc = np.array([0.005, 0.01, 0.015, 0.02])
+                absor = np.array([float(c_row['abs_1']), float(c_row['abs_2']), float(c_row['abs_3']), float(c_row['abs_4'])])
+                res = stats.linregress(absor, conc)
+                datos['c_eq'] = f"y = {res.slope:.4f}x + {res.intercept:.4f} (R²={res.rvalue**2:.4f})"
+                datos['c_slope'] = res.slope
+                datos['c_inter'] = res.intercept
+            except: pass
+            
+        # OBTENEMOS DATOS DE FOSFORO Y CALCULAMOS REGRESIÓN PARA LA API
+        cur.execute('SELECT resultado_ppm, resultado_mg_kg, peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_05, abs_1, abs_15, abs_2 FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
         p_row = cur.fetchone()
-        if p_row: datos.update({'p_peso': p_row['peso_suelo'], 'p_volext': p_row['vol_extracto'], 'p_voldil': p_row['vol_dilucion'], 'p_abs': p_row['abs_muestra'], 'p_a0': p_row['abs_0'], 'p_a05': p_row['abs_05'], 'p_a1': p_row['abs_1'], 'p_a15': p_row['abs_15'], 'p_a2': p_row['abs_2']})
+        if p_row: 
+            datos.update({'p_peso': p_row['peso_suelo'], 'p_volext': p_row['vol_extracto'], 'p_voldil': p_row['vol_dilucion'], 'p_abs': p_row['abs_muestra'], 'p_a0': p_row['abs_0'], 'p_a05': p_row['abs_05'], 'p_a1': p_row['abs_1'], 'p_a15': p_row['abs_15'], 'p_a2': p_row['abs_2'], 'p_res_mg': p_row['resultado_mg_kg'], 'p_res_ppm': p_row['resultado_ppm']})
+            try:
+                conc = np.array([0.0, 0.5, 1.0, 1.5, 2.0])
+                absor = np.array([float(p_row['abs_0']), float(p_row['abs_05']), float(p_row['abs_1']), float(p_row['abs_15']), float(p_row['abs_2'])])
+                res = stats.linregress(conc, absor)
+                datos['p_eq'] = f"y = {res.slope:.4f}x + {res.intercept:.4f} (R²={res.rvalue**2:.4f})"
+                datos['p_slope'] = res.slope
+                datos['p_inter'] = res.intercept
+            except: pass
+            
         cur.execute('SELECT peso_suelo, peso_filtro, peso_muestra_con_filtro FROM materia_organica WHERE muestra_id = %s', (muestra_id,))
         mop_row = cur.fetchone()
         if mop_row: datos.update({'mop_suelo': mop_row['peso_suelo'], 'mop_pf': mop_row.get('peso_filtro'), 'mop_pmcf': mop_row.get('peso_muestra_con_filtro')})
+        
         cur.execute('SELECT peso_inicial, peso_filtro, peso_fraccion_mayor, peso_fraccion_250, peso_recipiente_piedras, peso_piedras_con_recipiente FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
         ea_row = cur.fetchone()
         if ea_row: datos.update({'ea_pi': ea_row['peso_inicial'], 'ea_pf': ea_row['peso_filtro'], 'ea_pm': ea_row['peso_fraccion_mayor'], 'ea_p250': ea_row['peso_fraccion_250'], 'ea_rec_p': ea_row.get('peso_recipiente_piedras'), 'ea_pcr': ea_row.get('peso_piedras_con_recipiente')})
+        
+        # OBTENEMOS DATOS DE RESPIRACION
+        cur.execute('SELECT peso_suelo, co2_initial, co2_final, horas, ugc_gsoil, curva_tiempo, curva_co2 FROM respiracion_suelo WHERE muestra_id = %s', (muestra_id,))
+        r_row = cur.fetchone()
+        if r_row:
+            datos.update({'r_peso': r_row['peso_suelo'], 'r_ini': r_row['co2_initial'], 'r_fin': r_row['co2_final'], 'r_horas': r_row['horas'], 'r_res': r_row['ugc_gsoil'], 'r_tiempo': r_row['curva_tiempo'], 'r_co2': r_row['curva_co2']})
+            
         return jsonify(datos)
     finally: 
         cur.close()
@@ -379,7 +410,7 @@ def eliminar_foto(muestra_id):
     try:
         cur.execute('UPDATE muestras SET foto_macrofauna = NULL WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         conexion.commit()
-        flash('Foto de macrofauna eliminada correctamente.', 'success')
+        flash('Foto eliminada correctamente.', 'success')
     finally: 
         cur.close()
         conexion.close()
