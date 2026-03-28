@@ -169,7 +169,7 @@
                             <div class="section-card">
                                 <h5 class="mb-4 fw-bold"><i class="bi bi-geo-alt text-muted me-2"></i> Nueva Muestra</h5>
                                 <div class="mb-4 p-3 rounded-3" style="background-color: #f8f9fa;"><label class="form-label text-muted">¿Editar muestra existente?</label><select class="form-select selector-memoria shadow-sm border-0" name="muestra_id_editar"><option value="">-- No, crear una muestra nueva --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div>
-                                <div class="row g-3 mb-4"><div class="col-md-4"><label class="form-label d-flex justify-content-between align-items-center">Nombre de la muestra *<button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill" id="btn-scan-qr" title="Escanear QR"><i class="bi bi-qr-code-scan"></i></button></label><input type="text" class="form-control fw-bold" name="nombre" id="input_nombre_qr" required></div><div class="col-md-4"><label class="form-label">Cultivo Principal</label><input type="text" class="form-control" name="cultivo"></div><div class="col-md-4"><label class="form-label">Textura General</label><input type="text" class="form-control" name="textura"></div></div>
+                                <div class="row g-3 mb-4"><div class="col-md-6"><label class="form-label d-flex justify-content-between align-items-center">Nombre de la muestra *<button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill" id="btn-scan-qr" title="Escanear QR"><i class="bi bi-qr-code-scan"></i></button></label><input type="text" class="form-control fw-bold" name="nombre" id="input_nombre_qr" required></div><div class="col-md-6"><label class="form-label">Cultivo Principal</label><input type="text" class="form-control" name="cultivo"></div></div>
                             </div>
                             <div class="row g-4"><div class="col-md-6"><div class="section-card h-100"><h6 class="fw-bold mb-4 border-bottom pb-2">Coordenadas Geográficas</h6><div class="row g-3"><div class="col-sm-6"><label class="form-label text-muted">Latitud (Y)</label><input type="number" step="any" inputmode="decimal" class="form-control" name="latitud"></div><div class="col-sm-6"><label class="form-label text-muted">Longitud (X)</label><input type="number" step="any" inputmode="decimal" class="form-control" name="longitud"></div></div></div></div><div class="col-md-6"><div class="section-card h-100"><h6 class="fw-bold mb-4 border-bottom pb-2">Historial Cualitativo</h6><div class="mb-3"><input type="text" class="form-control" name="descripcion" placeholder="Descripción breve del estado"></div><div><textarea class="form-control" name="info" rows="2" placeholder="Notas de manejo, riego o abono..."></textarea></div></div></div></div>
                             <div class="text-end mt-4"><button type="submit" class="btn btn-agro px-5 py-2 shadow-sm"><i class="bi bi-save me-2"></i> Guardar muestra</button></div>
@@ -256,10 +256,33 @@
                     </div>
 
                     <div class="tab-pane fade" id="estab">
-                        <form action="/" method="POST" class="form-memoria" data-tab="estab">
-                            <input type="hidden" name="form_type" value="estabilidad_agregados">
-                            <div class="section-card"><h5 class="fw-bold mb-4"><i class="bi bi-grid-3x3-gap text-muted me-2"></i> Estabilidad de Agregados</h5><div class="col-md-6 mb-4"><label class="form-label">Muestra Analizada</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Seleccione --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="bg-light p-4 rounded-3 mb-4"><h6 class="fw-bold mb-4 border-bottom pb-2">Pesos y Taras Base (g)</h6><div class="row g-3"><div class="col-md-4"><label class="form-label text-muted">Suelo Inicial Seco</label><input type="number" step="any" inputmode="decimal" class="form-control bg-white" name="peso_inicial" required></div><div class="col-md-4"><label class="form-label text-muted">Tara Filtro Papel</label><input type="number" step="any" inputmode="decimal" class="form-control bg-white" name="peso_filtro" required></div><div class="col-md-4"><label class="form-label text-muted">Tara Recipiente Piedras</label><input type="number" step="any" inputmode="decimal" class="form-control bg-white" name="peso_recipiente_piedras" required></div></div></div><div class="bg-white p-4 rounded-3 mb-4 border"><h6 class="fw-bold mb-4 border-bottom pb-2">Pesajes Poscamizado (g)</h6><div class="row g-3"><div class="col-md-4"><label class="form-label text-danger">Recipiente + Arena gruesa/Piedras</label><input type="number" step="any" inputmode="decimal" class="form-control input-soft-danger fw-bold" name="peso_piedras_con_recipiente" required></div><div class="col-md-4"><label class="form-label text-primary">Filtro + Agregados >2mm</label><input type="number" step="any" inputmode="decimal" class="form-control input-soft-primary fw-bold" name="peso_fraccion_mayor" required></div><div class="col-md-4"><label class="form-label text-info">Filtro + Agregados 250µm</label><input type="number" step="any" inputmode="decimal" class="form-control input-soft-info fw-bold" name="peso_fraccion_250" required></div></div></div><button type="submit" class="btn btn-agro px-5 py-2"><i class="bi bi-calculator me-2"></i> Calcular Estabilidad</button></div>
-                        </form>
+                        <div class="row g-4 mb-4">
+                            <div class="col-lg-6">
+                                <div class="section-card h-100 text-center d-flex flex-column align-items-center justify-content-center bg-light">
+                                    <img src="{{ url_for('static', filename='slakes_info.png') }}" class="img-fluid w-100 mb-3" style="max-height: 200px; object-fit: contain;" alt="Infografía Slakes">
+                                    <h6 class="fw-bold mt-3">Usa la aplicación Slakes</h6>
+                                    <p class="small text-muted px-3">La estabilidad de agregados se mide fácilmente con la cámara de tu celular usando la aplicación gratuita <b>Slakes</b>.</p>
+                                    <a href="https://play.google.com/store/apps/details?id=com.slakes" target="_blank" class="btn btn-sm btn-outline-dark mt-2 fw-bold"><i class="bi bi-google-play"></i> Descargar Slakes</a>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <form action="/" method="POST" class="form-memoria" data-tab="estab">
+                                    <input type="hidden" name="form_type" value="estabilidad_agregados">
+                                    <div class="section-card h-100 d-flex flex-column">
+                                        <h5 class="fw-bold mb-4"><i class="bi bi-grid-3x3-gap text-muted me-2"></i> Estabilidad (Índice Slakes)</h5>
+                                        <div class="mb-4">
+                                            <label class="form-label">Muestra Analizada</label>
+                                            <select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Seleccione --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label class="form-label text-primary">Índice Slakes Obtenido (SI)</label>
+                                            <input type="number" step="any" inputmode="decimal" class="form-control form-control-lg input-soft-primary fw-bold text-center" name="indice_slakes" required placeholder="Ej: 5.4">
+                                        </div>
+                                        <button type="submit" class="btn btn-agro w-100 py-2 mt-auto"><i class="bi bi-save me-2"></i> Guardar Índice</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="tab-pane fade" id="macrofauna">
@@ -372,8 +395,8 @@
                             <p class="text-muted small mb-3">Selecciona las variables en los ejes para encontrar correlaciones biológicas y físico-químicas.</p>
                             
                             <div class="row g-2 mb-3">
-                                <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Eje X (Horizontal)</label><select id="sel-x" class="form-select form-select-sm bg-light fw-bold text-primary border-0"><option value="p" selected>Fósforo (mg/kg)</option><option value="poxc">Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados >2mm %</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración (ugC/g)</option></select></div>
-                                <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Eje Y (Vertical)</label><select id="sel-y" class="form-select form-select-sm bg-light fw-bold text-primary border-0"><option value="p">Fósforo (mg/kg)</option><option value="poxc" selected>Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados >2mm %</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración (ugC/g)</option></select></div>
+                                <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Eje X (Horizontal)</label><select id="sel-x" class="form-select form-select-sm bg-light fw-bold text-primary border-0"><option value="p" selected>Fósforo (mg/kg)</option><option value="poxc">Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados (SI)</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración (ugC/g)</option></select></div>
+                                <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Eje Y (Vertical)</label><select id="sel-y" class="form-select form-select-sm bg-light fw-bold text-primary border-0"><option value="p">Fósforo (mg/kg)</option><option value="poxc" selected>Carbono Activo</option><option value="ph">Nivel de pH</option><option value="mop">Materia Orgánica %</option><option value="agregados">Agregados (SI)</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración (ugC/g)</option></select></div>
                                 <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Tamaño Burbuja</label><select id="sel-size" class="form-select form-select-sm"><option value="p">Fósforo</option><option value="poxc">Carbono</option><option value="ph">pH</option><option value="mop" selected>Materia Orgánica</option><option value="agregados">Agregados</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración</option></select></div>
                                 <div class="col-md-3 col-6"><label class="form-label" style="font-size: 0.7rem;">Color Burbuja</label><select id="sel-color" class="form-select form-select-sm"><option value="p">Fósforo</option><option value="poxc">Carbono</option><option value="ph" selected>Nivel de pH</option><option value="mop">Materia Orgánica</option><option value="agregados">Agregados</option><option value="conductividad">Conductividad</option><option value="respiracion">Respiración</option></select></div>
                             </div>
@@ -412,7 +435,7 @@
                                             <th>Fósforo</th>
                                             <th>Resp. (μg)</th>
                                             <th>MOP %</th>
-                                            <th>Agreg. %</th>
+                                            <th>Índice Slakes</th>
                                             <th>Croma.</th>
                                             <th>Info</th>
                                         </tr>
@@ -428,7 +451,7 @@
                                             <td data-label="Fósforo">{% if fila.fosforo %}<strong>{{ "%.2f"|format(fila.fosforo) }}</strong>{% else %}-{% endif %}</td>
                                             <td data-label="Respiración">{% if fila.respiracion %}<span class="badge border border-success text-success">{{ "%.2f"|format(fila.respiracion) }}</span>{% else %}-{% endif %}</td>
                                             <td data-label="MOP %">{% if fila.mop %}<strong>{{ "%.2f"|format(fila.mop) }}</strong>{% else %}-{% endif %}</td>
-                                            <td data-label="Agregados %">{% if fila.porcentaje_mayor_2mm %}<strong>{{ "%.1f"|format(fila.porcentaje_mayor_2mm) }}</strong>{% else %}-{% endif %}</td>
+                                            <td data-label="Índice Slakes">{% if fila.indice_slakes %}<strong>{{ "%.1f"|format(fila.indice_slakes) }}</strong>{% else %}-{% endif %}</td>
                                             <td data-label="Croma">{% if fila.foto_cromatografia %}<i class="bi bi-check-circle-fill text-info"></i>{% else %}-{% endif %}</td>
                                             <td data-label="Opciones">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle" data-bs-toggle="modal" data-bs-target="#modal-{{ fila.id }}"><i class="bi bi-arrows-fullscreen"></i></button>
@@ -471,7 +494,7 @@
                 btn.addEventListener('shown.bs.tab', e => { 
                     localStorage.setItem('pestañaActiva', e.target.id); 
                     window.history.replaceState(null, null, e.target.getAttribute('data-bs-target')); 
-                    window.scrollTo(0, 0);
+                    window.scrollTo(0, 0); 
                 }); 
             });
 
@@ -483,14 +506,12 @@
                     if(document.getElementById('fosforo-result-card')) document.getElementById('fosforo-result-card').style.display = 'none';
                     if(document.getElementById('resp-result-card')) document.getElementById('resp-result-card').style.display = 'none';
 
-                    if (!id) { 
-                        form.reset(); form.dataset.modificando = "false"; 
-                        if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; 
-                        if(document.getElementById('foto_preview_container_cromo')) document.getElementById('foto_preview_container_cromo').style.display='none';
-                        return; 
-                    }
-                    if (id.startsWith('offline_')) { 
-                        form.reset(); this.value = id; form.dataset.modificando = "false"; 
+                    // 4) Casillas en blanco al cambiar de muestra
+                    form.reset();
+                    this.value = id; // Mantener la seleccion
+                    form.dataset.modificando = "false";
+                    
+                    if (!id || id.startsWith('offline_')) { 
                         if(document.getElementById('foto_preview_container')) document.getElementById('foto_preview_container').style.display='none'; 
                         if(document.getElementById('foto_preview_container_cromo')) document.getElementById('foto_preview_container_cromo').style.display='none';
                         return; 
@@ -498,9 +519,13 @@
                     
                     fetch('/api/datos_crudos/' + id).then(r => r.json()).then(data => {
                         let tieneDatos = false;
-                        if(tab === 'registro') { form.querySelector('[name="nombre"]').value = data.nombre || ''; form.querySelector('[name="cultivo"]').value = data.cultivo || ''; form.querySelector('[name="textura"]').value = data.textura || ''; form.querySelector('[name="latitud"]').value = data.latitud || ''; form.querySelector('[name="longitud"]').value = data.longitud || ''; form.querySelector('[name="descripcion"]').value = data.descripcion || ''; form.querySelector('[name="info"]').value = data.info || ''; tieneDatos = true; }
-                        if(tab === 'textura') { form.querySelector('[name="textura"]').value = data.textura || ''; tieneDatos = true; }
-                        if(tab === 'ph' && data.ph !== undefined && data.ph !== null) { form.querySelector('[name="ph"]').value = data.ph; form.querySelector('[name="conductividad"]').value = data.conductividad; tieneDatos = true; }
+                        if(tab === 'registro') { form.querySelector('[name="nombre"]').value = data.nombre || ''; form.querySelector('[name="cultivo"]').value = data.cultivo || ''; form.querySelector('[name="latitud"]').value = data.latitud || ''; form.querySelector('[name="longitud"]').value = data.longitud || ''; form.querySelector('[name="descripcion"]').value = data.descripcion || ''; form.querySelector('[name="info"]').value = data.info || ''; tieneDatos = true; }
+                        if(tab === 'textura' && data.textura) { form.querySelector('[name="textura"]').value = data.textura; tieneDatos = true; }
+                        if(tab === 'ph' && (data.ph !== undefined || data.conductividad !== undefined)) { 
+                            if(data.ph !== null) form.querySelector('[name="ph"]').value = data.ph; 
+                            if(data.conductividad !== null) form.querySelector('[name="conductividad"]').value = data.conductividad; 
+                            tieneDatos = true; 
+                        }
                         
                         if(tab === 'carbono' && data.c_abs !== undefined && data.c_abs !== null) { 
                             form.querySelector('[name="peso_suelo_carbono"]').value = data.c_peso || '2.5'; form.querySelector('[name="abs_muestra"]').value = data.c_abs; form.querySelector('[name="abs_1"]').value = data.c_a1 || ''; form.querySelector('[name="abs_2"]').value = data.c_a2 || ''; form.querySelector('[name="abs_3"]').value = data.c_a3 || ''; form.querySelector('[name="abs_4"]').value = data.c_a4 || ''; tieneDatos = true; 
@@ -567,7 +592,8 @@
                         }
 
                         if(tab === 'mop' && data.mop_suelo !== undefined && data.mop_suelo !== null) { form.querySelector('[name="peso_filtro_mop"]').value = data.mop_pf || ''; form.querySelector('[name="peso_muestra_con_filtro"]').value = data.mop_pmcf || ''; form.querySelector('[name="peso_suelo"]').value = data.mop_suelo || ''; tieneDatos = true; }
-                        if(tab === 'estab' && data.ea_pi !== undefined && data.ea_pi !== null) { form.querySelector('[name="peso_inicial"]').value = data.ea_pi || ''; form.querySelector('[name="peso_filtro"]').value = data.ea_pf || ''; form.querySelector('[name="peso_recipiente_piedras"]').value = data.ea_rec_p || ''; form.querySelector('[name="peso_piedras_con_recipiente"]').value = data.ea_pcr || ''; form.querySelector('[name="peso_fraccion_mayor"]').value = data.ea_pm || ''; form.querySelector('[name="peso_fraccion_250"]').value = data.ea_p250 || ''; tieneDatos = true; }
+                        if(tab === 'estab' && data.ea_slakes !== undefined && data.ea_slakes !== null) { form.querySelector('[name="indice_slakes"]').value = data.ea_slakes; tieneDatos = true; }
+                        
                         if(tab === 'macrofauna') { 
                             if(data.foto_macrofauna) { document.getElementById('hidden_url_foto').value = data.foto_macrofauna; document.getElementById('foto_preview').src = data.foto_macrofauna; document.getElementById('foto_preview_container').style.display = 'block'; tieneDatos = true; } else { document.getElementById('hidden_url_foto').value = ''; document.getElementById('foto_preview_container').style.display = 'none'; }
                         }
@@ -581,7 +607,6 @@
                 });
             });
 
-            // EL AUTO-SELECT AHORA ESTÁ AQUÍ (DESPUÉS DE QUE LOS LISTENERS ESTÉN ACTIVOS)
             const urlParams = new URLSearchParams(window.location.search);
             const autoMuestraId = urlParams.get('m');
             if (autoMuestraId && activeTabId) {
@@ -590,7 +615,6 @@
                     const sel = tabEl.querySelector('.selector-memoria');
                     if (sel) {
                         sel.value = autoMuestraId;
-                        // Un micro-retraso asegura que ECharts pueda leer el ancho del contenedor en Bootstrap
                         setTimeout(() => {
                             sel.dispatchEvent(new Event('change'));
                         }, 100);
@@ -655,9 +679,7 @@
                         document.querySelectorAll('.selector-memoria').forEach(sel => {
                             if(![...sel.options].some(opt => opt.value === `offline_${newName}`)) {
                                 const opt = new Option(`*NUEVO* ${newName}`, `offline_${newName}`);
-                                opt.style.color = '#2d6a4f';
-                                opt.style.fontWeight = 'bold';
-                                sel.add(opt);
+                                opt.style.color = '#2d6a4f'; opt.style.fontWeight = 'bold'; sel.add(opt);
                             }
                         });
                     }
@@ -697,6 +719,15 @@
 
             document.querySelectorAll('.form-memoria').forEach(form => {
                 form.addEventListener('submit', function(e) {
+                    
+                    // 3) Advertencia al modificar un valor existente
+                    if (this.dataset.modificando === "true") {
+                        if (!confirm("Ya existen datos guardados para este análisis. ¿Estás seguro que deseas sobrescribir la información?")) {
+                            e.preventDefault();
+                            return;
+                        }
+                    }
+
                     if (!navigator.onLine && form.dataset.tab !== 'respiracion') {
                         e.preventDefault(); 
                         const formData = new FormData(form);
@@ -815,17 +846,17 @@
 
                 const datosSuelo = [
                     {% for f in consolidado %}
-                    { name: "{{ f.nombre_muestra }}", ph: {{ f.ph or 0 }}, poxc: {{ f.resultado_carbono or 0 }}, p: {{ f.fosforo or 0 }}, mop: {{ f.mop or 0 }}, agregados: {{ f.porcentaje_mayor_2mm or 0 }}, conductividad: {{ f.conductividad or 0 }}, respiracion: {{ f.respiracion or 0 }} },
+                    { name: "{{ f.nombre_muestra }}", ph: {{ f.ph or 0 }}, poxc: {{ f.resultado_carbono or 0 }}, p: {{ f.fosforo or 0 }}, mop: {{ f.mop or 0 }}, agregados: {{ f.indice_slakes or 0 }}, conductividad: {{ f.conductividad or 0 }}, respiracion: {{ f.respiracion or 0 }} },
                     {% endfor %}
                 ];
 
-                const dictVars = { 'ph': { label: 'pH', unit: '' }, 'poxc': { label: 'Carbono Activo', unit: 'mg/kg' }, 'p': { label: 'Fósforo', unit: 'mg/kg' }, 'mop': { label: 'Materia Orgánica', unit: '%' }, 'agregados': { label: 'Agregados', unit: '%' }, 'conductividad': { label: 'Conductividad', unit: 'dS/m' }, 'respiracion': { label: 'Respiración', unit: 'μgC/g' } };
-                const maxValues = { ph: 14, poxc: Math.max(...datosSuelo.map(d=>d.poxc), 800), p: Math.max(...datosSuelo.map(d=>d.p), 50), mop: Math.max(...datosSuelo.map(d=>d.mop), 5), agregados: Math.max(...datosSuelo.map(d=>d.agregados), 100) };
+                const dictVars = { 'ph': { label: 'pH', unit: '' }, 'poxc': { label: 'Carbono Activo', unit: 'mg/kg' }, 'p': { label: 'Fósforo', unit: 'mg/kg' }, 'mop': { label: 'Materia Orgánica', unit: '%' }, 'agregados': { label: 'Índice Slakes', unit: 'SI' }, 'conductividad': { label: 'Conductividad', unit: 'dS/m' }, 'respiracion': { label: 'Respiración', unit: 'μgC/g' } };
+                const maxValues = { ph: 14, poxc: Math.max(...datosSuelo.map(d=>d.poxc), 800), p: Math.max(...datosSuelo.map(d=>d.p), 50), mop: Math.max(...datosSuelo.map(d=>d.mop), 5), agregados: Math.max(...datosSuelo.map(d=>d.agregados), 10) };
 
                 let chartRadar = echarts.init(document.getElementById('chart-radar'));
                 chartRadar.setOption({
                     tooltip: { trigger: 'item' },
-                    radar: { shape: 'polygon', indicator: [ { name: 'pH', max: maxValues.ph }, { name: 'Carbono', max: maxValues.poxc }, { name: 'Fósforo', max: maxValues.p }, { name: 'MOP %', max: maxValues.mop }, { name: 'Agregados %', max: maxValues.agregados } ], axisName: { color: '#4a4a4a', fontWeight: 'bold', fontSize: 10 } },
+                    radar: { shape: 'polygon', indicator: [ { name: 'pH', max: maxValues.ph }, { name: 'Carbono', max: maxValues.poxc }, { name: 'Fósforo', max: maxValues.p }, { name: 'MOP %', max: maxValues.mop }, { name: 'Agregados (SI)', max: maxValues.agregados } ], axisName: { color: '#4a4a4a', fontWeight: 'bold', fontSize: 10 } },
                     series: [{ type: 'radar', data: [{ value: [datosSuelo[0].ph, datosSuelo[0].poxc, datosSuelo[0].p, datosSuelo[0].mop, datosSuelo[0].agregados], name: datosSuelo[0].name, areaStyle: { color: 'rgba(45, 106, 79, 0.2)' }, lineStyle: { color: '#2d6a4f', width: 2 }, itemStyle: { color: '#2d6a4f' } }] }]
                 });
 
@@ -861,4 +892,3 @@
     </script>
 </body>
 </html>
-
