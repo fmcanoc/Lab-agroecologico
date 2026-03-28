@@ -78,6 +78,12 @@ def crear_tablas():
                 cur.execute("ALTER TABLE muestras ADD COLUMN obs_cromatografia TEXT;")
             except Exception:
                 conexion.rollback()
+                
+            # NUEVO CAMPO PARA SLAKES
+            try:
+                cur.execute("ALTER TABLE estabilidad_agregados ADD COLUMN indice_slakes NUMERIC;")
+            except Exception:
+                conexion.rollback()
 
             conexion.commit()
             cur.close()
@@ -154,21 +160,21 @@ def inicio():
             
             if tipo_formulario == 'registro_muestra':
                 nombre, cultivo, descripcion, info = request.form['nombre'], request.form['cultivo'], request.form['descripcion'], request.form['info']
-                textura = request.form.get('textura')
+                # Se eliminó la textura del form de Muestras (se maneja en su pestaña)
                 lat_str, lon_str = request.form.get('latitud'), request.form.get('longitud')
                 latitud = float(lat_str) if lat_str else None
                 longitud = float(lon_str) if lon_str else None
                 muestra_id_editar = request.form.get('muestra_id_editar')
                 if muestra_id_editar:
-                    cur.execute('''UPDATE muestras SET nombre_muestra=%s, cultivo=%s, textura=%s, latitud=%s, longitud=%s, descripcion=%s, informacion_relevante=%s WHERE id=%s AND usuario_id=%s''', (nombre, cultivo, textura, latitud, longitud, descripcion, info, muestra_id_editar, usuario_id))
+                    cur.execute('''UPDATE muestras SET nombre_muestra=%s, cultivo=%s, latitud=%s, longitud=%s, descripcion=%s, informacion_relevante=%s WHERE id=%s AND usuario_id=%s''', (nombre, cultivo, latitud, longitud, descripcion, info, muestra_id_editar, usuario_id))
                     flash('Muestra actualizada exitosamente.', 'info')
                 else:
                     try:
-                        cur.execute('''INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, textura, descripcion, informacion_relevante, latitud, longitud) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', (usuario_id, nombre, cultivo, textura, descripcion, info, latitud, longitud))
+                        cur.execute('''INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, descripcion, informacion_relevante, latitud, longitud) VALUES (%s, %s, %s, %s, %s, %s, %s)''', (usuario_id, nombre, cultivo, descripcion, info, latitud, longitud))
                         flash('Muestra creada exitosamente.', 'success')
                     except errors.UniqueViolation:
                         conexion.rollback()
-                        cur.execute('''UPDATE muestras SET cultivo=%s, textura=%s, descripcion=%s, informacion_relevante=%s, latitud=%s, longitud=%s WHERE usuario_id=%s AND nombre_muestra=%s''', (cultivo, textura, descripcion, info, latitud, longitud, usuario_id, nombre))
+                        cur.execute('''UPDATE muestras SET cultivo=%s, descripcion=%s, informacion_relevante=%s, latitud=%s, longitud=%s WHERE usuario_id=%s AND nombre_muestra=%s''', (cultivo, descripcion, info, latitud, longitud, usuario_id, nombre))
                         flash('Muestra actualizada exitosamente.', 'info')
                 conexion.commit()
                 return redirect(url_for('inicio') + '#muestras')
@@ -250,10 +256,15 @@ def inicio():
                 return redirect(url_for('inicio', m=muestra_id) + '#fosforo')
 
             elif tipo_formulario == 'ph_conductividad':
+                ph_str = request.form.get('ph')
+                cond_str = request.form.get('conductividad')
+                ph_num = float(ph_str) if ph_str and ph_str.strip() != '' else None
+                cond_num = float(cond_str) if cond_str and cond_str.strip() != '' else None
+                
                 cur.execute('DELETE FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
-                cur.execute('INSERT INTO ph_conductividad (muestra_id, ph, conductividad) VALUES (%s, %s, %s)', (muestra_id, float(request.form['ph']), float(request.form['conductividad'])))
+                cur.execute('INSERT INTO ph_conductividad (muestra_id, ph, conductividad) VALUES (%s, %s, %s)', (muestra_id, ph_num, cond_num))
                 conexion.commit()
-                flash('pH y Conductividad guardados.', 'success')
+                flash('Valores de pH y/o Conductividad guardados.', 'success')
                 return redirect(url_for('inicio', m=muestra_id) + '#ph')
 
             elif tipo_formulario == 'materia_organica':
@@ -267,15 +278,13 @@ def inicio():
                 return redirect(url_for('inicio', m=muestra_id) + '#mop')
 
             elif tipo_formulario == 'estabilidad_agregados':
-                pi, pf, tara_piedras, piedras_bruto, pm, p250 = float(request.form['peso_inicial']), float(request.form['peso_filtro']), float(request.form['peso_recipiente_piedras']), float(request.form['peso_piedras_con_recipiente']), float(request.form['peso_fraccion_mayor']), float(request.form['peso_fraccion_250'])
-                ppd_neto = piedras_bruto - tara_piedras
-                denominador = pi - ppd_neto
-                porc_mayor = ((pm - pf) / denominador) * 100
-                porc_250 = ((p250 - pf) / denominador) * 100
+                slakes_str = request.form.get('indice_slakes')
+                slakes_num = float(slakes_str) if slakes_str and slakes_str.strip() != '' else None
+                
                 cur.execute('DELETE FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
-                cur.execute('''INSERT INTO estabilidad_agregados (muestra_id, porcentaje_mayor_2mm, porcentaje_250_2mm, peso_inicial, peso_filtro, peso_piedras, peso_fraccion_mayor, peso_fraccion_250, peso_recipiente_piedras, peso_piedras_con_recipiente) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, porc_mayor, porc_250, pi, pf, ppd_neto, pm, p250, tara_piedras, piedras_bruto))
+                cur.execute('''INSERT INTO estabilidad_agregados (muestra_id, indice_slakes) VALUES (%s, %s)''', (muestra_id, slakes_num))
                 conexion.commit()
-                flash('Estabilidad calculada.', 'success')
+                flash('Índice Slakes guardado exitosamente.', 'success')
                 return redirect(url_for('inicio', m=muestra_id) + '#estab')
 
             elif tipo_formulario == 'macrofauna':
@@ -304,7 +313,7 @@ def inicio():
         consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, m.foto_macrofauna, 
                                   m.foto_cromatografia, m.obs_cromatografia,
                                   c.resultado_carbono, p.ph, p.conductividad, mo.resultado_porcentaje AS mop, 
-                                  ea.porcentaje_mayor_2mm, ea.porcentaje_250_2mm, fo.resultado_mg_kg AS fosforo, fo.resultado_ppm AS fosforo_ppm,
+                                  ea.indice_slakes, fo.resultado_mg_kg AS fosforo, fo.resultado_ppm AS fosforo_ppm,
                                   rs.ugc_gsoil AS respiracion, rs.co2_initial, rs.co2_final, rs.curva_tiempo, rs.curva_co2
                                   FROM muestras m 
                                   LEFT JOIN carbono_activo c ON m.id = c.muestra_id 
@@ -336,7 +345,6 @@ def datos_crudos(muestra_id):
         ph_row = cur.fetchone()
         if ph_row: datos.update({'ph': ph_row['ph'], 'conductividad': ph_row['conductividad']})
         
-        # OBTENEMOS DATOS DE POXC Y CALCULAMOS REGRESIÓN PARA LA API
         cur.execute('SELECT resultado_carbono, peso_suelo, abs_muestra, abs_1, abs_2, abs_3, abs_4 FROM carbono_activo WHERE muestra_id = %s', (muestra_id,))
         c_row = cur.fetchone()
         if c_row: 
@@ -350,7 +358,6 @@ def datos_crudos(muestra_id):
                 datos['c_inter'] = res.intercept
             except: pass
             
-        # OBTENEMOS DATOS DE FOSFORO Y CALCULAMOS REGRESIÓN PARA LA API
         cur.execute('SELECT resultado_ppm, resultado_mg_kg, peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_05, abs_1, abs_15, abs_2 FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
         p_row = cur.fetchone()
         if p_row: 
@@ -368,11 +375,10 @@ def datos_crudos(muestra_id):
         mop_row = cur.fetchone()
         if mop_row: datos.update({'mop_suelo': mop_row['peso_suelo'], 'mop_pf': mop_row.get('peso_filtro'), 'mop_pmcf': mop_row.get('peso_muestra_con_filtro')})
         
-        cur.execute('SELECT peso_inicial, peso_filtro, peso_fraccion_mayor, peso_fraccion_250, peso_recipiente_piedras, peso_piedras_con_recipiente FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
+        cur.execute('SELECT indice_slakes FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
         ea_row = cur.fetchone()
-        if ea_row: datos.update({'ea_pi': ea_row['peso_inicial'], 'ea_pf': ea_row['peso_filtro'], 'ea_pm': ea_row['peso_fraccion_mayor'], 'ea_p250': ea_row['peso_fraccion_250'], 'ea_rec_p': ea_row.get('peso_recipiente_piedras'), 'ea_pcr': ea_row.get('peso_piedras_con_recipiente')})
+        if ea_row: datos.update({'ea_slakes': ea_row['indice_slakes']})
         
-        # OBTENEMOS DATOS DE RESPIRACION
         cur.execute('SELECT peso_suelo, co2_initial, co2_final, horas, ugc_gsoil, curva_tiempo, curva_co2 FROM respiracion_suelo WHERE muestra_id = %s', (muestra_id,))
         r_row = cur.fetchone()
         if r_row:
@@ -439,7 +445,7 @@ def descargar_csv():
                   m.foto_macrofauna AS "Foto_Macrofauna", m.foto_cromatografia AS "Foto_Cromatografia", m.obs_cromatografia AS "Obs_Cromatografia",
                   c.resultado_carbono AS "Carbono_Activo", fo.resultado_ppm AS "Fosforo_ppm", fo.resultado_mg_kg AS "Fosforo_mg_kg", 
                   p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc", 
-                  ea.porcentaje_mayor_2mm AS "Agregados_Mayor_2mm_Porc", ea.porcentaje_250_2mm AS "Agregados_250_2mm_Porc",
+                  ea.indice_slakes AS "Indice_Slakes",
                   rs.ugc_gsoil AS "Respiracion_ugC_g"
                   FROM muestras m 
                   LEFT JOIN carbono_activo c ON m.id = c.muestra_id 
@@ -539,7 +545,7 @@ def manifest():
 @app.route('/sw.js')
 def sw():
     sw_content = """
-    const CACHE_NAME = 'agro-cache-v6';
+    const CACHE_NAME = 'agro-cache-v7';
     const urlsToCache = ['/'];
     self.addEventListener('install', (e) => { 
         e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)));
