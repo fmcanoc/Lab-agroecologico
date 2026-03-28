@@ -2,64 +2,176 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ingresar - Lab Agroecológico</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
     <style>
-        body { font-family: 'Montserrat', sans-serif; background-color: #f4f6f8; }
-        .header-bar { background-color: #212529; color: #ffffff; padding: 1rem 1.5rem; position: fixed; top: 0; width: 100%; z-index: 1050; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .lab-title { color: #fcfbf5; font-weight: 800; letter-spacing: 0.03em; margin: 0; font-size: 1.3rem;}
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            background-color: #f4f6f8; 
+            margin: 0; 
+            overflow-x: hidden;
+            color: #333333;
+        }
+        
+        /* HEADER OSCURO */
+        .header-bar { 
+            background-color: #212529; 
+            color: #ffffff; 
+            padding: 1rem 1.5rem; 
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            z-index: 1050; 
+            display: flex; 
+            align-items: center; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .lab-title { color: #fcfbf5; font-weight: 800; letter-spacing: 0.03em; font-size: 1.3rem; margin: 0;}
+        .text-highlight { color: #d4ff00; }
+        
+        /* CONTENEDOR PRINCIPAL DIVIDIDO */
+        .main-wrapper {
+            display: flex;
+            min-height: 100vh;
+            padding-top: 60px; /* Compensa el header */
+        }
+
+        /* LADO IZQUIERDO: ILUSTRACIÓN */
+        .illustration-side {
+            flex: 1.2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            /* El color de fondo debe ser similar al fondo de tu imagen para que el blend-mode funcione perfecto */
+            background-color: #f4f6f8; 
+        }
+        
+        .illustration-img {
+            max-width: 100%;
+            max-height: 85vh;
+            object-fit: contain;
+            /* AQUÍ ESTÁ LA MAGIA: Esto hace que el fondo crema de tu dibujo se vuelva transparente */
+            mix-blend-mode: multiply; 
+            opacity: 0.85;
+        }
+
+        /* LADO DERECHO: TARJETA DE LOGIN */
+        .form-side {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            border: 1px solid #e9ecef;
+        }
+
+        /* ESTILOS DE LA TARJETA */
+        .card-icon { font-size: 3rem; color: #2d6a4f; margin-bottom: 0.5rem; }
+        h4 { font-weight: 800; color: #1a1a1a; letter-spacing: -0.02em; margin-bottom: 1.5rem; }
+        .form-label { font-size: 0.75rem; font-weight: 700; color: #6c757d; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+        
+        .form-control { border-radius: 8px; background-color: #fcfcfc; border: 1px solid #ced4da; padding: 0.8rem 1rem; font-size: 0.95rem; }
+        .form-control:focus { border-color: #2d6a4f; box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.1); background-color: #ffffff;}
+        
+        .btn-agro { background-color: #2d6a4f; color: #ffffff; font-weight: 700; border-radius: 8px; padding: 0.8rem; transition: all 0.2s; border: none; }
+        .btn-agro:hover { background-color: #1b4332; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2); color: white;}
+        
+        .btn-dark-outline { border: 2px solid #212529; color: #212529; font-weight: 700; border-radius: 8px; padding: 0.7rem; transition: all 0.2s;}
+        .btn-dark-outline:hover { background-color: #212529; color: white; }
+        
+        hr { border-color: #dee2e6; margin: 2rem 0; }
+
+        /* MODO CELULAR */
+        @media (max-width: 991px) {
+            .main-wrapper { flex-direction: column; }
+            .illustration-side { display: none; } /* Ocultamos el dibujo en el celular para ahorrar espacio */
+            .form-side { padding: 1rem; margin-top: 2rem;}
+            .login-card { padding: 2rem; }
+        }
     </style>
 </head>
-<body class="d-flex align-items-center justify-content-center" style="height: 100vh; margin: 0;">
+<body>
 
-    <div class="header-bar shadow-sm d-flex justify-content-center align-items-center">
-        <img src="{{ url_for('static', filename='logo_lab.png') }}" alt="Logo" style="height: 35px; width: auto; margin-right: 12px; border-radius: 4px;">
-        <h3 class="lab-title">LAB AGROECOLÓGICO</h3>
+    <div class="header-bar">
+        <h3 class="lab-title"><i class="bi bi-tree-fill me-2 text-highlight"></i> LAB AGROECOLÓGICO</h3>
     </div>
 
-    <div class="card shadow p-4" style="width: 400px; margin-top: 60px; border-radius: 12px; border: 1px solid #e9ecef;">
+    <div class="main-wrapper">
         
-        <div class="text-center mb-3">
-            <img src="{{ url_for('static', filename='logo_lab.png') }}" alt="Laboratorio Agroecológico Abierto" style="max-height: 200px; width: auto; mix-blend-mode: multiply;">
+        <div class="illustration-side">
+            <img src="{{ url_for('static', filename='logo_lab.jpg') }}" alt="Laboratorio Agroecológico" class="illustration-img">
         </div>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} py-2 px-3 text-center small fw-bold" style="border-radius: 8px;">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
 
-        <form action="/login" method="POST">
-            <div class="mb-3">
-                <label class="form-label fw-bold small text-muted mb-1 text-uppercase">Usuario</label>
-                <input type="text" class="form-control" name="username" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label fw-bold small text-muted mb-1 text-uppercase">Contraseña</label>
-                <input type="password" class="form-control" name="password" required>
-            </div>
-            <button type="submit" class="btn text-white w-100 mb-2 fw-bold" style="background-color: #2d6a4f; border-radius: 8px;">Iniciar Sesión</button>
-        </form>
+        <div class="form-side">
+            <div class="login-card">
+                
+                <div class="text-center">
+                    <i class="bi bi-tree-fill card-icon d-inline-block"></i>
+                    <h4>Laboratorio Abierto</h4>
+                </div>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} py-2 px-3 text-center small fw-bold mb-4" style="border-radius: 8px; border:none; background-color: {{ '#ebfbee' if category == 'success' else '#fff5f5' }}; color: {{ '#2b8a3e' if category == 'success' else '#c92a2a' }};">
+                          {{ message }}
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
 
-        <hr class="my-3 text-muted">
-        <p class="text-center small mb-2 text-muted fw-bold">¿No tienes cuenta?</p>
-        
-        <form action="/registro" method="POST">
-            <div class="input-group input-group-sm">
-                <input type="text" class="form-control" name="new_username" placeholder="Nuevo usuario" required>
-                <input type="password" class="form-control" name="new_password" placeholder="Contraseña" required>
-                <button type="submit" class="btn btn-dark fw-bold">Registrar</button>
+                <form action="/login" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Usuario</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-agro w-100 mb-2">Iniciar Sesión</button>
+                </form>
+
+                <hr>
+
+                <p class="text-center small mb-3 text-muted fw-bold">¿No tienes cuenta?</p>
+                
+                <form action="/registro" method="POST">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <input type="text" class="form-control" name="new_username" placeholder="Nuevo usuario" required>
+                        </div>
+                        <div class="col-12">
+                            <input type="password" class="form-control" name="new_password" placeholder="Contraseña" required>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <button type="submit" class="btn btn-dark-outline w-100 bg-transparent">Registrar</button>
+                        </div>
+                    </div>
+                </form>
+
             </div>
-        </form>
+        </div>
     </div>
 
     <img src="{{ url_for('static', filename='logo_regosh.png') }}" 
          alt="Logo REGOSH" 
-         style="position: fixed; bottom: 15px; right: 15px; width: 100px; height: auto; z-index: 1000; opacity: 0.9;">
+         style="position: fixed; bottom: 20px; right: 20px; width: 100px; height: auto; z-index: 1000; opacity: 0.9;">
 
 </body>
 </html>
