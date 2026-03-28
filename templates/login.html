@@ -15,14 +15,14 @@
 <body class="d-flex align-items-center justify-content-center" style="height: 100vh; margin: 0;">
 
     <div class="header-bar shadow-sm d-flex justify-content-center align-items-center">
-        <img src="{{ url_for('static', filename='logo_lab.jpg') }}" alt="Logo" style="height: 35px; width: auto; margin-right: 12px; border-radius: 4px;">
+        <img src="{{ url_for('static', filename='logo_lab.png') }}" alt="Logo" style="height: 35px; width: auto; margin-right: 12px; border-radius: 4px;">
         <h3 class="lab-title">LAB AGROECOLÓGICO</h3>
     </div>
 
     <div class="card shadow p-4" style="width: 400px; margin-top: 60px; border-radius: 12px; border: 1px solid #e9ecef;">
         
         <div class="text-center mb-3">
-            <img src="{{ url_for('static', filename='logo_lab.jpg') }}" alt="Laboratorio Agroecológico Abierto" style="max-height: 200px; width: auto; mix-blend-mode: multiply;">
+            <img src="{{ url_for('static', filename='logo_lab.png') }}" alt="Laboratorio Agroecológico Abierto" style="max-height: 200px; width: auto; mix-blend-mode: multiply;">
         </div>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
