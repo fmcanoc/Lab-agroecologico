@@ -119,7 +119,10 @@
 
     <div class="header-bar shadow-sm">
         <div class="container-fluid px-md-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <h3 class="m-0 d-flex align-items-center lab-title"><i class="bi bi-tree-fill me-2" style="color:var(--r-highlight);"></i> LAB AGROECOLÓGICO</h3>
+            <h3 class="m-0 d-flex align-items-center lab-title">
+                <img src="{{ url_for('static', filename='logo_lab.jpg') }}" alt="Logo" style="height: 35px; width: auto; margin-right: 12px; border-radius: 4px;">
+                LAB AGROECOLÓGICO
+            </h3>
             <div class="d-flex align-items-center">
                 <div id="google_translate_element" class="me-3 goog-te-gadget-simple-dark"></div>
                 <div class="me-3 text-end d-none d-sm-block user-info border-start ps-3 border-secondary"><span class="d-block lh-1">Sesión activa</span><strong>{{ username }}</strong></div>
