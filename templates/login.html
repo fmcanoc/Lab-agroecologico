@@ -10,17 +10,20 @@
         body { font-family: 'Montserrat', sans-serif; background-color: #f4f6f8; }
         .header-bar { background-color: #212529; color: #ffffff; padding: 1rem 1.5rem; position: fixed; top: 0; width: 100%; z-index: 1050; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .lab-title { color: #fcfbf5; font-weight: 800; letter-spacing: 0.03em; margin: 0; font-size: 1.3rem;}
-        .text-highlight { color: #d4ff00; }
     </style>
 </head>
 <body class="d-flex align-items-center justify-content-center" style="height: 100vh; margin: 0;">
 
-    <div class="header-bar shadow-sm">
-        <h3 class="lab-title"><span class="text-highlight">🌲</span> LAB AGROECOLÓGICO</h3>
+    <div class="header-bar shadow-sm d-flex justify-content-center align-items-center">
+        <img src="{{ url_for('static', filename='logo_lab.jpg') }}" alt="Logo" style="height: 35px; width: auto; margin-right: 12px; border-radius: 4px;">
+        <h3 class="lab-title">LAB AGROECOLÓGICO</h3>
     </div>
 
     <div class="card shadow p-4" style="width: 400px; margin-top: 60px; border-radius: 12px; border: 1px solid #e9ecef;">
-        <h4 class="text-center mb-4 fw-bold" style="color: #1a1a1a;">Laboratorio agroecológico abierto</h4>
+        
+        <div class="text-center mb-3">
+            <img src="{{ url_for('static', filename='logo_lab.jpg') }}" alt="Laboratorio Agroecológico Abierto" style="max-height: 200px; width: auto; mix-blend-mode: multiply;">
+        </div>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
