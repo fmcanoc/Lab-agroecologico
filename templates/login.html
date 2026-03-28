@@ -12,7 +12,8 @@
     <style>
         body { 
             font-family: 'Montserrat', sans-serif; 
-            background-color: #f4f6f8; 
+            /* Este color base ayuda a que el fondo del dibujo se fusione perfecto */
+            background-color: #f0f2f5; 
             margin: 0; 
             overflow-x: hidden;
             color: #333333;
@@ -35,30 +36,32 @@
         .text-highlight { color: #d4ff00; }
         
         /* CONTENEDOR PRINCIPAL DIVIDIDO */
-        .main-wrapper {
+        .login-container {
             display: flex;
             min-height: 100vh;
             padding-top: 60px; /* Compensa el header */
+            width: 100%;
         }
 
-        /* LADO IZQUIERDO: ILUSTRACIÓN */
+        /* LADO IZQUIERDO: ILUSTRACIÓN (MURAL) */
         .illustration-side {
             flex: 1.2;
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
-            /* El color de fondo debe ser similar al fondo de tu imagen para que el blend-mode funcione perfecto */
-            background-color: #f4f6f8; 
+            overflow: hidden;
         }
         
         .illustration-img {
-            max-width: 100%;
-            max-height: 85vh;
-            object-fit: contain;
-            /* AQUÍ ESTÁ LA MAGIA: Esto hace que el fondo crema de tu dibujo se vuelva transparente */
+            /* Hacemos que la imagen sea gigante y ocupe todo su espacio */
+            height: 90vh;
+            width: auto;
+            max-width: 120%;
+            /* LA MAGIA: Elimina el fondo crema de tu JPG original y funde las líneas negras con la web */
             mix-blend-mode: multiply; 
             opacity: 0.85;
+            object-fit: contain;
         }
 
         /* LADO DERECHO: TARJETA DE LOGIN */
@@ -67,20 +70,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
+            padding: 2rem 4rem 2rem 2rem;
+            z-index: 10;
         }
 
         .login-card {
             background: #ffffff;
             border-radius: 16px;
-            padding: 3rem;
+            padding: 3.5rem;
             width: 100%;
-            max-width: 420px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-            border: 1px solid #e9ecef;
+            max-width: 450px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
         }
 
-        /* ESTILOS DE LA TARJETA */
+        /* ESTILOS INTERNOS DE LA TARJETA */
         .card-icon { font-size: 3rem; color: #2d6a4f; margin-bottom: 0.5rem; }
         h4 { font-weight: 800; color: #1a1a1a; letter-spacing: -0.02em; margin-bottom: 1.5rem; }
         .form-label { font-size: 0.75rem; font-weight: 700; color: #6c757d; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
@@ -91,15 +95,15 @@
         .btn-agro { background-color: #2d6a4f; color: #ffffff; font-weight: 700; border-radius: 8px; padding: 0.8rem; transition: all 0.2s; border: none; }
         .btn-agro:hover { background-color: #1b4332; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2); color: white;}
         
-        .btn-dark-outline { border: 2px solid #212529; color: #212529; font-weight: 700; border-radius: 8px; padding: 0.7rem; transition: all 0.2s;}
+        .btn-dark-outline { border: 2px solid #212529; color: #212529; font-weight: 700; border-radius: 8px; padding: 0.7rem; transition: all 0.2s; background: transparent;}
         .btn-dark-outline:hover { background-color: #212529; color: white; }
         
-        hr { border-color: #dee2e6; margin: 2rem 0; }
+        hr { border-color: #e9ecef; margin: 2rem 0; }
 
         /* MODO CELULAR */
         @media (max-width: 991px) {
-            .main-wrapper { flex-direction: column; }
-            .illustration-side { display: none; } /* Ocultamos el dibujo en el celular para ahorrar espacio */
+            .login-container { flex-direction: column; }
+            .illustration-side { display: none; } /* En celular ocultamos el árbol para que entre la tarjeta */
             .form-side { padding: 1rem; margin-top: 2rem;}
             .login-card { padding: 2rem; }
         }
@@ -111,7 +115,7 @@
         <h3 class="lab-title"><i class="bi bi-tree-fill me-2 text-highlight"></i> LAB AGROECOLÓGICO</h3>
     </div>
 
-    <div class="main-wrapper">
+    <div class="login-container">
         
         <div class="illustration-side">
             <img src="{{ url_for('static', filename='logo_lab_a.png') }}" alt="Laboratorio Agroecológico" class="illustration-img">
@@ -160,7 +164,7 @@
                             <input type="password" class="form-control" name="new_password" placeholder="Contraseña" required>
                         </div>
                         <div class="col-12 mt-2">
-                            <button type="submit" class="btn btn-dark-outline w-100 bg-transparent">Registrar</button>
+                            <button type="submit" class="btn btn-dark-outline w-100">Registrar</button>
                         </div>
                     </div>
                 </form>
