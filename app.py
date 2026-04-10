@@ -537,7 +537,21 @@ def sincronizar_api():
 
 @app.route('/manifest.json')
 def manifest():
-    manifest_data = { "name": "Lab Agroecológico", "short_name": "LabAgro", "start_url": "/", "display": "standalone", "background_color": "#f8f9fa", "theme_color": "#2d6a4f", "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/2875/2875078.png", "sizes": "512x512", "type": "image/png"}] }
+    manifest_data = { 
+        "name": "Lab Agroecológico", 
+        "short_name": "LabAgro", 
+        "start_url": "/", 
+        "display": "standalone", 
+        "background_color": "#f8f9fa", 
+        "theme_color": "#2d6a4f", 
+        "icons": [
+            {
+                "src": "/static/Lab_ag.jpeg", 
+                "sizes": "512x512", 
+                "type": "image/jpeg"
+            }
+        ] 
+    }
     response = make_response(jsonify(manifest_data))
     response.headers["Content-Type"] = "application/json"
     return response
