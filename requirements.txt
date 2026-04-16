@@ -6,3 +6,4 @@ scipy
 matplotlib
 gunicorn
 pandas
+python-dotenv
