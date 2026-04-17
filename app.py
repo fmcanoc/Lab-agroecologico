@@ -273,7 +273,7 @@ def inicio():
             elif tipo_formulario == 'materia_organica':
                 pf_mop, pm_filtro, ps = float(request.form['peso_filtro_mop']), float(request.form['peso_muestra_con_filtro']), float(request.form['peso_suelo'])
                 pp_neto = pm_filtro - pf_mop
-                mop_porcentaje = pp_neto / (ps * 10)
+                mop_porcentaje = (pp_neto / ps) * 100
                 cur.execute('DELETE FROM materia_organica WHERE muestra_id = %s', (muestra_id,))
                 cur.execute('''INSERT INTO materia_organica (muestra_id, resultado_porcentaje, peso_particulas, peso_suelo, peso_filtro, peso_muestra_con_filtro) VALUES (%s, %s, %s, %s, %s, %s)''', (muestra_id, mop_porcentaje, pp_neto, ps, pf_mop, pm_filtro))
                 conexion.commit()
