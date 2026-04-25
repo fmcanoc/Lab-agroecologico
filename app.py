@@ -538,22 +538,31 @@ def sincronizar_api():
     except Exception as e: flash(f'Error al procesar: {str(e)}', 'danger')
     return redirect(url_for('inicio') + '#muestras')
 
+@app.route('/api/metodos')
+def api_metodos():
+    with open('metodos_laboratorios.json', 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return jsonify(data)
+
 @app.route('/manifest.json')
 def manifest():
-    manifest_data = { 
-        "name": "Lab Agroecológico", 
-        "short_name": "LabAgro", 
-        "start_url": "/", 
-        "display": "standalone", 
-        "background_color": "#f8f9fa", 
-        "theme_color": "#2d6a4f", 
+    manifest_data = {
+        "name": "Lab Agroecológico",
+        "short_name": "LabAgro",
+        "description": "Plataforma de seguimiento de análisis de suelo agroecológico",
+        "start_url": "/",
+        "scope": "/",
+        "display": "standalone",
+        "background_color": "#f8f9fa",
+        "theme_color": "#2d6a4f",
+        "lang": "es",
         "icons": [
             {
-                "src": "/static/Lab_ag.jpeg", 
-                "sizes": "512x512", 
-                "type": "image/jpeg"
+                "src": "/static/logo_lab.png",
+                "sizes": "any",
+                "type": "image/png"
             }
-        ] 
+        ]
     }
     response = make_response(jsonify(manifest_data))
     response.headers["Content-Type"] = "application/json"
@@ -592,4 +601,4 @@ def sw():
     return response
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')

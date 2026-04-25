@@ -87,6 +87,18 @@
         .gallery-img { height: 140px; width: 100%; object-fit: cover; border-radius: 8px; transition: transform 0.3s ease; }
         .gallery-card { border: 1px solid var(--r-divider); border-radius: 12px; background: #fff; padding: 0.4rem; }
         #offline-banner { display: none; position: sticky; top: 0; z-index: 1060; font-size: 0.85rem; letter-spacing: 0.5px; }
+
+        #pwa-install-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 1065; background: #fff; border-top: 2px solid #2d6a4f; box-shadow: 0 -4px 20px rgba(0,0,0,0.12); padding: 0.75rem 1.25rem; align-items: center; gap: 0.75rem; }
+        #pwa-install-banner.visible { display: flex; }
+        .pwa-banner-icon { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+        .pwa-banner-text { flex: 1; display: flex; flex-direction: column; line-height: 1.3; }
+        .pwa-banner-text strong { font-size: 0.88rem; color: #1a1a1a; }
+        .pwa-banner-text span { font-size: 0.75rem; color: #6c757d; }
+        .pwa-banner-install { background: #2d6a4f; color: #fff; border: none; border-radius: 8px; padding: 0.45rem 1.1rem; font-weight: 700; font-size: 0.82rem; cursor: pointer; font-family: 'Montserrat', sans-serif; white-space: nowrap; flex-shrink: 0; }
+        .pwa-banner-install:hover { background: #245a41; }
+        .pwa-banner-dismiss { background: none; border: none; color: #adb5bd; font-size: 1rem; cursor: pointer; padding: 4px; line-height: 1; flex-shrink: 0; }
+        .pwa-banner-dismiss:hover { color: #6c757d; }
+        @media (max-width: 767px) { #pwa-install-banner { bottom: 65px; } }
         .goog-te-gadget-simple { background-color: #ffffff !important; border: 1px solid #ddd !important; border-radius: 8px !important; padding: 4px 8px !important; font-size: 0.8rem !important; }
         .goog-te-gadget-icon { display: none; }
         .skiptranslate iframe { display: none !important; }
@@ -96,6 +108,16 @@
 
     <div id="offline-banner" class="bg-warning text-dark text-center py-2 fw-bold w-100 shadow-sm">
         <i class="bi bi-wifi-off me-2"></i> MODO OFFLINE: Datos se guardan localmente.
+    </div>
+
+    <div id="pwa-install-banner">
+        <img src="{{ url_for('static', filename='logo_lab.png') }}" alt="Logo" class="pwa-banner-icon">
+        <div class="pwa-banner-text">
+            <strong>Lab Agroecológico</strong>
+            <span>Instalá la app en tu dispositivo</span>
+        </div>
+        <button id="pwa-install-btn" class="pwa-banner-install">Instalar</button>
+        <button id="pwa-dismiss-btn" class="pwa-banner-dismiss" aria-label="Cerrar"><i class="bi bi-x-lg"></i></button>
     </div>
 
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
@@ -876,6 +898,37 @@
 
             if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(err => {}); }
 
+            (function () {
+                let deferredPrompt = null;
+                const banner = document.getElementById('pwa-install-banner');
+                const installBtn = document.getElementById('pwa-install-btn');
+                const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+                window.addEventListener('beforeinstallprompt', function (e) {
+                    e.preventDefault();
+                    deferredPrompt = e;
+                    banner.classList.add('visible');
+                });
+
+                installBtn.addEventListener('click', async function () {
+                    if (!deferredPrompt) return;
+                    deferredPrompt.prompt();
+                    await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                    banner.classList.remove('visible');
+                });
+
+                dismissBtn.addEventListener('click', function () {
+                    banner.classList.remove('visible');
+                });
+
+                window.addEventListener('appinstalled', function () {
+                    banner.classList.remove('visible');
+                    deferredPrompt = null;
+                });
+            })();
+
+
             const btnScan = document.getElementById('btn-scan-qr');
             const qrReaderDiv = document.getElementById('qr-reader');
             const inputNombre = document.getElementById('input_nombre_qr');
@@ -1142,5 +1195,214 @@
             {% endif %}
         });
     </script>
+
+    <!-- ===== CHAT WIDGET: Asistente de Métodos ===== -->
+    <style>
+        #chat-fab {
+            position: fixed; right: 20px; z-index: 2001;
+            width: 56px; height: 56px; border-radius: 50%; border: none;
+            background: #2d6a4f; color: #fff; font-size: 1.4rem;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 20px rgba(45,106,79,0.4);
+            cursor: pointer; transition: transform 0.25s ease, box-shadow 0.2s ease;
+        }
+        #chat-fab:hover { box-shadow: 0 8px 24px rgba(45,106,79,0.55); transform: scale(1.08); }
+        #chat-fab.open { transform: rotate(20deg) scale(1.08); }
+
+        #chat-panel {
+            position: fixed; right: 20px; z-index: 2000;
+            width: 370px; min-width: 300px; max-width: calc(100vw - 40px);
+            background: #fff; border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+            display: none; flex-direction: column; overflow: hidden;
+            border: 1px solid #dee2e6;
+            font-family: 'Montserrat', sans-serif;
+        }
+        #chat-panel.visible { display: flex; }
+
+        #chat-messages { flex: 1; overflow-y: auto; padding: 1.2rem; min-height: 160px; max-height: 260px; display: flex; flex-direction: column; gap: 0.85rem; background: #f7f9fa; }
+        #chat-messages::-webkit-scrollbar { width: 4px; }
+        #chat-messages::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 4px; }
+
+        .chat-bubble-bot { background: #eef5f1; border: 1px solid #c8e6c9; color: #1a1a1a; padding: 0.7rem 0.95rem; border-radius: 12px 12px 12px 4px; font-size: 0.82rem; max-width: 92%; line-height: 1.55; }
+        .chat-bubble-bot ul { margin: 0.35rem 0 0; padding: 0; list-style: none; }
+        .chat-bubble-bot li { position: relative; padding-left: 1rem; margin-bottom: 0.3rem; line-height: 1.5; }
+        .chat-bubble-bot li::before { content: '•'; position: absolute; left: 0; color: #2d6a4f; font-weight: bold; }
+        .chat-bubble-user { background: #2d6a4f; color: #fff; padding: 0.6rem 0.95rem; border-radius: 12px 12px 4px 12px; font-size: 0.82rem; max-width: 80%; align-self: flex-end; margin-left: auto; font-weight: 600; }
+
+        #chat-context-footer { padding: 1rem 1.4rem 1.2rem; border-top: 2px solid #e0ece6; background: #f8faf9; flex-shrink: 0; }
+        #chat-context-label { font-size: 0.62rem; font-weight: 800; color: #adb5bd; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem; }
+        #chat-active-section { font-size: 0.92rem; font-weight: 800; color: #2d6a4f; line-height: 1.3; margin-bottom: 0.9rem; }
+        #chat-active-section.no-method { font-size: 0.82rem; font-weight: 600; color: #adb5bd; }
+
+        #chat-question-btns { display: flex; flex-direction: column; gap: 0.5rem; }
+        .chat-q-btn {
+            width: 100%; text-align: left;
+            font-size: 0.82rem; background: #fff; border: 1.5px solid #e0ece6; color: #1a1a1a;
+            border-radius: 10px; padding: 0.6rem 1rem; cursor: pointer; font-weight: 600;
+            transition: all 0.15s ease; font-family: 'Montserrat', sans-serif;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .chat-q-btn::before { content: '→'; color: #2d6a4f; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; }
+        .chat-q-btn:hover { background: #2d6a4f; color: #fff; border-color: #2d6a4f; }
+        .chat-q-btn:hover::before { color: #fff; }
+
+        @media (max-width: 767px) {
+            #chat-fab { bottom: 90px; }
+            #chat-panel { bottom: 158px; }
+        }
+        @media (min-width: 768px) {
+            #chat-fab { bottom: 30px; }
+            #chat-panel { bottom: 100px; }
+        }
+    </style>
+
+    <button id="chat-fab" title="Asistente de Métodos de Laboratorio">
+        <i class="bi bi-chat-dots-fill"></i>
+    </button>
+
+    <div id="chat-panel">
+        <div style="background:#2d6a4f;color:#fff;padding:1.1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+            <div>
+                <div style="font-weight:800;font-size:0.95rem;letter-spacing:0.02em;">Asistente de Métodos</div>
+                <div style="font-size:0.72rem;opacity:0.75;margin-top:3px;">Lab Agroecológico</div>
+            </div>
+            <button id="chat-close" style="background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer;padding:4px;line-height:1;"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <div id="chat-messages">
+            <div class="chat-bubble-bot">
+                <i class="bi bi-seedling me-1" style="color:#2d6a4f;"></i>
+                ¡Hola! Navegá a cualquier sección de análisis y te explico <strong>qué es</strong>, <strong>para qué sirve</strong> y <strong>cómo se interpreta</strong>.
+            </div>
+        </div>
+
+        <div id="chat-context-footer">
+            <div id="chat-context-label">Sección activa</div>
+            <div id="chat-active-section" class="no-method">Navegá a un análisis para consultar</div>
+            <div id="chat-question-btns" style="display:none;">
+                <button class="chat-q-btn" data-q="que_es">¿Qué es?</button>
+                <button class="chat-q-btn" data-q="para_que_sirve">¿Para qué sirve?</button>
+                <button class="chat-q-btn" data-q="como_se_interpreta">¿Cómo se interpreta?</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const fab        = document.getElementById('chat-fab');
+        const panel      = document.getElementById('chat-panel');
+        const closeBtn   = document.getElementById('chat-close');
+        const messages   = document.getElementById('chat-messages');
+        const sectionEl  = document.getElementById('chat-active-section');
+        const questionEl = document.getElementById('chat-question-btns');
+
+        // Map Bootstrap tab button IDs → method info
+        const TAB_METHOD = {
+            'textura-tab':       { id: 'textura',        nombre: 'Textura del Suelo' },
+            'respiracion-tab':   { id: 'respiracion',    nombre: 'Respiración del Suelo' },
+            'carbono-tab':       { id: 'carbono_activo', nombre: 'Carbono Activo (POXC)' },
+            'fosforo-tab':       { id: 'fosforo',        nombre: 'Fósforo Olsen' },
+            'ph-tab':            { id: 'ph',             nombre: 'pH y Conductividad Eléctrica' },
+            'mop-tab':           { id: 'mop',            nombre: 'Materia Orgánica Particulada (MOP)' },
+            'estab-tab':         { id: 'agregados',      nombre: 'Estabilidad de Agregados (Slakes)' },
+            'macrofauna-tab':    { id: 'macrofauna',     nombre: 'Macrofauna del Suelo' },
+            'cromatografia-tab': { id: 'cromatografia',  nombre: 'Cromatografía de Pfeiffer' }
+        };
+
+        let metodosData    = null;
+        let currentMethod  = null;
+        let isOpen         = false;
+
+        // Load JSON in background as soon as page is ready
+        fetch('/api/metodos').then(r => r.json()).then(data => { metodosData = data.metodos; }).catch(() => {});
+
+        // Update the context footer from a method info object (or null)
+        function updateContext(methodInfo) {
+            currentMethod = methodInfo || null;
+            if (currentMethod) {
+                sectionEl.textContent = 'Estás en ' + currentMethod.nombre;
+                sectionEl.classList.remove('no-method');
+                questionEl.style.display = 'flex';
+            } else {
+                sectionEl.textContent = 'Navegá a un análisis para consultar';
+                sectionEl.classList.add('no-method');
+                questionEl.style.display = 'none';
+            }
+        }
+
+        // Detect which tab is currently active and update context
+        function syncFromActiveTab() {
+            const active = document.querySelector('#misPestanas .nav-link.active');
+            updateContext(active ? (TAB_METHOD[active.id] || null) : null);
+        }
+
+        // React to Bootstrap tab switches
+        document.querySelectorAll('#misPestanas .nav-link').forEach(function (btn) {
+            btn.addEventListener('shown.bs.tab', function (e) {
+                updateContext(TAB_METHOD[e.target.id] || null);
+            });
+        });
+
+        // Set initial context on load
+        syncFromActiveTab();
+
+        // Chat helpers
+        function addUserMsg(text) {
+            var d = document.createElement('div');
+            d.className = 'chat-bubble-user';
+            d.textContent = text;
+            messages.appendChild(d);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function addBotMsg(html, asBullets) {
+            var d = document.createElement('div');
+            d.className = 'chat-bubble-bot';
+            var icon = '<i class="bi bi-robot me-1" style="color:#2d6a4f;"></i>';
+            var content = html;
+            if (asBullets) {
+                var parts = html.split(/\.\s+(?=[A-ZÁÉÍÓÚÑ])/).map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 3; });
+                if (parts.length > 1) {
+                    content = '<ul>' + parts.map(function (p) { return '<li>' + p + '</li>'; }).join('') + '</ul>';
+                }
+            }
+            d.innerHTML = icon + content;
+            messages.appendChild(d);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // Question buttons
+        document.querySelectorAll('.chat-q-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (!currentMethod) return;
+                var q = this.dataset.q;
+                var labels = { que_es: '¿Qué es?', para_que_sirve: '¿Para qué sirve?', como_se_interpreta: '¿Cómo se interpreta?' };
+                addUserMsg(labels[q]);
+                if (!metodosData) {
+                    addBotMsg('Cargando información, intentá de nuevo en un momento.');
+                    return;
+                }
+                var metodo = metodosData.find(function (m) { return m.id === currentMethod.id; });
+                if (metodo) addBotMsg(metodo[q], true);
+            });
+        });
+
+        // FAB toggle
+        fab.addEventListener('click', function () {
+            isOpen = !isOpen;
+            panel.classList.toggle('visible', isOpen);
+            fab.classList.toggle('open', isOpen);
+        });
+
+        closeBtn.addEventListener('click', function () {
+            isOpen = false;
+            panel.classList.remove('visible');
+            fab.classList.remove('open');
+        });
+    })();
+    </script>
+    <!-- ===== FIN CHAT WIDGET ===== -->
+
 </body>
 </html>

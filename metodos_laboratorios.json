@@ -1,0 +1,67 @@
+{
+  "metodos": [
+    {
+      "id": "carbono_activo",
+      "nombre": "Carbono Activo (POXC)",
+      "que_es": "El Carbono Oxidable por Permanganato (POXC) es una fracción lábil del carbono orgánico del suelo fácilmente mineralizable por microorganismos. Se determina midiendo la decoloración de una solución de permanganato de potasio (KMnO₄) al reaccionar con las fracciones orgánicas activas del suelo, y el resultado se expresa en mg POXC/kg de suelo.",
+      "para_que_sirve": "Es un indicador temprano y sensible de cambios en la materia orgánica del suelo. Detecta alteraciones en la calidad del suelo antes que el carbono orgánico total (COT), lo que lo hace útil para evaluar el impacto de prácticas de manejo (labranza, rotaciones, abonos verdes) sobre la salud del suelo. Cuantifica la energía disponible para la actividad microbiana.",
+      "como_se_interpreta": "Valores más altos indican mayor disponibilidad de carbono lábil y mayor actividad biológica. En suelos agrícolas pampeanos, valores mayores a 500 mg/kg se consideran adecuados, mientras que valores menores a 300 mg/kg indican degradación. Siempre se compara entre muestras del mismo sistema o frente a un suelo de referencia bajo vegetación natural."
+    },
+    {
+      "id": "respiracion",
+      "nombre": "Respiración del Suelo",
+      "que_es": "La respiración basal del suelo mide el CO₂ liberado por los microorganismos durante la descomposición de materia orgánica en condiciones controladas de temperatura y humedad. El resultado se expresa en microgramos de carbono por gramo de suelo seco por día (μgC/g/día).",
+      "para_que_sirve": "Evalúa la actividad biológica total del suelo. Es un indicador clave de la salud microbiana y del ciclo de nutrientes. Se utiliza para comparar manejos agrícolas, evaluar el efecto de enmiendas orgánicas y detectar el impacto de agroquímicos sobre los microorganismos del suelo.",
+      "como_se_interpreta": "Valores elevados (>15 μgC/g/día) indican alta actividad microbiana y buen funcionamiento biológico del suelo. Valores bajos (<5 μgC/g/día) pueden señalar limitaciones de carbono disponible, condiciones desfavorables (pH extremo, sequía) o degradación. Se interpreta junto con el contenido de materia orgánica para calcular el cociente metabólico (qCO₂)."
+    },
+    {
+      "id": "fosforo",
+      "nombre": "Fósforo Olsen",
+      "que_es": "El fósforo Olsen es el fósforo disponible o asimilable por las plantas, extraído con una solución de bicarbonato de sodio (NaHCO₃) a pH 8.5. Es el método estándar para suelos neutros a alcalinos. El extracto se cuantifica por espectrofotometría mediante la reacción del azul de molibdeno, y el resultado se expresa en mg P/kg de suelo.",
+      "para_que_sirve": "Determina la disponibilidad de fósforo para los cultivos, lo cual es fundamental para el manejo de la fertilización. El fósforo es un nutriente primario esencial para el desarrollo radicular, la floración y la producción de semillas. Este análisis guía las dosis de fertilización fosforada y evita tanto la deficiencia como la sobredosis.",
+      "como_se_interpreta": "En suelos pampeanos, la interpretación general es: <10 mg/kg = muy bajo (respuesta segura a fertilización), 10–20 mg/kg = bajo, 20–40 mg/kg = medio, >40 mg/kg = alto (menor probabilidad de respuesta). El nivel crítico para soja y maíz suele situarse alrededor de 20 mg/kg P Olsen."
+    },
+    {
+      "id": "ph",
+      "nombre": "pH y Conductividad Eléctrica",
+      "que_es": "El pH del suelo mide la concentración de iones hidrógeno (H⁺) en la solución del suelo, en una escala de 0 a 14. La conductividad eléctrica (CE) mide la capacidad de la solución del suelo para conducir corriente eléctrica, expresada en dS/m, y es un indicador indirecto de la concentración total de sales solubles.",
+      "para_que_sirve": "El pH determina la disponibilidad de nutrientes, la actividad microbiana y la solubilidad de metales. La CE indica el nivel de salinidad del suelo. Ambos parámetros son fundamentales para diagnosticar limitantes de fertilidad, diseñar planes de encalado o enmiendas, y evaluar el riesgo de toxicidad por salinidad o sodicidad.",
+      "como_se_interpreta": "pH: <5.5 = ácido (toxicidad por Al y Mn, deficiencia de P y Ca), 5.5–7.0 = óptimo para la mayoría de cultivos, 7.0–8.0 = levemente alcalino, >8.0 = alcalino (deficiencia de micronutrientes). CE: <0.5 dS/m = muy baja, 0.5–2.0 dS/m = normal, >4 dS/m = salino (afecta cultivos sensibles), >8 dS/m = altamente salino."
+    },
+    {
+      "id": "mop",
+      "nombre": "Materia Orgánica Particulada (MOP)",
+      "que_es": "La Materia Orgánica Particulada (MOP) es la fracción de la materia orgánica del suelo compuesta por residuos vegetales y animales en descomposición, con tamaño de partícula entre 53 y 2000 μm. Se separa físicamente por tamizado en húmedo y se cuantifica como porcentaje del peso seco del suelo.",
+      "para_que_sirve": "Es un indicador sensible y dinámico de cambios en la materia orgánica, ya que responde más rápido que la materia orgánica total a los cambios de manejo. Refleja el ingreso reciente de residuos orgánicos, el estado de la red trófica detritívora y la capacidad del sistema de retener y procesar carbono. Es clave para evaluar prácticas de conservación como siembra directa.",
+      "como_se_interpreta": "Valores altos de MOP (>2% o >10 g/kg) indican buen aporte de residuos y actividad descomponedora activa. Valores bajos (<0.5%) señalan poca entrada de materia orgánica fresca o alta tasa de mineralización. Se compara con un suelo de referencia bajo vegetación natural para calcular un índice relativo de degradación."
+    },
+    {
+      "id": "agregados",
+      "nombre": "Estabilidad de Agregados (Índice Slakes)",
+      "que_es": "El Índice Slakes evalúa la resistencia de los agregados del suelo a la desintegración cuando se sumergen bruscamente en agua. Los agregados se sumergen y se observa su comportamiento en una escala de 0 a 6, donde 0 = desintegración total instantánea y 6 = agregado completamente estable. Es un método sencillo y rápido de campo o laboratorio.",
+      "para_que_sirve": "La estabilidad de agregados es clave para la salud estructural del suelo. Determina la resistencia a la erosión hídrica, la formación de costras superficiales, la infiltración de agua y la aireación radicular. Un suelo con alta estabilidad de agregados resiste mejor la degradación física producida por lluvia o labranza excesiva.",
+      "como_se_interpreta": "Escala Slakes (0–6): 0–1 = muy inestable (alto riesgo de erosión), 2–3 = moderadamente estable, 4–5 = estable (buena estructura), 6 = muy estable (excelente condición estructural). Valores altos se asocian a mayor contenido de materia orgánica, mayor actividad biológica (hongos, lombrices) y uso de labranza reducida."
+    },
+    {
+      "id": "textura",
+      "nombre": "Textura del Suelo",
+      "que_es": "La textura del suelo describe las proporciones relativas de las partículas minerales primarias: arena (2–0.05 mm), limo (0.05–0.002 mm) y arcilla (<0.002 mm). En laboratorio se determina por hidrómetro (método Bouyoucos). En campo se estima por el método organoléptico del 'gusanito', formando un cilindro de suelo húmedo y observando su comportamiento.",
+      "para_que_sirve": "La textura determina la capacidad de retención de agua y nutrientes, la permeabilidad, la aireación, la susceptibilidad a la compactación y a la erosión. Es la propiedad física más permanente del suelo y condiciona todas las demás propiedades físicas e hídricas. Influye en la elección del cultivo, el diseño del riego y el tipo de labranza adecuada.",
+      "como_se_interpreta": "Suelos arenosos: alta permeabilidad, baja retención de agua y nutrientes, poco compactables. Suelos francos: equilibrio entre retención y drenaje, ideales para la mayoría de cultivos. Suelos arcillosos: alta retención de agua y nutrientes, baja permeabilidad, susceptibles a compactación y encharcamiento. La clase textural se obtiene del triángulo textural del USDA."
+    },
+    {
+      "id": "macrofauna",
+      "nombre": "Macrofauna del Suelo",
+      "que_es": "La macrofauna del suelo incluye todos los invertebrados con tamaño corporal mayor a 2 mm: lombrices, escarabajos, hormigas, ciempiés, arañas, isópodos, entre otros. Se cuantifica mediante el método TSBF (Tropical Soil Biology and Fertility), extrayendo monolitos de suelo de 25×25×30 cm y separando manualmente los organismos encontrados.",
+      "para_que_sirve": "Es un indicador biológico clave de la salud del suelo. La macrofauna regula procesos esenciales: descomposición de residuos, bioturbación (aireación y mezcla del suelo), regulación de microorganismos y formación de agregados estables. La abundancia y diversidad de macrofauna reflejan la calidad del hábitat edáfico y son muy sensibles al uso de agroquímicos, la labranza intensiva y la compactación.",
+      "como_se_interpreta": "Se evalúa la presencia de grupos funcionales clave: ingenieros del ecosistema (lombrices, termitas, hormigas), depredadores reguladores y transformadores de residuos (escarabajos descomponedores). Alta abundancia de lombrices (>80 ind/m²) indica buen estado del suelo. La diversidad elevada señala un sistema biológicamente activo. La ausencia de grupos clave indica degradación del hábitat edáfico."
+    },
+    {
+      "id": "cromatografia",
+      "nombre": "Cromatografía de Pfeiffer",
+      "que_es": "La cromatografía circular de Pfeiffer es un método cualitativo que usa papel de filtro impregnado con nitrato de plata para visualizar la composición y vitalidad del suelo. Un extracto del suelo migra por capilaridad y forma un patrón circular de colores y zonas concéntricas que refleja la estructura química y biológica del suelo.",
+      "para_que_sirve": "Permite una evaluación visual rápida e integral de la salud del suelo, incluyendo aspectos que los análisis químicos convencionales no capturan: vitalidad biológica, actividad enzimática, equilibrio mineral y complejidad de la materia orgánica. Es especialmente útil en agricultura orgánica y biodinámica para evaluar procesos holísticos del suelo.",
+      "como_se_interpreta": "Se analizan las zonas concéntricas del cromatograma: zona central (minerales), zona intermedia (humus y materia orgánica), zona externa (actividad biológica). Un suelo saludable muestra zonas bien diferenciadas, colores cálidos (amarillo-naranja-marrón), bordes irregulares y buena extensión radial. Zonas grises, bordes lisos o colapso de zonas indica suelo degradado. La interpretación es cualitativa y mejora con la comparación de cromatogramas de referencia."
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "metodos": {
+    "carbono_activo": {
+      "nombre": "Carbono Activo",
+      "que_es": "Es la fracción del carbono orgánico del suelo que es biológicamente activa y fácilmente disponible para los microorganismos. Se mide mediante la oxidación con permanganato de potasio (KMnO4) y representa la parte lábil de la materia orgánica del suelo.",
+      "para_que_sirve": "Es un indicador temprano de cambios en la calidad del suelo, mucho más sensible que el carbono orgánico total. Permite detectar mejoras o degradaciones del suelo antes de que sean visibles con otros métodos. Es especialmente útil para evaluar el impacto de prácticas agroecológicas como la incorporación de compost, abonos verdes o la reducción de labranza.",
+      "como_se_interpreta": "A mayor valor, mayor actividad biológica y mejor calidad del suelo. En sistemas agricolas es ideal incrementar este valor a lo largo del tiempo. Una caída en el carbono activo puede indicar compactación, exceso de labranza o falta de aporte de materia orgánica.",
+      "rangos": {
+        "bajo": "< 200 mg/kg — Suelo con baja actividad biológica, requiere incorporación de materia orgánica.",
+        "medio": "200–400 mg/kg — Actividad biológica moderada, suelo en proceso de mejora.",
+        "alto": "> 400 mg/kg — Buena actividad biológica, suelo saludable con buen ciclado de nutrientes."
+      },
+      "notas": "Los rangos pueden variar según el tipo de suelo y la región. En suelos de Mendoza los valores de referencia suelen ser bajos debido a los tipos de suelos característicos."
+    },
+    "ph_conductividad": {
+      "nombre": "pH y Conductividad Eléctrica",
+      "que_es": "El pH mide la acidez o alcalinidad del suelo en una escala de 0 a 14. La conductividad eléctrica (CE) mide la concentración de sales solubles en el suelo, expresada en dS/m o mS/cm.",
+      "para_que_sirve": "El pH determina la disponibilidad de nutrientes para las plantas y la actividad de los microorganismos del suelo. La conductividad indica si hay problemas de salinidad que puedan afectar el crecimiento de los cultivos. Ambos parámetros son fundamentales para tomar decisiones de lavado de suelos, enmiendas y manejo del riego.",
+      "como_se_interpreta": "Para el pH: En Mendoza los valores rondan entre 7 a 8.5. Para la conductividad: valores menores a 2 dS/m son seguros para la mayoría de los cultivos. Entre 2 y 4 dS/m puede haber reducción en el rendimiento de cultivos sensibles. Por encima de 4 dS/m hay riesgo serio de daño por salinidad.",
+      "rangos": {
+        "ph_acido": "< 5.5 — Suelo ácido, posible toxicidad por aluminio. Considerar encalado.",
+        "ph_optimo": "6.0–8.0 — Rango óptimo para la mayoría de cultivos agroecológicos.",
+        "ph_alcalino": "> 8.0 — Suelo alcalino, posibles deficiencias de micronutrientes.",
+        "ce_normal": "< 2 dS/m — Sin problemas de salinidad.",
+        "ce_moderada": "2–4 dS/m — Salinidad moderada, monitorear cultivos sensibles.",
+        "ce_alta": "> 4 dS/m — Salinidad alta, puede limitar severamente la producción."
+      },
+      "notas": "En Argentina, los suelos del oeste árido y semiárido suelen tener problemas de salinidad y sodicidad."
+    },
+    "materia_organica": {
+      "nombre": "Materia Orgánica Particulada (MOP)",
+      "que_es": "Es la fracción de la materia orgánica del suelo compuesta por residuos vegetales y animales en descomposición, con tamaño de partícula entre 53 µm y 2 mm. Es la fracción más activa y fácilmente descomponible de la materia orgánica total.",
+      "para_que_sirve": "Actúa como reservorio de nutrientes, especialmente nitrógeno y fósforo, que se liberan gradualmente por la actividad microbiana. Mejora la estructura del suelo, la retención de agua y la aireación. Es un indicador muy sensible del impacto de las prácticas de manejo, reflejando cambios en pocos años.",
+      "como_se_interpreta": "Se expresa como porcentaje del peso del suelo. Valores crecientes indican que las prácticas de manejo están mejorando la calidad del suelo. Valores decrecientes o muy bajos indican pérdida de materia orgánica, posiblemente por exceso de labranza, monocultivo o falta de restitución de residuos.",
+      "rangos": {
+        "bajo": "< 1% — Suelo con muy poca materia orgánica activa, alta prioridad de manejo.",
+        "medio": "1–3% — Nivel moderado, con potencial de mejora mediante prácticas agroecológicas.",
+        "alto": "> 3% — Buen contenido de materia orgánica activa, suelo en buen estado."
+      },
+      "notas": "La materia orgánica particulada es diferente al carbono orgánico total. Es más sensible a cambios de manejo y por eso se usa como indicador de calidad en el corto y mediano plazo."
+    },
+    "fosforo_olsen": {
+      "nombre": "Fósforo Olsen",
+      "que_es": "Es el fósforo disponible para las plantas extraído con una solución de bicarbonato de sodio a pH 8.5 (método Olsen). Representa la fracción del fósforo total del suelo que las plantas pueden absorber en el corto plazo.",
+      "para_que_sirve": "Permite determinar si el suelo tiene suficiente fósforo para cubrir las necesidades de los cultivos o si es necesario aplicar enmiendas fosfatadas. Es clave para evitar tanto la deficiencia (que limita el crecimiento) como el exceso (que contamina napas y cursos de agua).",
+      "como_se_interpreta": "Se expresa en partes por millón (ppm) o mg/kg. Valores bajos indican necesidad de aporte de fósforo mediante compost, humus de lombriz u otras fuentes orgánicas. Valores muy altos pueden indicar acumulación por aplicaciones excesivas históricas.",
+      "rangos": {
+        "muy_bajo": "< 5 ppm — Deficiencia severa, respuesta muy probable a la fertilización.",
+        "bajo": "5–15 ppm — Deficiencia moderada, respuesta probable a la fertilización.",
+        "medio": "15–25 ppm — Nivel adecuado para la mayoría de los cultivos.",
+        "alto": "> 25 ppm — Nivel alto, sin necesidad de aporte adicional de fósforo."
+      },
+      "notas": "El método Olsen es el más utilizado en Argentina para suelos neutros a alcalinos, que son los más comunes en Mendoza. La disponibilidad de fósforo también depende del pH: es máxima entre 6 y 7."
+    },
+    "estabilidad_agregados": {
+      "nombre": "Estabilidad de Agregados (Índice Slakes)",
+      "que_es": "Mide la capacidad de los terrones del suelo para mantener su estructura cuando se mojan rápidamente. Los agregados estables son grupos de partículas del suelo unidas por materia orgánica, hongos, bacterias y otros agentes que resisten la dispersión al contacto con el agua.",
+      "para_que_sirve": "Indica la salud estructural del suelo. Un suelo con agregados estables resiste mejor la erosión hídrica, permite mejor infiltración del agua, tiene mejor aireación y es más fácil de trabajar. Es un indicador directo del efecto de las prácticas de manejo sobre la estructura del suelo.",
+      "como_se_interpreta": "El Índice Slakes va de 0 a 1. Valores altos indican agregados muy estables y buena estructura. Valores bajos indican que los terrones se desarman fácilmente al mojarse, lo que predispone al encostramiento, escurrimiento y erosión. La fracción mayor a 2mm y la fracción 250µm-2mm dan información sobre la distribución del tamaño de los agregados.",
+      "rangos": {
+        "indice_slakes": {
+          "muy_inestable": "0–0.2 — Agregados muy inestables, alto riesgo de erosión y encostramiento.",
+          "inestable": "0.3–0.4 — Estabilidad baja a moderada, suelo susceptible.",
+          "estable": "0.5–0.6 — Buena estabilidad estructural.",
+          "muy_estable": "0.7–0.8 — Excelente estabilidad, suelo con muy buena estructura."
+        },
+        "fraccion_mayor_2mm": "Mayor porcentaje indica macroagregados más estables, asociados a mayor actividad de hongos y raíces.",
+        "fraccion_250_2mm": "Fracción intermedia, influenciada por la actividad microbiana general."
+      },
+      "notas": "La estabilidad de agregados responde relativamente rápido a cambios en el manejo. La incorporación de compost, la siembra directa y los cultivos de cobertura mejoran significativamente este indicador en 2-3 años."
+    },
+    "respiracion_suelo": {
+      "nombre": "Respiración del Suelo",
+      "que_es": "Mide la cantidad de CO2 liberado por el suelo durante un período de tiempo determinado. Este CO2 proviene de la actividad respiratoria de los microorganismos del suelo (bacterias, hongos, actinomicetes) y de las raíces de las plantas.",
+      "para_que_sirve": "Es un indicador directo de la actividad biológica del suelo. Un suelo con alta respiración tiene una comunidad microbiana activa que descompone la materia orgánica y libera nutrientes para las plantas. Se usa para evaluar el impacto de prácticas de manejo, aplicación de bioinsumos, compost y otros productos sobre la vida del suelo.",
+      "como_se_interpreta": "Se expresa en µg C-CO2 / g suelo / hora. Valores altos indican alta actividad microbiana y buen funcionamiento biológico del suelo. Valores muy bajos indican suelo biológicamente inactivo. Es importante considerar que la respiración también varía con la temperatura y la humedad del suelo al momento del muestreo.",
+      "rangos": {
+        "muy_baja": "< 5 µg C/g/h — Actividad microbiana muy baja, suelo biológicamente pobre.",
+        "baja": "5–15 µg C/g/h — Actividad moderada, con potencial de mejora.",
+        "media": "15–30 µg C/g/h — Buena actividad biológica.",
+        "alta": "> 30 µg C/g/h — Muy alta actividad microbiana, suelo biológicamente muy activo."
+      },
+      "notas": "La respiración del suelo es muy sensible a la temperatura y humedad. Los valores son más altos en primavera-verano y más bajos en invierno. Para comparar muestras correctamente es importante estandarizar las condiciones de incubación."
+    },
+    "textura": {
+      "nombre": "Textura del Suelo",
+      "que_es": "Es la proporción relativa de arena, limo y arcilla en el suelo. La arena tiene partículas grandes (0.05–2 mm), el limo partículas medianas (0.002–0.05 mm) y la arcilla partículas muy finas (< 0.002 mm). La combinación de estas tres fracciones determina la clase textural del suelo (franco, arcilloso, arenoso, etc.).",
+      "para_que_sirve": "La textura es una propiedad permanente del suelo que no se puede modificar con el manejo. Determina la capacidad de retención de agua, la aireación, la facilidad de labranza, la erosionabilidad y la capacidad de almacenar nutrientes. Condiciona las prácticas de manejo más adecuadas para cada suelo.",
+      "como_se_interpreta": "Se determina en el campo por el método táctil (al tacto con los dedos) o en laboratorio. Los suelos francos (equilibrio entre arena, limo y arcilla) son generalmente los más productivos. Los suelos muy arcillosos retienen más agua pero se compactan fácilmente. Los suelos arenosos drenan muy rápido y retienen pocos nutrientes.",
+      "clases_texturales": {
+        "arenoso": "Alta macroporosidad, baja retención de agua y nutrientes, fácil laboreo. Requiere más frecuencia de riego y fertilización.",
+        "franco_arenoso": "Buena aireación con algo más de retención que el arenoso. Buena para muchos cultivos hortícolas.",
+        "franco": "Equilibrio entre arena, limo y arcilla. Generalmente los suelos más productivos y fáciles de manejar.",
+        "franco_limoso": "Alta retención de agua y nutrientes, pero puede endurecerse al secarse y ser susceptible a la erosión hídrica.",
+        "franco_arcilloso": "Buena retención de nutrientes, pero puede compactarse. Requiere manejo cuidadoso de la labranza.",
+        "arcilloso": "Máxima retención de agua y nutrientes, pero muy susceptible a la compactación y al anegamiento. Difícil laboreo cuando está seco."
+      },
+      "notas": "En Cuyo predominan suelos más arenosos o franco-arenosos. En el NOA hay gran variabilidad textural según la altitud y origen geológico."
+    }
+  }
+}
