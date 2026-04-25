@@ -102,6 +102,12 @@
         .goog-te-gadget-simple { background-color: #ffffff !important; border: 1px solid #ddd !important; border-radius: 8px !important; padding: 4px 8px !important; font-size: 0.8rem !important; }
         .goog-te-gadget-icon { display: none; }
         .skiptranslate iframe { display: none !important; }
+
+        .col-info-btn { background: none; border: none; color: #adb5bd; font-size: 0.72rem; cursor: pointer; padding: 0 0 0 2px; line-height: 1; vertical-align: middle; transition: color 0.15s ease; }
+        .col-info-btn:hover, .col-info-btn:focus { color: #2d6a4f; outline: none; }
+        .popover { font-family: 'Montserrat', sans-serif !important; font-size: 0.78rem; max-width: 290px; border-color: #c8e6c9; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+        .popover-header { font-weight: 700; font-size: 0.8rem; background-color: #eef5f1; color: #2d6a4f; border-bottom-color: #c8e6c9; }
+        .popover-body { color: #333; line-height: 1.55; }
     </style>
 </head>
 <body>
@@ -672,15 +678,15 @@
                                     <thead class="bg-light">
                                         <tr>
                                             <th class="text-start px-4">Muestra</th>
-                                            <th>Textura</th>
-                                            <th>pH</th>
-                                            <th>Cond.</th>
-                                            <th>POXC</th>
-                                            <th>Fósforo</th>
-                                            <th>Resp. (μg)</th>
-                                            <th>MOP %</th>
-                                            <th>Índice Slakes</th>
-                                            <th>Croma.</th>
+                                            <th>Textura <button class="col-info-btn" data-method-id="textura" type="button" tabindex="0">ⓘ</button></th>
+                                            <th>pH <button class="col-info-btn" data-method-id="ph" type="button" tabindex="0">ⓘ</button></th>
+                                            <th>Cond. <button class="col-info-btn" data-method-id="ph" type="button" tabindex="0">ⓘ</button></th>
+                                            <th>POXC <button class="col-info-btn" data-method-id="carbono_activo" type="button" tabindex="0">ⓘ</button></th>
+                                            <th>Fósforo <button class="col-info-btn" data-method-id="fosforo" type="button" tabindex="0">ⓘ</button></th>
+                                            <th>Resp. (μg) <button class="col-info-btn" data-method-id="respiracion" type="button" tabindex="0">ⓘ</button></th>
+                                            <th>MOP % <button class="col-info-btn" data-method-id="mop" type="button" tabindex="0">ⓘ</button></th>
+                                            <th>Índice Slakes <button class="col-info-btn" data-method-id="agregados" type="button" tabindex="0">ⓘ</button></th>
+                                            <th>Croma. <button class="col-info-btn" data-method-id="cromatografia" type="button" tabindex="0">ⓘ</button></th>
                                             <th>Info</th>
                                             <th></th>
                                         </tr>
@@ -1200,10 +1206,10 @@
     <style>
         #chat-fab {
             position: fixed; right: 20px; z-index: 2001;
-            width: 56px; height: 56px; border-radius: 50%; border: none;
-            background: #2d6a4f; color: #fff; font-size: 1.4rem;
+            width: 44px; height: 44px; border-radius: 50%; border: none;
+            background: #2d6a4f; color: #fff; font-size: 1.1rem;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 20px rgba(45,106,79,0.4);
+            box-shadow: 0 4px 14px rgba(45,106,79,0.35);
             cursor: pointer; transition: transform 0.25s ease, box-shadow 0.2s ease;
         }
         #chat-fab:hover { box-shadow: 0 8px 24px rgba(45,106,79,0.55); transform: scale(1.08); }
@@ -1335,12 +1341,14 @@
         function syncFromActiveTab() {
             const active = document.querySelector('#misPestanas .nav-link.active');
             updateContext(active ? (TAB_METHOD[active.id] || null) : null);
+            fab.style.display = (active && active.id === 'consolidado-tab') ? 'none' : 'flex';
         }
 
         // React to Bootstrap tab switches
         document.querySelectorAll('#misPestanas .nav-link').forEach(function (btn) {
             btn.addEventListener('shown.bs.tab', function (e) {
                 updateContext(TAB_METHOD[e.target.id] || null);
+                fab.style.display = e.target.id === 'consolidado-tab' ? 'none' : 'flex';
             });
         });
 
@@ -1400,6 +1408,39 @@
             panel.classList.remove('visible');
             fab.classList.remove('open');
         });
+    })();
+    </script>
+    <script>
+    // Popovers ⓘ en tabla Resultados
+    (function () {
+        var btns = document.querySelectorAll('.col-info-btn');
+        if (!btns.length) return;
+        fetch('/api/metodos').then(function (r) { return r.json(); }).then(function (data) {
+            var metodos = data.metodos;
+            var instances = [];
+            btns.forEach(function (btn) {
+                var metodo = metodos.find(function (m) { return m.id === btn.dataset.methodId; });
+                if (!metodo) return;
+                var pop = new bootstrap.Popover(btn, {
+                    title: metodo.nombre,
+                    content: metodo.como_se_interpreta,
+                    trigger: 'click',
+                    placement: 'auto',
+                    container: 'body',
+                    html: false
+                });
+                instances.push({ btn: btn, pop: pop });
+                btn.addEventListener('show.bs.popover', function () {
+                    instances.forEach(function (inst) { if (inst.btn !== btn) inst.pop.hide(); });
+                });
+            });
+            // Close open popover when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('.col-info-btn') && !e.target.closest('.popover')) {
+                    instances.forEach(function (inst) { inst.pop.hide(); });
+                }
+            });
+        }).catch(function () {});
     })();
     </script>
     <!-- ===== FIN CHAT WIDGET ===== -->
