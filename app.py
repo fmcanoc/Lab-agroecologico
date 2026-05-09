@@ -59,10 +59,10 @@ def crear_tablas():
                             peso_filtro NUMERIC, peso_piedras NUMERIC, peso_fraccion_mayor NUMERIC, 
                             peso_fraccion_250 NUMERIC, peso_recipiente_piedras NUMERIC, peso_piedras_con_recipiente NUMERIC)''')
             cur.execute('''CREATE TABLE IF NOT EXISTS fosforo_olsen (
-                            id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
-                            resultado_ppm NUMERIC, resultado_mg_kg NUMERIC, peso_suelo NUMERIC, 
-                            vol_extracto NUMERIC, vol_dilucion NUMERIC, abs_muestra NUMERIC, 
-                            abs_0 NUMERIC, abs_05 NUMERIC, abs_1 NUMERIC, abs_15 NUMERIC, abs_2 NUMERIC)''')
+                            id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE,
+                            resultado_ppm NUMERIC, resultado_mg_kg NUMERIC, peso_suelo NUMERIC,
+                            vol_extracto NUMERIC, vol_dilucion NUMERIC, abs_muestra NUMERIC,
+                            abs_0 NUMERIC, abs_01 NUMERIC, abs_02 NUMERIC, abs_04 NUMERIC, abs_06 NUMERIC, abs_08 NUMERIC)''')
             cur.execute('''CREATE TABLE IF NOT EXISTS respiracion_suelo (
                             id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
                             peso_suelo NUMERIC, co2_initial NUMERIC, co2_final NUMERIC, horas NUMERIC, ugc_gsoil NUMERIC, 
@@ -85,6 +85,47 @@ def crear_tablas():
             # NUEVO CAMPO PARA SLAKES
             try:
                 cur.execute("ALTER TABLE estabilidad_agregados ADD COLUMN indice_slakes NUMERIC;")
+            except Exception:
+                conexion.rollback()
+
+            # MIGRACION CURVA CALIBRACION FOSFORO: renombrar columnas al nuevo esquema de 6 puntos
+            try:
+                cur.execute("""
+                    DO $$ BEGIN
+                        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='fosforo_olsen' AND column_name='abs_05') THEN
+                            ALTER TABLE fosforo_olsen RENAME COLUMN abs_05 TO abs_01;
+                            ALTER TABLE fosforo_olsen RENAME COLUMN abs_15 TO abs_04;
+                        END IF;
+                    END $$;
+                """)
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+            try:
+                cur.execute("""
+                    DO $$ BEGIN
+                        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='fosforo_olsen' AND column_name='abs_1') THEN
+                            ALTER TABLE fosforo_olsen RENAME COLUMN abs_1 TO abs_02;
+                        END IF;
+                    END $$;
+                """)
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+            try:
+                cur.execute("""
+                    DO $$ BEGIN
+                        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='fosforo_olsen' AND column_name='abs_2') THEN
+                            ALTER TABLE fosforo_olsen RENAME COLUMN abs_2 TO abs_06;
+                        END IF;
+                    END $$;
+                """)
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+            try:
+                cur.execute("ALTER TABLE fosforo_olsen ADD COLUMN IF NOT EXISTS abs_08 NUMERIC;")
+                conexion.commit()
             except Exception:
                 conexion.rollback()
 
@@ -246,14 +287,14 @@ def inicio():
 
             elif tipo_formulario == 'fosforo_olsen':
                 peso_g, vol_ext, vol_dil = float(request.form.get('peso_suelo', 2.5)), float(request.form.get('vol_extracto', 7.0)), float(request.form.get('vol_dilucion', 20.0))
-                abs_m, a0, a05, a1, a15, a2 = float(request.form['abs_muestra']), float(request.form['abs_0']), float(request.form['abs_05']), float(request.form['abs_1']), float(request.form['abs_15']), float(request.form['abs_2'])
-                conc = np.array([0.0, 0.5, 1.0, 1.5, 2.0])
-                absor = np.array([a0, a05, a1, a15, a2])
+                abs_m, a0, a01, a02, a04, a06, a08 = float(request.form['abs_muestra']), float(request.form['abs_0']), float(request.form['abs_01']), float(request.form['abs_02']), float(request.form['abs_04']), float(request.form['abs_06']), float(request.form['abs_08'])
+                conc = np.array([0.0, 0.1, 0.2, 0.4, 0.6, 0.8])
+                absor = np.array([a0, a01, a02, a04, a06, a08])
                 resultado = stats.linregress(conc, absor)
-                ppm = abs_m / resultado.slope if resultado.slope != 0 else 0
-                p_disponible = (((ppm * 0.0559) - 0.052) * (vol_dil / vol_ext) * 0.025) / (peso_g / 1000)
+                ppm = (abs_m - resultado.intercept) / resultado.slope if resultado.slope != 0 else 0
+                p_disponible = ppm * (vol_dil / vol_ext) * 0.025 / (peso_g / 1000)
                 cur.execute('DELETE FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
-                cur.execute('''INSERT INTO fosforo_olsen (muestra_id, resultado_ppm, resultado_mg_kg, peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_05, abs_1, abs_15, abs_2) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, ppm, p_disponible, peso_g, vol_ext, vol_dil, abs_m, a0, a05, a1, a15, a2))
+                cur.execute('''INSERT INTO fosforo_olsen (muestra_id, resultado_ppm, resultado_mg_kg, peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_01, abs_02, abs_04, abs_06, abs_08) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (muestra_id, ppm, p_disponible, peso_g, vol_ext, vol_dil, abs_m, a0, a01, a02, a04, a06, a08))
                 conexion.commit()
                 flash('Fósforo calculado exitosamente.', 'success')
                 return redirect(url_for('inicio', m=muestra_id) + '#fosforo')
@@ -361,13 +402,13 @@ def datos_crudos(muestra_id):
                 datos['c_inter'] = res.intercept
             except: pass
             
-        cur.execute('SELECT resultado_ppm, resultado_mg_kg, peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_05, abs_1, abs_15, abs_2 FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
+        cur.execute('SELECT resultado_ppm, resultado_mg_kg, peso_suelo, vol_extracto, vol_dilucion, abs_muestra, abs_0, abs_01, abs_02, abs_04, abs_06, abs_08 FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
         p_row = cur.fetchone()
-        if p_row: 
-            datos.update({'p_peso': p_row['peso_suelo'], 'p_volext': p_row['vol_extracto'], 'p_voldil': p_row['vol_dilucion'], 'p_abs': p_row['abs_muestra'], 'p_a0': p_row['abs_0'], 'p_a05': p_row['abs_05'], 'p_a1': p_row['abs_1'], 'p_a15': p_row['abs_15'], 'p_a2': p_row['abs_2'], 'p_res_mg': p_row['resultado_mg_kg'], 'p_res_ppm': p_row['resultado_ppm']})
+        if p_row:
+            datos.update({'p_peso': p_row['peso_suelo'], 'p_volext': p_row['vol_extracto'], 'p_voldil': p_row['vol_dilucion'], 'p_abs': p_row['abs_muestra'], 'p_a0': p_row['abs_0'], 'p_a01': p_row['abs_01'], 'p_a02': p_row['abs_02'], 'p_a04': p_row['abs_04'], 'p_a06': p_row['abs_06'], 'p_a08': p_row['abs_08'], 'p_res_mg': p_row['resultado_mg_kg'], 'p_res_ppm': p_row['resultado_ppm']})
             try:
-                conc = np.array([0.0, 0.5, 1.0, 1.5, 2.0])
-                absor = np.array([float(p_row['abs_0']), float(p_row['abs_05']), float(p_row['abs_1']), float(p_row['abs_15']), float(p_row['abs_2'])])
+                conc = np.array([0.0, 0.1, 0.2, 0.4, 0.6, 0.8])
+                absor = np.array([float(p_row['abs_0']), float(p_row['abs_01']), float(p_row['abs_02']), float(p_row['abs_04']), float(p_row['abs_06']), float(p_row['abs_08'])])
                 res = stats.linregress(conc, absor)
                 datos['p_eq'] = f"y = {res.slope:.4f}x + {res.intercept:.4f} (R²={res.rvalue**2:.4f})"
                 datos['p_slope'] = res.slope

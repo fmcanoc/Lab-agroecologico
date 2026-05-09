@@ -389,20 +389,24 @@
                                             <input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_0" required>
                                         </div>
                                         <div class="col">
-                                            <label class="form-label text-muted">0.5 ppm</label>
-                                            <input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_05" required>
+                                            <label class="form-label text-muted">0.1 ppm</label>
+                                            <input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_01" required>
                                         </div>
                                         <div class="col">
-                                            <label class="form-label text-muted">1.0 ppm</label>
-                                            <input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_1" required>
+                                            <label class="form-label text-muted">0.2 ppm</label>
+                                            <input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_02" required>
                                         </div>
                                         <div class="col">
-                                            <label class="form-label text-muted">1.5 ppm</label>
-                                            <input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_15" required>
+                                            <label class="form-label text-muted">0.4 ppm</label>
+                                            <input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_04" required>
                                         </div>
                                         <div class="col">
-                                            <label class="form-label text-muted">2.0 ppm</label>
-                                            <input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_2" required>
+                                            <label class="form-label text-muted">0.6 ppm</label>
+                                            <input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_06" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label text-muted">0.8 ppm</label>
+                                            <input type="number" step="any" inputmode="decimal" class="form-control bg-light" name="abs_08" required>
                                         </div>
                                     </div>
                                 </div>
@@ -831,7 +835,7 @@
                         }
                         
                         if(tab === 'fosforo' && data.p_abs !== undefined && data.p_abs !== null) { 
-                            form.querySelector('[name="peso_suelo"]').value = data.p_peso || '2.5'; form.querySelector('[name="vol_extracto"]').value = data.p_volext || '7'; form.querySelector('[name="vol_dilucion"]').value = data.p_voldil || '20'; form.querySelector('[name="abs_muestra"]').value = data.p_abs; form.querySelector('[name="abs_0"]').value = data.p_a0 || ''; form.querySelector('[name="abs_05"]').value = data.p_a05 || ''; form.querySelector('[name="abs_1"]').value = data.p_a1 || ''; form.querySelector('[name="abs_15"]').value = data.p_a15 || ''; form.querySelector('[name="abs_2"]').value = data.p_a2 || ''; tieneDatos = true; 
+                            form.querySelector('[name="peso_suelo"]').value = data.p_peso || '2.5'; form.querySelector('[name="vol_extracto"]').value = data.p_volext || '7'; form.querySelector('[name="vol_dilucion"]').value = data.p_voldil || '20'; form.querySelector('[name="abs_muestra"]').value = data.p_abs; form.querySelector('[name="abs_0"]').value = data.p_a0 || ''; form.querySelector('[name="abs_01"]').value = data.p_a01 || ''; form.querySelector('[name="abs_02"]').value = data.p_a02 || ''; form.querySelector('[name="abs_04"]').value = data.p_a04 || ''; form.querySelector('[name="abs_06"]').value = data.p_a06 || ''; form.querySelector('[name="abs_08"]').value = data.p_a08 || ''; tieneDatos = true; 
                             
                             if (data.p_res_mg !== undefined && data.p_res_mg !== null) {
                                 document.getElementById('fosforo-result-card').style.display = 'block';
@@ -840,8 +844,8 @@
                                 document.getElementById('fosforo-eq-text').innerText = data.p_eq || '';
                                 
                                 let chart = echarts.getInstanceByDom(document.getElementById('fosforo-chart')) || echarts.init(document.getElementById('fosforo-chart'));
-                                let pts = [[0, data.p_a0], [0.5, data.p_a05], [1.0, data.p_a1], [1.5, data.p_a15], [2.0, data.p_a2]];
-                                let lineData = [[0, data.p_inter], [2.0, data.p_slope*2.0 + data.p_inter]];
+                                let pts = [[0, data.p_a0], [0.1, data.p_a01], [0.2, data.p_a02], [0.4, data.p_a04], [0.6, data.p_a06], [0.8, data.p_a08]];
+                                let lineData = [[0, data.p_inter], [0.8, data.p_slope*0.8 + data.p_inter]];
                                 let samplePt = [data.p_res_ppm, data.p_abs];
                                 
                                 chart.setOption({
