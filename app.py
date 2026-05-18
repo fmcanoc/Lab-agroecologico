@@ -300,7 +300,7 @@ def inicio():
                         flash('Muestra actualizada exitosamente.', 'info')
                 conexion.commit()
                 return redirect(url_for('inicio') + '#muestras')
-                
+
             if not muestra_id and tipo_formulario != 'registro_muestra':
                  return redirect(url_for('inicio'))
 
@@ -619,7 +619,7 @@ def sincronizar_api():
                     token = auth_data.get('token')
             except urllib.error.HTTPError:
                 flash("Credenciales incorrectas.", "danger")
-                return redirect(url_for('inicio') + '#muestras')
+                return redirect(url_for('inicio') + '#ms-surveystack')
 
         url_api = f"https://app.surveystack.io/api/submissions?survey={survey_id}"
         headers = {'Content-Type': 'application/json'}
@@ -667,7 +667,7 @@ def sincronizar_api():
         conexion.close()
         flash(f'Sincronización exitosa. {contador} muestras importadas.', 'success')
     except Exception as e: flash(f'Error al procesar: {str(e)}', 'danger')
-    return redirect(url_for('inicio') + '#muestras')
+    return redirect(url_for('inicio') + '#ms-surveystack')
 
 def parsear_muestra_suelo(fila):
     data = fila.get('data', {})
@@ -809,7 +809,7 @@ def conectar_surveystack():
     ss_password = request.form.get('ss_password', '')
     if not ss_email or not ss_password:
         flash('Email y contraseña son requeridos.', 'danger')
-        return redirect(url_for('inicio') + '#surveystack')
+        return redirect(url_for('inicio') + '#ms-surveystack')
     try:
         auth_url = "https://app.surveystack.io/api/auth/login"
         auth_payload = json.dumps({"email": ss_email, "password": ss_password}).encode('utf-8')
@@ -819,7 +819,7 @@ def conectar_surveystack():
         token = auth_data.get('token')
         if not token:
             flash('No se pudo obtener el token. Verificá tus credenciales.', 'danger')
-            return redirect(url_for('inicio') + '#surveystack')
+            return redirect(url_for('inicio') + '#ms-surveystack')
         user_info = auth_data.get('user', {})
         ss_user_id = user_info.get('_id') or auth_data.get('_id')
         conexion = obtener_conexion()
@@ -833,7 +833,7 @@ def conectar_surveystack():
         flash('Credenciales incorrectas.', 'danger')
     except Exception as e:
         flash(f'Error al conectar: {str(e)}', 'danger')
-    return redirect(url_for('inicio') + '#surveystack')
+    return redirect(url_for('inicio') + '#ms-surveystack')
 
 @app.route('/desconectar-surveystack', methods=['POST'])
 def desconectar_surveystack():
@@ -845,7 +845,7 @@ def desconectar_surveystack():
     cur.close()
     conexion.close()
     flash('Desconectado de SurveyStack.', 'info')
-    return redirect(url_for('inicio') + '#surveystack')
+    return redirect(url_for('inicio') + '#ms-surveystack')
 
 @app.route('/guardar-survey', methods=['POST'])
 def guardar_survey():
@@ -856,7 +856,7 @@ def guardar_survey():
     edit_id = request.form.get('edit_id')
     if not nombre or not survey_id or not tipo:
         flash('Todos los campos son requeridos.', 'danger')
-        return redirect(url_for('inicio') + '#surveystack')
+        return redirect(url_for('inicio') + '#ms-surveystack')
     conexion = obtener_conexion()
     cur = conexion.cursor()
     try:
@@ -873,7 +873,7 @@ def guardar_survey():
     finally:
         cur.close()
         conexion.close()
-    return redirect(url_for('inicio') + '#surveystack')
+    return redirect(url_for('inicio') + '#ms-surveystack')
 
 @app.route('/eliminar-survey/<int:survey_db_id>', methods=['POST'])
 def eliminar_survey(survey_db_id):
@@ -885,7 +885,7 @@ def eliminar_survey(survey_db_id):
     cur.close()
     conexion.close()
     flash('Encuesta eliminada.', 'info')
-    return redirect(url_for('inicio') + '#surveystack')
+    return redirect(url_for('inicio') + '#ms-surveystack')
 
 @app.route('/importar-survey/<int:survey_db_id>', methods=['POST'])
 def importar_survey(survey_db_id):
@@ -898,12 +898,12 @@ def importar_survey(survey_db_id):
         survey = cur.fetchone()
         if not survey:
             flash('Encuesta no encontrada.', 'danger')
-            return redirect(url_for('inicio') + '#surveystack')
+            return redirect(url_for('inicio') + '#ms-surveystack')
         cur.execute('SELECT ss_token, ss_email FROM usuarios WHERE id=%s', (usuario_id,))
         user = cur.fetchone()
         if not user or not user['ss_token']:
             flash('Conectate a SurveyStack primero.', 'warning')
-            return redirect(url_for('inicio') + '#surveystack')
+            return redirect(url_for('inicio') + '#ms-surveystack')
         token = user['ss_token']
         ss_email = user['ss_email']
         url_api = f"https://app.surveystack.io/api/submissions?survey={survey['survey_id']}"
@@ -917,13 +917,13 @@ def importar_survey(survey_db_id):
                 flash('Token vencido. Reconectate a SurveyStack.', 'warning')
             else:
                 flash(f'Error al conectar con SurveyStack ({e.code}).', 'danger')
-            return redirect(url_for('inicio') + '#surveystack')
+            return redirect(url_for('inicio') + '#ms-surveystack')
         datos_json = json.loads(respuesta)
         if isinstance(datos_json, dict) and 'data' in datos_json:
             datos_json = datos_json['data']
         if not isinstance(datos_json, list):
             flash('Respuesta inesperada de SurveyStack. Verificá el ID de encuesta.', 'danger')
-            return redirect(url_for('inicio') + '#surveystack')
+            return redirect(url_for('inicio') + '#ms-surveystack')
         total_recibidos = len(datos_json)
         # Filtrar solo los envíos del usuario autenticado
         ss_email_lower = (ss_email or '').lower()
@@ -1010,7 +1010,7 @@ def importar_survey(survey_db_id):
     finally:
         cur.close()
         conexion.close()
-    return redirect(url_for('inicio') + '#surveystack')
+    return redirect(url_for('inicio') + '#ms-surveystack')
 
 @app.route('/eliminar_finca/<int:finca_id>', methods=['POST'])
 def eliminar_finca(finca_id):

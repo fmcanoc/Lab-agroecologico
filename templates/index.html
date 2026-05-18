@@ -186,11 +186,6 @@
                     <h6 class="sidebar-heading">MÉTRICAS</h6>
                     <button class="nav-link text-start" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-2"></i> Resultados</button>
 
-                    <h6 class="sidebar-heading">CAMPO</h6>
-                    <button class="nav-link text-start position-relative" id="surveystack-tab" data-bs-toggle="tab" data-bs-target="#surveystack" type="button">
-                        <i class="bi bi-cloud-arrow-down me-2"></i> SurveyStack
-                        {% if ss_conectado %}<span class="position-absolute top-50 end-0 translate-middle-y me-2 p-1 bg-success border border-light rounded-circle" style="width:8px;height:8px;"></span>{% endif %}
-                    </button>
                 </div>
             </div>
 
@@ -198,19 +193,22 @@
                 <div class="tab-content" id="contenidoPestanas">
                     
                     <div class="tab-pane fade show active" id="muestras">
-                        <div class="section-card d-flex justify-content-between align-items-center flex-wrap gap-3 p-4 mb-4" style="background-color: {% if ss_conectado %}#f0fff4{% else %}#f8fbfa{% endif %}; border-color: {% if ss_conectado %}#b7ebc8{% else %}#d0ebff{% endif %} !important;">
-                            <div class="d-flex align-items-center">
-                                <div class="bg-white p-3 rounded-circle me-3 shadow-sm d-none d-sm-block"><i class="bi bi-cloud-arrow-down-fill fs-4 {% if ss_conectado %}text-success{% else %}text-primary{% endif %}"></i></div>
-                                <div>
-                                    <h5 class="{% if ss_conectado %}text-success{% else %}text-primary{% endif %} fw-bold m-0">SurveyStack {% if ss_conectado %}<span class="badge bg-success fw-normal" style="font-size:0.7rem;">Conectado</span>{% endif %}</h5>
-                                    <p class="text-muted small m-0 mt-1">{% if ss_conectado %}{{ ss_email_conectado }}{% else %}Importá tus encuestas de campo.{% endif %}</p>
-                                </div>
-                            </div>
-                            <button type="button" class="btn {% if ss_conectado %}btn-success{% else %}btn-primary{% endif %} rounded-pill px-4 fw-bold shadow-sm" onclick="document.getElementById('surveystack-tab').click()">
-                                Gestionar <i class="bi bi-arrow-right ms-1"></i>
-                            </button>
-                        </div>
-                        
+                        <!-- Sub-nav pills -->
+                        <ul class="nav sub-nav-agro mb-4" id="muestrasSubTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="ms-registro-tab" data-bs-toggle="tab" data-bs-target="#ms-registro" type="button" role="tab">
+                                    <i class="bi bi-geo-alt me-1"></i> Registro
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link position-relative" id="ms-surveystack-tab" data-bs-toggle="tab" data-bs-target="#ms-surveystack" type="button" role="tab">
+                                    <i class="bi bi-cloud-arrow-down me-1"></i> SurveyStack
+                                    {% if ss_conectado %}<span class="position-absolute top-50 end-0 translate-middle-y me-2 p-1 bg-success border border-light rounded-circle" style="width:8px;height:8px;"></span>{% endif %}
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                        <div class="tab-pane fade show active" id="ms-registro" role="tabpanel">
                         <form action="/" method="POST" class="form-memoria" data-tab="registro">
                             <input type="hidden" name="form_type" value="registro_muestra">
                             <div class="section-card">
@@ -221,7 +219,95 @@
                             <div class="row g-4"><div class="col-md-6"><div class="section-card h-100"><h6 class="fw-bold mb-4 border-bottom pb-2">Coordenadas Geográficas</h6><div class="row g-3"><div class="col-sm-6"><label class="form-label text-muted">Latitud (Y)</label><input type="number" step="any" inputmode="decimal" class="form-control" name="latitud"></div><div class="col-sm-6"><label class="form-label text-muted">Longitud (X)</label><input type="number" step="any" inputmode="decimal" class="form-control" name="longitud"></div></div></div></div><div class="col-md-6"><div class="section-card h-100"><h6 class="fw-bold mb-4 border-bottom pb-2">Historial Cualitativo</h6><div class="mb-3"><input type="text" class="form-control" name="descripcion" placeholder="Descripción breve del estado"></div><div><textarea class="form-control" name="info" rows="2" placeholder="Notas de manejo, riego o abono..."></textarea></div></div></div></div>
                             <div class="text-end mt-4"><button type="submit" class="btn btn-agro px-5 py-2 shadow-sm"><i class="bi bi-save me-2"></i> Guardar muestra</button></div>
                         </form>
-                    </div>
+                        </div><!-- /ms-registro -->
+
+                        <div class="tab-pane fade" id="ms-surveystack" role="tabpanel">
+                        <!-- Conexión -->
+                        {% if ss_conectado %}
+                        <div class="section-card d-flex justify-content-between align-items-center flex-wrap gap-3 p-4 mb-4" style="background-color:#f0fff4; border-color:#b7ebc8 !important;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-success bg-opacity-10 p-3 rounded-circle"><i class="bi bi-cloud-check-fill fs-4 text-success"></i></div>
+                                <div>
+                                    <h5 class="text-success fw-bold m-0">Conectado <span class="badge bg-success fw-normal" style="font-size:0.7rem;">Activo</span></h5>
+                                    <p class="text-muted small m-0 mt-1">{{ ss_email_conectado }}</p>
+                                </div>
+                            </div>
+                            <form action="/desconectar-surveystack" method="POST">
+                                <button type="submit" class="btn btn-outline-danger rounded-pill px-4 fw-bold"><i class="bi bi-plug-fill me-2"></i> Desconectar</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="section-card mb-4">
+                            <h5 class="fw-bold mb-1"><i class="bi bi-cloud-arrow-down-fill text-primary me-2"></i> Conectar SurveyStack</h5>
+                            <p class="text-muted small mb-4">Ingresá tus credenciales una sola vez. Tu contraseña no se guarda.</p>
+                            <form action="/conectar-surveystack" method="POST">
+                                <div class="row g-3">
+                                    <div class="col-md-5"><label class="form-label">Email de SurveyStack</label><input type="email" class="form-control" name="ss_email" required></div>
+                                    <div class="col-md-5"><label class="form-label">Contraseña</label><input type="password" class="form-control" name="ss_password" required></div>
+                                    <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100 py-2 fw-bold"><i class="bi bi-plug-fill me-2"></i> Conectar</button></div>
+                                </div>
+                            </form>
+                        </div>
+                        {% endif %}
+
+                        <!-- Lista de encuestas -->
+                        <div class="section-card">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="fw-bold m-0"><i class="bi bi-list-check text-muted me-2"></i> Mis Encuestas</h5>
+                                <button class="btn btn-agro btn-sm px-3" data-bs-toggle="modal" data-bs-target="#modalSurvey" onclick="abrirModalSurvey()">
+                                    <i class="bi bi-plus-lg me-1"></i> Agregar
+                                </button>
+                            </div>
+                            {% if ss_surveys %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Tipo</th>
+                                            <th class="d-none d-md-table-cell">ID Encuesta</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for s in ss_surveys %}
+                                        <tr>
+                                            <td class="fw-bold">{{ s.nombre }}</td>
+                                            <td>
+                                                {% if s.tipo == 'muestra_suelo' %}<span class="badge bg-success bg-opacity-10 text-success fw-bold">Muestra Suelo</span>
+                                                {% elif s.tipo == 'test_parcela' %}<span class="badge bg-primary bg-opacity-10 text-primary fw-bold">Parcela</span>
+                                                {% elif s.tipo == 'test_productor' %}<span class="badge bg-warning bg-opacity-10 text-warning fw-bold">Productor</span>
+                                                {% else %}<span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold">{{ s.tipo }}</span>{% endif %}
+                                            </td>
+                                            <td class="d-none d-md-table-cell"><code class="text-muted small">{{ s.survey_id[:14] }}…</code></td>
+                                            <td class="text-end">
+                                                <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                                    <form action="/importar-survey/{{ s.id }}" method="POST" class="d-inline">
+                                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold" {% if not ss_conectado %}disabled title="Conectate primero"{% endif %}>
+                                                            <i class="bi bi-cloud-download me-1"></i> Importar
+                                                        </button>
+                                                    </form>
+                                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalSurvey"
+                                                        onclick="abrirModalSurvey('{{ s.id }}', '{{ s.nombre }}', '{{ s.survey_id }}', '{{ s.tipo }}')">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <form action="/eliminar-survey/{{ s.id }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta encuesta?')">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-5"><i class="bi bi-inbox fs-3 d-block mb-2"></i> No hay encuestas configuradas.</p>
+                            {% endif %}
+                        </div>
+                        </div><!-- /ms-surveystack -->
+                        </div><!-- /muestras tab-content -->
+                    </div><!-- /muestras -->
 
                     <div class="tab-pane fade" id="textura">
                         <div class="row g-4 mb-4">
@@ -784,7 +870,7 @@
                         <div class="section-card text-center py-5 text-muted">
                             <i class="bi bi-house-heart fs-2 d-block mb-3"></i>
                             <p class="mb-3">No hay productores importados todavía.</p>
-                            <button onclick="document.getElementById('surveystack-tab').click()" class="btn btn-agro px-4"><i class="bi bi-cloud-arrow-down me-2"></i> Importar desde SurveyStack</button>
+                            <button onclick="document.getElementById('muestras-tab').click(); setTimeout(()=>document.getElementById('ms-surveystack-tab').click(),50)" class="btn btn-agro px-4"><i class="bi bi-cloud-arrow-down me-2"></i> Importar desde SurveyStack</button>
                         </div>
                         {% endif %}
                     </div>
@@ -922,99 +1008,13 @@
                         <div class="section-card text-center py-5 text-muted">
                             <i class="bi bi-map fs-2 d-block mb-3"></i>
                             <p class="mb-3">No hay parcelas importadas todavía.</p>
-                            <button onclick="document.getElementById('surveystack-tab').click()" class="btn btn-agro px-4"><i class="bi bi-cloud-arrow-down me-2"></i> Importar desde SurveyStack</button>
+                            <button onclick="document.getElementById('muestras-tab').click(); setTimeout(()=>document.getElementById('ms-surveystack-tab').click(),50)" class="btn btn-agro px-4"><i class="bi bi-cloud-arrow-down me-2"></i> Importar desde SurveyStack</button>
                         </div>
                         {% endif %}
                     </div><!-- /sub-parcelas -->
                         </div><!-- /tab-content -->
                     </div><!-- /consolidado -->
 
-                    <!-- SurveyStack Tab -->
-                    <div class="tab-pane fade" id="surveystack">
-                        <!-- Conexión -->
-                        {% if ss_conectado %}
-                        <div class="section-card d-flex justify-content-between align-items-center flex-wrap gap-3 p-4 mb-4" style="background-color:#f0fff4; border-color:#b7ebc8 !important;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="bg-success bg-opacity-10 p-3 rounded-circle"><i class="bi bi-cloud-check-fill fs-4 text-success"></i></div>
-                                <div>
-                                    <h5 class="text-success fw-bold m-0">Conectado <span class="badge bg-success fw-normal" style="font-size:0.7rem;">Activo</span></h5>
-                                    <p class="text-muted small m-0 mt-1">{{ ss_email_conectado }}</p>
-                                </div>
-                            </div>
-                            <form action="/desconectar-surveystack" method="POST">
-                                <button type="submit" class="btn btn-outline-danger rounded-pill px-4 fw-bold"><i class="bi bi-plug-fill me-2"></i> Desconectar</button>
-                            </form>
-                        </div>
-                        {% else %}
-                        <div class="section-card mb-4">
-                            <h5 class="fw-bold mb-1"><i class="bi bi-cloud-arrow-down-fill text-primary me-2"></i> Conectar SurveyStack</h5>
-                            <p class="text-muted small mb-4">Ingresá tus credenciales una sola vez. Tu contraseña no se guarda.</p>
-                            <form action="/conectar-surveystack" method="POST">
-                                <div class="row g-3">
-                                    <div class="col-md-5"><label class="form-label">Email de SurveyStack</label><input type="email" class="form-control" name="ss_email" required></div>
-                                    <div class="col-md-5"><label class="form-label">Contraseña</label><input type="password" class="form-control" name="ss_password" required></div>
-                                    <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100 py-2 fw-bold"><i class="bi bi-plug-fill me-2"></i> Conectar</button></div>
-                                </div>
-                            </form>
-                        </div>
-                        {% endif %}
-
-                        <!-- Lista de encuestas -->
-                        <div class="section-card">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="fw-bold m-0"><i class="bi bi-list-check text-muted me-2"></i> Mis Encuestas</h5>
-                                <button class="btn btn-agro btn-sm px-3" data-bs-toggle="modal" data-bs-target="#modalSurvey" onclick="abrirModalSurvey()">
-                                    <i class="bi bi-plus-lg me-1"></i> Agregar
-                                </button>
-                            </div>
-                            {% if ss_surveys %}
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th>Nombre</th>
-                                            <th>Tipo</th>
-                                            <th class="d-none d-md-table-cell">ID Encuesta</th>
-                                            <th class="text-end">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for s in ss_surveys %}
-                                        <tr>
-                                            <td class="fw-bold">{{ s.nombre }}</td>
-                                            <td>
-                                                {% if s.tipo == 'muestra_suelo' %}<span class="badge bg-success bg-opacity-10 text-success fw-bold">Muestra Suelo</span>
-                                                {% elif s.tipo == 'test_parcela' %}<span class="badge bg-primary bg-opacity-10 text-primary fw-bold">Parcela</span>
-                                                {% elif s.tipo == 'test_productor' %}<span class="badge bg-warning bg-opacity-10 text-warning fw-bold">Productor</span>
-                                                {% else %}<span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold">{{ s.tipo }}</span>{% endif %}
-                                            </td>
-                                            <td class="d-none d-md-table-cell"><code class="text-muted small">{{ s.survey_id[:14] }}…</code></td>
-                                            <td class="text-end">
-                                                <div class="d-flex gap-2 justify-content-end flex-wrap">
-                                                    <form action="/importar-survey/{{ s.id }}" method="POST" class="d-inline">
-                                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold" {% if not ss_conectado %}disabled title="Conectate primero"{% endif %}>
-                                                            <i class="bi bi-cloud-download me-1"></i> Importar
-                                                        </button>
-                                                    </form>
-                                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalSurvey"
-                                                        onclick="abrirModalSurvey('{{ s.id }}', '{{ s.nombre }}', '{{ s.survey_id }}', '{{ s.tipo }}')">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </button>
-                                                    <form action="/eliminar-survey/{{ s.id }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta encuesta?')">
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2"><i class="bi bi-trash"></i></button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {% else %}
-                            <p class="text-muted text-center py-5"><i class="bi bi-inbox fs-3 d-block mb-2"></i> No hay encuestas configuradas.</p>
-                            {% endif %}
-                        </div>
-                    </div>
 
                 </div>
             </div>
@@ -1100,7 +1100,17 @@
             });
 
             let activeTabId = window.location.hash ? window.location.hash.substring(1) + '-tab' : localStorage.getItem('pestañaActiva');
-            if (activeTabId) { let t = document.querySelector('#' + activeTabId); if (t) new bootstrap.Tab(t).show(); }
+            if (activeTabId) {
+                let t = document.getElementById(activeTabId);
+                if (t) {
+                    let parentPane = t.closest('.tab-pane[id]');
+                    if (parentPane) {
+                        let parentTab = document.getElementById(parentPane.id + '-tab');
+                        if (parentTab) new bootstrap.Tab(parentTab).show();
+                    }
+                    new bootstrap.Tab(t).show();
+                }
+            }
             document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(btn => { 
                 btn.addEventListener('shown.bs.tab', e => { 
                     localStorage.setItem('pestañaActiva', e.target.id); 
