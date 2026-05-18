@@ -22,10 +22,10 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'clave_super_secreta_trazabilidad_suelos'
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-cambiar-en-produccion')
 
 def obtener_conexion():
-    url_bd = os.environ.get('DATABASE_URL', '***REMOVED_DB_URI***')
+    url_bd = os.environ.get('DATABASE_URL')
     conexion = psycopg.connect(url_bd, row_factory=dict_row)
     return conexion
 
@@ -130,6 +130,76 @@ def crear_tablas():
                 conexion.rollback()
 
             conexion.commit()
+
+            # SurveyStack integration
+            try:
+                cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ss_token TEXT;")
+                cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ss_token_expiry TIMESTAMP;")
+                cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ss_user_id TEXT;")
+                cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ss_email TEXT;")
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+            try:
+                cur.execute('''CREATE TABLE IF NOT EXISTS usuario_surveys (
+                    id SERIAL PRIMARY KEY,
+                    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+                    nombre TEXT NOT NULL,
+                    survey_id TEXT NOT NULL,
+                    tipo TEXT NOT NULL,
+                    UNIQUE(usuario_id, survey_id)
+                )''')
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+            try:
+                for nombre, survey_id, tipo in [
+                    ('Muestra Suelo - LAA', '6a08920d4c396d25617db9ed', 'muestra_suelo'),
+                    ('Test Parcela - LAA', '69e27691ca4d1d7e5d39db88', 'test_parcela'),
+                    ('Test Productor - LAA', '6a022adad40876f3b64849a7', 'test_productor'),
+                ]:
+                    cur.execute('''INSERT INTO usuario_surveys (usuario_id, nombre, survey_id, tipo)
+                        SELECT id, %s, %s, %s FROM usuarios
+                        ON CONFLICT (usuario_id, survey_id) DO NOTHING''', (nombre, survey_id, tipo))
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+            try:
+                cur.execute('''CREATE TABLE IF NOT EXISTS fincas (
+                    id SERIAL PRIMARY KEY,
+                    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+                    ss_submission_id TEXT,
+                    nombre TEXT NOT NULL,
+                    productor TEXT,
+                    telefono TEXT,
+                    localidad TEXT,
+                    provincia TEXT,
+                    hectareas NUMERIC,
+                    tipo_produccion TEXT,
+                    geojson TEXT,
+                    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(usuario_id, ss_submission_id)
+                )''')
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+            try:
+                cur.execute('''CREATE TABLE IF NOT EXISTS parcelas (
+                    id SERIAL PRIMARY KEY,
+                    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+                    finca_nombre TEXT NOT NULL,
+                    nombre TEXT NOT NULL,
+                    nombre_completo TEXT,
+                    certificacion TEXT,
+                    cultivo TEXT,
+                    geojson TEXT,
+                    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(usuario_id, finca_nombre, nombre)
+                )''')
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+
             cur.close()
         except Exception as e:
             print("Error al crear tablas:", e)
@@ -146,7 +216,15 @@ def registro():
     conexion = obtener_conexion()
     cur = conexion.cursor()
     try:
-        cur.execute('INSERT INTO usuarios (username, password) VALUES (%s, %s)', (username, hashed_password))
+        cur.execute('INSERT INTO usuarios (username, password) VALUES (%s, %s) RETURNING id', (username, hashed_password))
+        new_user = cur.fetchone()
+        if new_user:
+            for nombre, survey_id, tipo in [
+                ('Muestra Suelo - LAA', '6a08920d4c396d25617db9ed', 'muestra_suelo'),
+                ('Test Parcela - LAA', '69e27691ca4d1d7e5d39db88', 'test_parcela'),
+                ('Test Productor - LAA', '6a022adad40876f3b64849a7', 'test_productor'),
+            ]:
+                cur.execute('INSERT INTO usuario_surveys (usuario_id, nombre, survey_id, tipo) VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING', (new_user['id'], nombre, survey_id, tipo))
         conexion.commit()
         flash('Cuenta creada. Por favor, inicia sesión.', 'success')
     except errors.UniqueViolation:
@@ -369,7 +447,19 @@ def inicio():
                                   WHERE m.usuario_id = %s ORDER BY m.id DESC'''
         cur.execute(consulta_consolidado, (usuario_id,))
         consolidado_db = cur.fetchall()
-        return render_template('index.html', muestras=muestras_db, consolidado=consolidado_db, username=username)
+        cur.execute('SELECT ss_token, ss_email FROM usuarios WHERE id=%s', (usuario_id,))
+        ss_user = cur.fetchone()
+        ss_conectado = bool(ss_user and ss_user.get('ss_token'))
+        ss_email_conectado = ss_user.get('ss_email') if ss_user else None
+        cur.execute('SELECT * FROM usuario_surveys WHERE usuario_id=%s ORDER BY id', (usuario_id,))
+        ss_surveys = cur.fetchall()
+        cur.execute('SELECT * FROM fincas WHERE usuario_id=%s ORDER BY nombre', (usuario_id,))
+        fincas_db = cur.fetchall()
+        cur.execute('SELECT * FROM parcelas WHERE usuario_id=%s ORDER BY finca_nombre, nombre', (usuario_id,))
+        parcelas_db = cur.fetchall()
+        return render_template('index.html', muestras=muestras_db, consolidado=consolidado_db, username=username,
+                               ss_conectado=ss_conectado, ss_email_conectado=ss_email_conectado, ss_surveys=ss_surveys,
+                               fincas=fincas_db, parcelas=parcelas_db)
     finally:
         cur.close()
         conexion.close()
@@ -578,6 +668,377 @@ def sincronizar_api():
         flash(f'Sincronización exitosa. {contador} muestras importadas.', 'success')
     except Exception as e: flash(f'Error al procesar: {str(e)}', 'danger')
     return redirect(url_for('inicio') + '#muestras')
+
+def parsear_muestra_suelo(fila):
+    data = fila.get('data', {})
+    page3 = data.get('page_3', {})
+    page2 = data.get('page_2', {})
+    id_muestra = page3.get('id_muestra', {}).get('value')
+    if not id_muestra:
+        return None
+    finca_val = page3.get('finca', {}).get('value', [])
+    finca = finca_val[0] if isinstance(finca_val, list) and finca_val else None
+    cultivo_val = page3.get('cultivo', {}).get('value', [])
+    cultivo_full = cultivo_val[0] if isinstance(cultivo_val, list) and cultivo_val else None
+    cultivo = cultivo_full.split(' | ')[-1].strip() if cultivo_full else None
+    parcela_val = page3.get('parcela', {}).get('value', [])
+    parcela = parcela_val[0].split(' | ')[-1].strip() if isinstance(parcela_val, list) and parcela_val else None
+    lat, lon = None, None
+    coords_data = page2.get('coordenadas', {}).get('value', {})
+    if isinstance(coords_data, dict):
+        features = coords_data.get('features', [])
+        if features:
+            geom = features[0].get('geometry', {})
+            if geom and geom.get('type') == 'Point':
+                coords = geom.get('coordinates', [])
+                if len(coords) >= 2:
+                    lon, lat = float(coords[0]), float(coords[1])
+    profundidad_val = page2.get('profundidad', {}).get('value', [])
+    profundidad = profundidad_val[0] if isinstance(profundidad_val, list) and profundidad_val else None
+    observaciones = page2.get('observaciones', {}).get('value')
+    info_parts = []
+    if finca: info_parts.append(f"Finca: {finca}")
+    if parcela: info_parts.append(f"Parcela: {parcela}")
+    if profundidad: info_parts.append(f"Prof.: {profundidad}")
+    return {
+        'id_muestra': id_muestra,
+        'cultivo': cultivo,
+        'lat': lat,
+        'lon': lon,
+        'descripcion': observaciones,
+        'info': ' | '.join(info_parts) if info_parts else None,
+    }
+
+def parsear_productor(fila):
+    data = fila.get('data', {})
+    ss_id = fila.get('_id')
+    common_profile = data.get('common_profile', {})
+    caddr = common_profile.get('contact_and_address', {})
+    contact = caddr.get('contact', {})
+    location = caddr.get('location', {})
+    area_data = caddr.get('area', {})
+    nombre = (data.get('organization', {}).get('value')
+              or contact.get('organization', {}).get('value')
+              or contact.get('name', {}).get('value'))
+    if not nombre:
+        return None
+    nombre_productor = contact.get('name', {}).get('value')
+    telefono = contact.get('phone', {}).get('value')
+    localidad = location.get('city', {}).get('value')
+    prov_val = location.get('province', {}).get('value', [])
+    provincia = prov_val[0] if isinstance(prov_val, list) and prov_val else None
+    geojson_val = area_data.get('value')
+    geojson_str = json.dumps(geojson_val) if geojson_val else None
+    land = common_profile.get('land', {})
+    ha_val = land.get('area', {}).get('total_hectares', {}).get('value', [])
+    try:
+        hectareas = float(ha_val[0]) if ha_val else None
+    except Exception:
+        hectareas = None
+    tipos_val = common_profile.get('types', {}).get('value', [])
+    tipo = ', '.join(tipos_val) if isinstance(tipos_val, list) and tipos_val else None
+    return {
+        'ss_id': ss_id, 'nombre': nombre, 'productor': nombre_productor,
+        'telefono': telefono, 'localidad': localidad, 'provincia': provincia,
+        'hectareas': hectareas, 'tipo_produccion': tipo, 'geojson': geojson_str,
+    }
+
+
+def parsear_parcelas(fila):
+    data = fila.get('data', {})
+    ss_id = fila.get('_id')
+    farm_val = data.get('participating', {}).get('farm', {}).get('value', [])
+    if isinstance(farm_val, list) and farm_val:
+        finca_nombre = farm_val[0]
+    elif isinstance(farm_val, str) and farm_val:
+        finca_nombre = farm_val
+    else:
+        return []
+    cultivos_por_campo = {}
+    for ptype in ['plantings_div_veg', 'plantings_row_crop', 'plantings_cover_crop', 'plantings_tree_crop']:
+        pt = data.get(ptype, {})
+        if not pt:
+            continue
+        planting_list = pt.get('planting', {}).get('value', [])
+        if not isinstance(planting_list, list):
+            continue
+        for p in planting_list:
+            fields = p.get('field', {}).get('value', [])
+            crop_val = p.get('crop', {}).get('value', [])
+            crop = crop_val[0] if isinstance(crop_val, list) and crop_val else None
+            if not crop:
+                continue
+            for f in (fields if isinstance(fields, list) else []):
+                fname = f.get('name', '') if isinstance(f, dict) else ''
+                if fname:
+                    cultivos_por_campo.setdefault(fname, set()).add(crop)
+    result = []
+    for i in range(1, 6):
+        fd = data.get(f'create_field_{i}')
+        if not fd:
+            continue
+        add = fd.get('add', {})
+        name_data = add.get('name', {}).get('value')
+        if isinstance(name_data, dict):
+            nombre = name_data.get('name')
+        elif isinstance(name_data, str):
+            nombre = name_data
+        else:
+            continue
+        if not nombre:
+            continue
+        area_val = add.get('area', {}).get('value')
+        geojson_str = json.dumps(area_val) if area_val else None
+        flags_val = add.get('flags', {}).get('value', [])
+        certificacion = flags_val[0] if isinstance(flags_val, list) and flags_val else None
+        cultivos = list(cultivos_por_campo.get(nombre, set()))
+        result.append({
+            'ss_id': ss_id, 'finca_nombre': finca_nombre, 'nombre': nombre,
+            'nombre_completo': f"{finca_nombre} | {nombre}",
+            'certificacion': certificacion,
+            'cultivo': ', '.join(cultivos) if cultivos else None,
+            'geojson': geojson_str,
+        })
+    return result
+
+
+@app.route('/conectar-surveystack', methods=['POST'])
+def conectar_surveystack():
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    ss_email = request.form.get('ss_email', '').strip()
+    ss_password = request.form.get('ss_password', '')
+    if not ss_email or not ss_password:
+        flash('Email y contraseña son requeridos.', 'danger')
+        return redirect(url_for('inicio') + '#surveystack')
+    try:
+        auth_url = "https://app.surveystack.io/api/auth/login"
+        auth_payload = json.dumps({"email": ss_email, "password": ss_password}).encode('utf-8')
+        req_auth = urllib.request.Request(auth_url, data=auth_payload, headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req_auth) as auth_res:
+            auth_data = json.loads(auth_res.read().decode('utf-8'))
+        token = auth_data.get('token')
+        if not token:
+            flash('No se pudo obtener el token. Verificá tus credenciales.', 'danger')
+            return redirect(url_for('inicio') + '#surveystack')
+        user_info = auth_data.get('user', {})
+        ss_user_id = user_info.get('_id') or auth_data.get('_id')
+        conexion = obtener_conexion()
+        cur = conexion.cursor()
+        cur.execute('UPDATE usuarios SET ss_token=%s, ss_user_id=%s, ss_email=%s WHERE id=%s', (token, ss_user_id, ss_email, session['usuario_id']))
+        conexion.commit()
+        cur.close()
+        conexion.close()
+        flash(f'Conectado a SurveyStack como {ss_email}.', 'success')
+    except urllib.error.HTTPError:
+        flash('Credenciales incorrectas.', 'danger')
+    except Exception as e:
+        flash(f'Error al conectar: {str(e)}', 'danger')
+    return redirect(url_for('inicio') + '#surveystack')
+
+@app.route('/desconectar-surveystack', methods=['POST'])
+def desconectar_surveystack():
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    cur.execute('UPDATE usuarios SET ss_token=NULL, ss_user_id=NULL, ss_email=NULL WHERE id=%s', (session['usuario_id'],))
+    conexion.commit()
+    cur.close()
+    conexion.close()
+    flash('Desconectado de SurveyStack.', 'info')
+    return redirect(url_for('inicio') + '#surveystack')
+
+@app.route('/guardar-survey', methods=['POST'])
+def guardar_survey():
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    nombre = request.form.get('nombre', '').strip()
+    survey_id = request.form.get('survey_id', '').strip()
+    tipo = request.form.get('tipo', '').strip()
+    edit_id = request.form.get('edit_id')
+    if not nombre or not survey_id or not tipo:
+        flash('Todos los campos son requeridos.', 'danger')
+        return redirect(url_for('inicio') + '#surveystack')
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    try:
+        if edit_id:
+            cur.execute('UPDATE usuario_surveys SET nombre=%s, survey_id=%s, tipo=%s WHERE id=%s AND usuario_id=%s', (nombre, survey_id, tipo, edit_id, session['usuario_id']))
+        else:
+            cur.execute('''INSERT INTO usuario_surveys (usuario_id, nombre, survey_id, tipo) VALUES (%s, %s, %s, %s)
+                ON CONFLICT (usuario_id, survey_id) DO UPDATE SET nombre=EXCLUDED.nombre, tipo=EXCLUDED.tipo''', (session['usuario_id'], nombre, survey_id, tipo))
+        conexion.commit()
+        flash('Encuesta guardada.', 'success')
+    except Exception as e:
+        conexion.rollback()
+        flash(f'Error: {str(e)}', 'danger')
+    finally:
+        cur.close()
+        conexion.close()
+    return redirect(url_for('inicio') + '#surveystack')
+
+@app.route('/eliminar-survey/<int:survey_db_id>', methods=['POST'])
+def eliminar_survey(survey_db_id):
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    cur.execute('DELETE FROM usuario_surveys WHERE id=%s AND usuario_id=%s', (survey_db_id, session['usuario_id']))
+    conexion.commit()
+    cur.close()
+    conexion.close()
+    flash('Encuesta eliminada.', 'info')
+    return redirect(url_for('inicio') + '#surveystack')
+
+@app.route('/importar-survey/<int:survey_db_id>', methods=['POST'])
+def importar_survey(survey_db_id):
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    usuario_id = session['usuario_id']
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    try:
+        cur.execute('SELECT * FROM usuario_surveys WHERE id=%s AND usuario_id=%s', (survey_db_id, usuario_id))
+        survey = cur.fetchone()
+        if not survey:
+            flash('Encuesta no encontrada.', 'danger')
+            return redirect(url_for('inicio') + '#surveystack')
+        cur.execute('SELECT ss_token, ss_email FROM usuarios WHERE id=%s', (usuario_id,))
+        user = cur.fetchone()
+        if not user or not user['ss_token']:
+            flash('Conectate a SurveyStack primero.', 'warning')
+            return redirect(url_for('inicio') + '#surveystack')
+        token = user['ss_token']
+        ss_email = user['ss_email']
+        url_api = f"https://app.surveystack.io/api/submissions?survey={survey['survey_id']}"
+        headers = {'Content-Type': 'application/json', 'Authorization': f"{ss_email} {token}"}
+        req = urllib.request.Request(url_api, headers=headers)
+        try:
+            with urllib.request.urlopen(req) as response:
+                respuesta = response.read().decode('utf-8')
+        except urllib.error.HTTPError as e:
+            if e.code == 401:
+                flash('Token vencido. Reconectate a SurveyStack.', 'warning')
+            else:
+                flash(f'Error al conectar con SurveyStack ({e.code}).', 'danger')
+            return redirect(url_for('inicio') + '#surveystack')
+        datos_json = json.loads(respuesta)
+        if isinstance(datos_json, dict) and 'data' in datos_json:
+            datos_json = datos_json['data']
+        if not isinstance(datos_json, list):
+            flash('Respuesta inesperada de SurveyStack. Verificá el ID de encuesta.', 'danger')
+            return redirect(url_for('inicio') + '#surveystack')
+        total_recibidos = len(datos_json)
+        # Filtrar solo los envíos del usuario autenticado
+        ss_email_lower = (ss_email or '').lower()
+        mis_envios = [f for f in datos_json if f.get('meta', {}).get('creatorDetail', {}).get('email', '').lower() == ss_email_lower]
+        # Si el filtro elimina todo pero hay envíos, la API ya los filtró — usar todos
+        if not mis_envios and total_recibidos > 0:
+            mis_envios = datos_json
+        tipo = survey['tipo']
+        contador = 0
+        if tipo == 'muestra_suelo':
+            for fila in mis_envios:
+                resultado = parsear_muestra_suelo(fila)
+                if not resultado:
+                    continue
+                cur.execute('''INSERT INTO muestras (usuario_id, nombre_muestra, cultivo, latitud, longitud, descripcion, informacion_relevante)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (usuario_id, nombre_muestra) DO UPDATE SET
+                        cultivo = COALESCE(EXCLUDED.cultivo, muestras.cultivo),
+                        latitud = COALESCE(EXCLUDED.latitud, muestras.latitud),
+                        longitud = COALESCE(EXCLUDED.longitud, muestras.longitud),
+                        descripcion = COALESCE(EXCLUDED.descripcion, muestras.descripcion),
+                        informacion_relevante = COALESCE(EXCLUDED.informacion_relevante, muestras.informacion_relevante)''',
+                    (usuario_id, resultado['id_muestra'], resultado['cultivo'], resultado['lat'], resultado['lon'], resultado['descripcion'], resultado['info']))
+                contador += 1
+            conexion.commit()
+            if contador > 0:
+                flash(f'{contador} muestras de suelo importadas correctamente.', 'success')
+            elif total_recibidos == 0:
+                flash('No hay envíos en esta encuesta todavía.', 'info')
+            else:
+                flash(f'Se recibieron {total_recibidos} envíos pero ninguno pudo parsearse. Verificá que el tipo sea correcto.', 'warning')
+        elif tipo == 'test_productor':
+            for fila in mis_envios:
+                resultado = parsear_productor(fila)
+                if not resultado:
+                    continue
+                cur.execute('''INSERT INTO fincas (usuario_id, ss_submission_id, nombre, productor, telefono, localidad, provincia, hectareas, tipo_produccion, geojson)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (usuario_id, ss_submission_id) DO UPDATE SET
+                        nombre = EXCLUDED.nombre,
+                        productor = COALESCE(EXCLUDED.productor, fincas.productor),
+                        telefono = COALESCE(EXCLUDED.telefono, fincas.telefono),
+                        localidad = COALESCE(EXCLUDED.localidad, fincas.localidad),
+                        provincia = COALESCE(EXCLUDED.provincia, fincas.provincia),
+                        hectareas = COALESCE(EXCLUDED.hectareas, fincas.hectareas),
+                        tipo_produccion = COALESCE(EXCLUDED.tipo_produccion, fincas.tipo_produccion),
+                        geojson = COALESCE(EXCLUDED.geojson, fincas.geojson)''',
+                    (usuario_id, resultado['ss_id'], resultado['nombre'], resultado['productor'],
+                     resultado['telefono'], resultado['localidad'], resultado['provincia'],
+                     resultado['hectareas'], resultado['tipo_produccion'], resultado['geojson']))
+                contador += 1
+            conexion.commit()
+            if contador > 0:
+                flash(f'{contador} productores/fincas importados correctamente.', 'success')
+            elif total_recibidos == 0:
+                flash('No hay envíos en esta encuesta todavía.', 'info')
+            else:
+                flash(f'Se recibieron {total_recibidos} envíos pero ninguno pudo parsearse.', 'warning')
+        elif tipo == 'test_parcela':
+            for fila in mis_envios:
+                for p in parsear_parcelas(fila):
+                    cur.execute('''INSERT INTO parcelas (usuario_id, finca_nombre, nombre, nombre_completo, certificacion, cultivo, geojson)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (usuario_id, finca_nombre, nombre) DO UPDATE SET
+                            nombre_completo = EXCLUDED.nombre_completo,
+                            certificacion = COALESCE(EXCLUDED.certificacion, parcelas.certificacion),
+                            cultivo = COALESCE(EXCLUDED.cultivo, parcelas.cultivo),
+                            geojson = COALESCE(EXCLUDED.geojson, parcelas.geojson)''',
+                        (usuario_id, p['finca_nombre'], p['nombre'], p['nombre_completo'],
+                         p['certificacion'], p['cultivo'], p['geojson']))
+                    contador += 1
+            conexion.commit()
+            if contador > 0:
+                flash(f'{contador} parcelas importadas correctamente.', 'success')
+            elif total_recibidos == 0:
+                flash('No hay envíos en esta encuesta todavía.', 'info')
+            else:
+                flash(f'Se recibieron {total_recibidos} envíos pero no se encontraron parcelas válidas.', 'warning')
+        else:
+            flash(f'Tipo de encuesta "{tipo}" no reconocido.', 'warning')
+    except Exception as e:
+        conexion.rollback()
+        flash(f'Error al importar: {str(e)}', 'danger')
+    finally:
+        cur.close()
+        conexion.close()
+    return redirect(url_for('inicio') + '#surveystack')
+
+@app.route('/eliminar_finca/<int:finca_id>', methods=['POST'])
+def eliminar_finca(finca_id):
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    try:
+        cur.execute('DELETE FROM fincas WHERE id=%s AND usuario_id=%s', (finca_id, session['usuario_id']))
+        conexion.commit()
+        flash('Productor/finca eliminado.', 'info')
+    finally:
+        cur.close()
+        conexion.close()
+    return redirect(url_for('inicio') + '#consolidado')
+
+@app.route('/eliminar_parcela/<int:parcela_id>', methods=['POST'])
+def eliminar_parcela(parcela_id):
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    try:
+        cur.execute('DELETE FROM parcelas WHERE id=%s AND usuario_id=%s', (parcela_id, session['usuario_id']))
+        conexion.commit()
+        flash('Parcela eliminada.', 'info')
+    finally:
+        cur.close()
+        conexion.close()
+    return redirect(url_for('inicio') + '#consolidado')
 
 @app.route('/api/metodos')
 def api_metodos():

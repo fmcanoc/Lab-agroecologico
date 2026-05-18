@@ -108,6 +108,9 @@
         .popover { font-family: 'Montserrat', sans-serif !important; font-size: 0.78rem; max-width: 290px; border-color: #c8e6c9; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
         .popover-header { font-weight: 700; font-size: 0.8rem; background-color: #eef5f1; color: #2d6a4f; border-bottom-color: #c8e6c9; }
         .popover-body { color: #333; line-height: 1.55; }
+        .sub-nav-agro .nav-link { color: var(--r-text-muted); font-weight: 600; border: 1px solid var(--r-divider); background: #fff; border-radius: 8px; padding: 0.5rem 1.1rem; font-size: 0.82rem; }
+        .sub-nav-agro .nav-link.active { background-color: var(--r-accent); color: #fff; border-color: var(--r-accent); }
+        .sub-nav-agro .nav-link:hover:not(.active) { background-color: var(--r-accent-light); color: var(--r-accent); }
     </style>
 </head>
 <body>
@@ -182,6 +185,12 @@
                     
                     <h6 class="sidebar-heading">MÉTRICAS</h6>
                     <button class="nav-link text-start" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-2"></i> Resultados</button>
+
+                    <h6 class="sidebar-heading">CAMPO</h6>
+                    <button class="nav-link text-start position-relative" id="surveystack-tab" data-bs-toggle="tab" data-bs-target="#surveystack" type="button">
+                        <i class="bi bi-cloud-arrow-down me-2"></i> SurveyStack
+                        {% if ss_conectado %}<span class="position-absolute top-50 end-0 translate-middle-y me-2 p-1 bg-success border border-light rounded-circle" style="width:8px;height:8px;"></span>{% endif %}
+                    </button>
                 </div>
             </div>
 
@@ -189,11 +198,18 @@
                 <div class="tab-content" id="contenidoPestanas">
                     
                     <div class="tab-pane fade show active" id="muestras">
-                        <div class="section-card d-flex justify-content-between align-items-center border-primary border-opacity-25 flex-wrap gap-3 p-4 mb-4" style="background-color: #f8fbfa;">
-                            <div class="d-flex align-items-center"><div class="bg-white p-3 rounded-circle me-3 shadow-sm d-none d-sm-block"><i class="bi bi-cloud-arrow-down-fill fs-4 text-primary"></i></div><div><h5 class="text-primary fw-bold m-0">Sincronizar SurveyStack</h5><p class="text-muted small m-0 mt-1">Importa mediciones registradas con la app móvil.</p></div></div>
-                            <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalSync">Conectar <i class="bi bi-arrow-right ms-1"></i></button>
+                        <div class="section-card d-flex justify-content-between align-items-center flex-wrap gap-3 p-4 mb-4" style="background-color: {% if ss_conectado %}#f0fff4{% else %}#f8fbfa{% endif %}; border-color: {% if ss_conectado %}#b7ebc8{% else %}#d0ebff{% endif %} !important;">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-white p-3 rounded-circle me-3 shadow-sm d-none d-sm-block"><i class="bi bi-cloud-arrow-down-fill fs-4 {% if ss_conectado %}text-success{% else %}text-primary{% endif %}"></i></div>
+                                <div>
+                                    <h5 class="{% if ss_conectado %}text-success{% else %}text-primary{% endif %} fw-bold m-0">SurveyStack {% if ss_conectado %}<span class="badge bg-success fw-normal" style="font-size:0.7rem;">Conectado</span>{% endif %}</h5>
+                                    <p class="text-muted small m-0 mt-1">{% if ss_conectado %}{{ ss_email_conectado }}{% else %}Importá tus encuestas de campo.{% endif %}</p>
+                                </div>
+                            </div>
+                            <button type="button" class="btn {% if ss_conectado %}btn-success{% else %}btn-primary{% endif %} rounded-pill px-4 fw-bold shadow-sm" onclick="document.getElementById('surveystack-tab').click()">
+                                Gestionar <i class="bi bi-arrow-right ms-1"></i>
+                            </button>
                         </div>
-                        <div class="modal fade" id="modalSync" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-dark text-white border-0 rounded-top-4"><h5 class="modal-title fw-bold">API SurveyStack</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><form action="/sincronizar_api" method="POST"><div class="modal-body p-4 text-start"><div class="mb-3"><label class="form-label">ID Encuesta</label><input type="text" class="form-control" name="survey_id" value="64c114078e8b2200011f0494" required></div><div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" name="ss_email" required></div><div class="mb-4"><label class="form-label">Contraseña</label><input type="password" class="form-control" name="ss_password" required></div></div><div class="modal-footer bg-light border-0 rounded-bottom-4"><button type="button" class="btn btn-light rounded-pill px-4 text-secondary fw-bold" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary rounded-pill px-4"><i class="bi bi-cloud-download me-2"></i> Importar Lotes</button></div></form></div></div></div>
                         
                         <form action="/" method="POST" class="form-memoria" data-tab="registro">
                             <input type="hidden" name="form_type" value="registro_muestra">
@@ -626,6 +642,13 @@
                     </div>
 
                     <div class="tab-pane fade" id="consolidado">
+                        <ul class="nav nav-pills sub-nav-agro mb-4 gap-2" id="sub-resultados-tabs" role="tablist">
+                            <li class="nav-item"><button class="nav-link active fw-bold" id="sub-muestras-tab" data-bs-toggle="tab" data-bs-target="#sub-muestras" type="button"><i class="bi bi-bar-chart-fill me-2"></i>Resultados</button></li>
+                            <li class="nav-item"><button class="nav-link fw-bold" id="sub-productores-tab" data-bs-toggle="tab" data-bs-target="#sub-productores" type="button"><i class="bi bi-house-heart me-2"></i>Productores</button></li>
+                            <li class="nav-item"><button class="nav-link fw-bold" id="sub-parcelas-tab" data-bs-toggle="tab" data-bs-target="#sub-parcelas" type="button"><i class="bi bi-map me-2"></i>Parcelas</button></li>
+                        </ul>
+                        <div class="tab-content">
+                        <div class="tab-pane fade show active" id="sub-muestras">
                         {% if not consolidado %}
                         <div class="section-card text-center py-5 rounded-4"><i class="bi bi-clipboard-data text-muted" style="font-size: 4rem;"></i><h5 class="text-muted mt-3 fw-bold">Aún no hay lotes analizados</h5><p class="small text-muted">Ingresa datos en las pestañas de laboratorio para ver los reportes.</p></div>
                         {% else %}
@@ -725,9 +748,313 @@
                             </div>
                         </div>
                         {% endif %}
+                        </div><!-- /sub-muestras -->
+
+                    <div class="tab-pane fade" id="sub-productores">
+                        {% set tipo_labels = {'cooperative_farm': 'Cooperativa', 'home_garden': 'Huerta familiar', 'nursery_farm': 'Vivero / Semillero', 'education_farm': 'Educativo', 'row_crop_farm': 'Cultivos en hilera', 'other': 'Otro'} %}
+                        {% if fincas %}
+                        <div class="row g-4">
+                            {% for f in fincas %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="section-card h-100">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h5 class="fw-bold text-agro mb-0">{{ f.nombre }}</h5>
+                                        <form action="/eliminar_finca/{{ f.id }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este productor?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                    {% if f.productor %}<p class="mb-2"><i class="bi bi-person-fill text-muted me-2"></i><strong>{{ f.productor }}</strong></p>{% endif %}
+                                    {% if f.localidad or f.provincia %}
+                                    <p class="mb-1 small text-muted"><i class="bi bi-geo-alt me-2"></i>{% if f.localidad %}{{ f.localidad }}{% endif %}{% if f.localidad and f.provincia %}, {% endif %}{% if f.provincia %}{{ f.provincia }}{% endif %}</p>
+                                    {% endif %}
+                                    {% if f.hectareas %}<p class="mb-1 small"><i class="bi bi-rulers me-2 text-muted"></i>{{ f.hectareas }} ha</p>{% endif %}
+                                    {% if f.telefono %}<p class="mb-2 small text-muted"><i class="bi bi-telephone me-2"></i>{{ f.telefono }}</p>{% endif %}
+                                    {% if f.tipo_produccion %}
+                                    <div class="mt-2 d-flex flex-wrap gap-1">
+                                        {% for t in f.tipo_produccion.split(', ') %}
+                                        <span class="badge bg-success bg-opacity-10 text-success fw-bold">{{ tipo_labels.get(t, t) }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="section-card text-center py-5 text-muted">
+                            <i class="bi bi-house-heart fs-2 d-block mb-3"></i>
+                            <p class="mb-3">No hay productores importados todavía.</p>
+                            <button onclick="document.getElementById('surveystack-tab').click()" class="btn btn-agro px-4"><i class="bi bi-cloud-arrow-down me-2"></i> Importar desde SurveyStack</button>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="tab-pane fade" id="sub-parcelas">
+                        {% if parcelas %}
+                        <div class="section-card mb-4 p-0 overflow-hidden">
+                            <div id="mapa-parcelas" style="height:420px;width:100%;border-radius:16px;"></div>
+                        </div>
+                        <div class="section-card">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle table-mobile-cards" id="tabla-parcelas">
+                                    <thead>
+                                        <tr>
+                                            <th>Parcela</th>
+                                            <th>Finca / Productor</th>
+                                            <th>Certificación</th>
+                                            <th>Cultivo(s)</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for p in parcelas %}
+                                        <tr id="fila-parcela-{{ p.id }}">
+                                            <td class="fw-bold lote-name" data-label="Parcela">{{ p.nombre }}</td>
+                                            <td data-label="Finca">{{ p.finca_nombre }}</td>
+                                            <td data-label="Certificación">
+                                                {% if p.certificacion == 'agroecologico' %}<span class="badge" style="background:#d4edda;color:#155724">Agroecológico</span>
+                                                {% elif p.certificacion == 'organico_certificado' %}<span class="badge" style="background:#cce5ff;color:#004085">Org. Certificado</span>
+                                                {% elif p.certificacion == 'convencional' %}<span class="badge" style="background:#fff3cd;color:#856404">Convencional</span>
+                                                {% elif p.certificacion == 'transicion_agroecologica' %}<span class="badge" style="background:#d1ecf1;color:#0c5460">En Transición</span>
+                                                {% elif p.certificacion %}<span class="badge bg-secondary bg-opacity-10 text-secondary">{{ p.certificacion }}</span>
+                                                {% else %}<span class="text-muted small">—</span>{% endif %}
+                                            </td>
+                                            <td data-label="Cultivo">
+                                                {% if p.cultivo %}
+                                                {% for c in p.cultivo.split(', ') %}<span class="badge bg-light text-dark border me-1">{{ c }}</span>{% endfor %}
+                                                {% else %}<span class="text-muted small">—</span>{% endif %}
+                                            </td>
+                                            <td class="text-end" data-label="Acciones">
+                                                <form action="/eliminar_parcela/{{ p.id }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta parcela?')">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2"><i class="bi bi-trash"></i></button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <script>
+                        (function() {
+                            const CERT_COLORS = {
+                                'agroecologico':          { fill: '#2d6a4f', stroke: '#1a3d2f' },
+                                'organico_certificado':   { fill: '#1a6fb5', stroke: '#0d4a80' },
+                                'convencional':           { fill: '#e6a817', stroke: '#9a6e00' },
+                                'transicion_agroecologica': { fill: '#17a2b8', stroke: '#0c6a7a' },
+                            };
+                            const DEFAULT_COLOR = { fill: '#6c757d', stroke: '#3d4855' };
+
+                            const parcelasData = [
+                                {% for p in parcelas %}{% if p.geojson %}
+                                { id: {{ p.id }}, nombre: {{ p.nombre|tojson }}, finca: {{ p.finca_nombre|tojson }},
+                                  cert: {{ (p.certificacion or '')|tojson }}, cultivo: {{ (p.cultivo or '')|tojson }},
+                                  geojson: {{ p.geojson|safe }} },
+                                {% endif %}{% endfor %}
+                            ];
+
+                            let mapaInit = false;
+                            let mapaObj = null;
+
+                            function initMapaParcelas() {
+                                if (mapaInit) { mapaObj && mapaObj.invalidateSize(); return; }
+                                mapaInit = true;
+
+                                mapaObj = L.map('mapa-parcelas', { zoomControl: true });
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '© OpenStreetMap',
+                                    maxZoom: 19
+                                }).addTo(mapaObj);
+
+                                const allBounds = [];
+
+                                parcelasData.forEach(function(p) {
+                                    const c = CERT_COLORS[p.cert] || DEFAULT_COLOR;
+                                    const layer = L.geoJSON(p.geojson, {
+                                        style: { color: c.stroke, fillColor: c.fill, weight: 2, fillOpacity: 0.45 }
+                                    });
+
+                                    const certLabel = {
+                                        'agroecologico': 'Agroecológico',
+                                        'organico_certificado': 'Org. Certificado',
+                                        'convencional': 'Convencional',
+                                        'transicion_agroecologica': 'En Transición'
+                                    }[p.cert] || (p.cert || 'Sin dato');
+
+                                    layer.bindPopup(
+                                        '<strong style="font-size:1rem">' + p.nombre + '</strong>' +
+                                        '<br><span class="text-muted">Finca: ' + p.finca + '</span>' +
+                                        (p.cultivo ? '<br>Cultivo: ' + p.cultivo : '') +
+                                        '<br>Cert.: ' + certLabel,
+                                        { minWidth: 160 }
+                                    );
+
+                                    layer.on('click', function() {
+                                        const fila = document.getElementById('fila-parcela-' + p.id);
+                                        if (fila) {
+                                            document.querySelectorAll('#tabla-parcelas tbody tr').forEach(r => r.style.background = '');
+                                            fila.style.background = '#eef5f1';
+                                            fila.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                        }
+                                    });
+
+                                    layer.addTo(mapaObj);
+                                    try { allBounds.push(layer.getBounds()); } catch(e) {}
+                                });
+
+                                if (allBounds.length) {
+                                    let combined = allBounds[0];
+                                    for (let i = 1; i < allBounds.length; i++) combined = combined.extend(allBounds[i]);
+                                    mapaObj.fitBounds(combined, { padding: [30, 30] });
+                                }
+                            }
+
+                            const tabBtn = document.getElementById('sub-parcelas-tab');
+                            if (tabBtn) {
+                                tabBtn.addEventListener('shown.bs.tab', initMapaParcelas);
+                                if (tabBtn.classList.contains('active')) initMapaParcelas();
+                            }
+                        })();
+                        </script>
+
+                        {% else %}
+                        <div class="section-card text-center py-5 text-muted">
+                            <i class="bi bi-map fs-2 d-block mb-3"></i>
+                            <p class="mb-3">No hay parcelas importadas todavía.</p>
+                            <button onclick="document.getElementById('surveystack-tab').click()" class="btn btn-agro px-4"><i class="bi bi-cloud-arrow-down me-2"></i> Importar desde SurveyStack</button>
+                        </div>
+                        {% endif %}
+                    </div><!-- /sub-parcelas -->
+                        </div><!-- /tab-content -->
+                    </div><!-- /consolidado -->
+
+                    <!-- SurveyStack Tab -->
+                    <div class="tab-pane fade" id="surveystack">
+                        <!-- Conexión -->
+                        {% if ss_conectado %}
+                        <div class="section-card d-flex justify-content-between align-items-center flex-wrap gap-3 p-4 mb-4" style="background-color:#f0fff4; border-color:#b7ebc8 !important;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-success bg-opacity-10 p-3 rounded-circle"><i class="bi bi-cloud-check-fill fs-4 text-success"></i></div>
+                                <div>
+                                    <h5 class="text-success fw-bold m-0">Conectado <span class="badge bg-success fw-normal" style="font-size:0.7rem;">Activo</span></h5>
+                                    <p class="text-muted small m-0 mt-1">{{ ss_email_conectado }}</p>
+                                </div>
+                            </div>
+                            <form action="/desconectar-surveystack" method="POST">
+                                <button type="submit" class="btn btn-outline-danger rounded-pill px-4 fw-bold"><i class="bi bi-plug-fill me-2"></i> Desconectar</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="section-card mb-4">
+                            <h5 class="fw-bold mb-1"><i class="bi bi-cloud-arrow-down-fill text-primary me-2"></i> Conectar SurveyStack</h5>
+                            <p class="text-muted small mb-4">Ingresá tus credenciales una sola vez. Tu contraseña no se guarda.</p>
+                            <form action="/conectar-surveystack" method="POST">
+                                <div class="row g-3">
+                                    <div class="col-md-5"><label class="form-label">Email de SurveyStack</label><input type="email" class="form-control" name="ss_email" required></div>
+                                    <div class="col-md-5"><label class="form-label">Contraseña</label><input type="password" class="form-control" name="ss_password" required></div>
+                                    <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100 py-2 fw-bold"><i class="bi bi-plug-fill me-2"></i> Conectar</button></div>
+                                </div>
+                            </form>
+                        </div>
+                        {% endif %}
+
+                        <!-- Lista de encuestas -->
+                        <div class="section-card">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="fw-bold m-0"><i class="bi bi-list-check text-muted me-2"></i> Mis Encuestas</h5>
+                                <button class="btn btn-agro btn-sm px-3" data-bs-toggle="modal" data-bs-target="#modalSurvey" onclick="abrirModalSurvey()">
+                                    <i class="bi bi-plus-lg me-1"></i> Agregar
+                                </button>
+                            </div>
+                            {% if ss_surveys %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Tipo</th>
+                                            <th class="d-none d-md-table-cell">ID Encuesta</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for s in ss_surveys %}
+                                        <tr>
+                                            <td class="fw-bold">{{ s.nombre }}</td>
+                                            <td>
+                                                {% if s.tipo == 'muestra_suelo' %}<span class="badge bg-success bg-opacity-10 text-success fw-bold">Muestra Suelo</span>
+                                                {% elif s.tipo == 'test_parcela' %}<span class="badge bg-primary bg-opacity-10 text-primary fw-bold">Parcela</span>
+                                                {% elif s.tipo == 'test_productor' %}<span class="badge bg-warning bg-opacity-10 text-warning fw-bold">Productor</span>
+                                                {% else %}<span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold">{{ s.tipo }}</span>{% endif %}
+                                            </td>
+                                            <td class="d-none d-md-table-cell"><code class="text-muted small">{{ s.survey_id[:14] }}…</code></td>
+                                            <td class="text-end">
+                                                <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                                    <form action="/importar-survey/{{ s.id }}" method="POST" class="d-inline">
+                                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold" {% if not ss_conectado %}disabled title="Conectate primero"{% endif %}>
+                                                            <i class="bi bi-cloud-download me-1"></i> Importar
+                                                        </button>
+                                                    </form>
+                                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalSurvey"
+                                                        onclick="abrirModalSurvey('{{ s.id }}', '{{ s.nombre }}', '{{ s.survey_id }}', '{{ s.tipo }}')">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <form action="/eliminar-survey/{{ s.id }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta encuesta?')">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-5"><i class="bi bi-inbox fs-3 d-block mb-2"></i> No hay encuestas configuradas.</p>
+                            {% endif %}
+                        </div>
                     </div>
 
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar/Editar Survey -->
+    <div class="modal fade" id="modalSurvey" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-dark text-white border-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold" id="modalSurveyTitulo">Agregar Encuesta</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="/guardar-survey" method="POST">
+                    <input type="hidden" name="edit_id" id="survey_edit_id">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control" name="nombre" id="survey_nombre" placeholder="Ej: Mi Encuesta de Suelo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ID de la Encuesta (SurveyStack)</label>
+                            <input type="text" class="form-control font-monospace" name="survey_id" id="survey_survey_id" placeholder="6a08920d4c396d25617db9ed" required>
+                            <div class="form-text">Lo encontrás en la URL de tu encuesta en SurveyStack.</div>
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select" name="tipo" id="survey_tipo" required>
+                                <option value="muestra_suelo">Muestra de Suelo</option>
+                                <option value="test_parcela">Test Parcela</option>
+                                <option value="test_productor">Test Productor</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-0 rounded-bottom-4">
+                        <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold"><i class="bi bi-save me-2"></i> Guardar</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -917,7 +1244,9 @@
                 window.addEventListener('beforeinstallprompt', function (e) {
                     e.preventDefault();
                     deferredPrompt = e;
-                    banner.classList.add('visible');
+                    if (!localStorage.getItem('pwa_dismissed')) {
+                        banner.classList.add('visible');
+                    }
                 });
 
                 installBtn.addEventListener('click', async function () {
@@ -930,6 +1259,7 @@
 
                 dismissBtn.addEventListener('click', function () {
                     banner.classList.remove('visible');
+                    localStorage.setItem('pwa_dismissed', '1');
                 });
 
                 window.addEventListener('appinstalled', function () {
@@ -1150,6 +1480,7 @@
                     });
                     
                     document.getElementById('consolidado-tab').addEventListener('shown.bs.tab', function () { chartRespAll.resize(); });
+                    document.getElementById('sub-muestras-tab').addEventListener('shown.bs.tab', function () { chartRespAll.resize(); });
                     window.addEventListener('resize', function() { chartRespAll.resize(); });
                 }
 
@@ -1157,7 +1488,7 @@
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
                 let markers = [];
                 {% for f in consolidado %} {% if f.latitud %} markers.push(L.marker([{{ f.latitud }}, {{ f.longitud }}]).addTo(map).bindPopup("<b class='text-success'>{{ f.nombre_muestra }}</b><br><small>{{ f.cultivo or 'Sin cultivo' }}</small>")); {% endif %} {% endfor %}
-                if(markers.length > 0) { var group = new L.featureGroup(markers); document.getElementById('consolidado-tab').addEventListener('shown.bs.tab', function () { map.invalidateSize(); map.fitBounds(group.getBounds().pad(0.1)); }); }
+                if(markers.length > 0) { var group = new L.featureGroup(markers); ['consolidado-tab','sub-muestras-tab'].forEach(function(id){ var t=document.getElementById(id); if(t) t.addEventListener('shown.bs.tab', function(){ map.invalidateSize(); map.fitBounds(group.getBounds().pad(0.1)); }); }); }
 
                 const datosSuelo = [
                     {% for f in consolidado %}
@@ -1201,6 +1532,7 @@
                 updateBubbleChart();
 
                 document.getElementById('consolidado-tab').addEventListener('shown.bs.tab', function () { chartRadar.resize(); chartBubble.resize(); });
+                document.getElementById('sub-muestras-tab').addEventListener('shown.bs.tab', function () { chartRadar.resize(); chartBubble.resize(); });
                 window.addEventListener('resize', function() { chartRadar.resize(); chartBubble.resize(); });
             {% endif %}
         });
@@ -1446,6 +1778,18 @@
             });
         }).catch(function () {});
     })();
+    </script>
+    <script>
+    function abrirModalSurvey(id, nombre, surveyId, tipo) {
+        var editMode = !!id;
+        document.getElementById('modalSurveyTitulo').textContent = editMode ? 'Editar Encuesta' : 'Agregar Encuesta';
+        document.getElementById('survey_edit_id').value = id || '';
+        document.getElementById('survey_nombre').value = nombre || '';
+        document.getElementById('survey_survey_id').value = surveyId || '';
+        var sel = document.getElementById('survey_tipo');
+        if (tipo) sel.value = tipo;
+        else sel.value = 'muestra_suelo';
+    }
     </script>
     <!-- ===== FIN CHAT WIDGET ===== -->
 
