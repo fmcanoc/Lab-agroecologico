@@ -730,8 +730,9 @@
                     <div class="tab-pane fade" id="consolidado">
                         <ul class="nav nav-pills sub-nav-agro mb-4 gap-2" id="sub-resultados-tabs" role="tablist">
                             <li class="nav-item"><button class="nav-link active fw-bold" id="sub-muestras-tab" data-bs-toggle="tab" data-bs-target="#sub-muestras" type="button"><i class="bi bi-bar-chart-fill me-2"></i>Resultados</button></li>
-                            <li class="nav-item"><button class="nav-link fw-bold" id="sub-productores-tab" data-bs-toggle="tab" data-bs-target="#sub-productores" type="button"><i class="bi bi-house-heart me-2"></i>Productores</button></li>
+                            <li class="nav-item"><button class="nav-link fw-bold" id="sub-muestra-tab" data-bs-toggle="tab" data-bs-target="#sub-muestra" type="button"><i class="bi bi-journals me-2"></i>Muestra</button></li>
                             <li class="nav-item"><button class="nav-link fw-bold" id="sub-parcelas-tab" data-bs-toggle="tab" data-bs-target="#sub-parcelas" type="button"><i class="bi bi-map me-2"></i>Parcelas</button></li>
+                            <li class="nav-item"><button class="nav-link fw-bold" id="sub-productores-tab" data-bs-toggle="tab" data-bs-target="#sub-productores" type="button"><i class="bi bi-house-heart me-2"></i>Productores</button></li>
                         </ul>
                         <div class="tab-content">
                         <div class="tab-pane fade show active" id="sub-muestras">
@@ -835,6 +836,33 @@
                         </div>
                         {% endif %}
                         </div><!-- /sub-muestras -->
+
+                    <div class="tab-pane fade" id="sub-muestra">
+                        <div class="section-card mb-4 d-flex align-items-center gap-3">
+                            <i class="bi bi-journals text-muted fs-5"></i>
+                            <select id="fichaSelector" class="form-select fw-bold border-0 bg-transparent" style="max-width:380px; font-size:1rem;">
+                                <option value="">— Elegí una muestra —</option>
+                                {% for m in consolidado %}
+                                <option value="{{ m.id }}">{{ m.nombre_muestra }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div id="fichaVacio" class="section-card text-center py-5 text-muted">
+                            <i class="bi bi-journals fs-2 d-block mb-3"></i>
+                            <p class="mb-0">Seleccioná una muestra para ver su ficha completa.</p>
+                        </div>
+
+                        <div id="fichaMuestra" style="display:none;">
+                            <div class="section-card mb-4" id="fichaHeader">
+                                <h5 class="fw-bold mb-1" id="fichaHeader-nombre"></h5>
+                                <div class="d-flex flex-wrap gap-2 align-items-center mt-2" id="fichaHeader-tags"></div>
+                                <p class="text-muted small mt-3 mb-0" id="fichaHeader-obs"></p>
+                            </div>
+                            <div class="row g-3 mb-4" id="fichaCards"></div>
+                            <div class="d-flex gap-3 flex-wrap" id="fichaFotos"></div>
+                        </div>
+                    </div><!-- /sub-muestra -->
 
                     <div class="tab-pane fade" id="sub-productores">
                         {% set tipo_labels = {'cooperative_farm': 'Cooperativa', 'home_garden': 'Huerta familiar', 'nursery_farm': 'Vivero / Semillero', 'education_farm': 'Educativo', 'row_crop_farm': 'Cultivos en hilera', 'other': 'Otro'} %}
@@ -1545,6 +1573,55 @@
                 document.getElementById('sub-muestras-tab').addEventListener('shown.bs.tab', function () { chartRadar.resize(); chartBubble.resize(); });
                 window.addEventListener('resize', function() { chartRadar.resize(); chartBubble.resize(); });
             {% endif %}
+
+            // ===== FICHA DE MUESTRA =====
+            const fichaData = {{ consolidado | tojson }};
+
+            document.getElementById('fichaSelector').addEventListener('change', function() {
+                const id = parseInt(this.value);
+                const m = fichaData.find(x => x.id === id);
+                const panel = document.getElementById('fichaMuestra');
+                const vacio = document.getElementById('fichaVacio');
+                if (!m) { panel.style.display = 'none'; vacio.style.display = ''; return; }
+                panel.style.display = ''; vacio.style.display = 'none';
+
+                document.getElementById('fichaHeader-nombre').textContent = m.nombre_muestra;
+
+                const tags = [];
+                if (m.cultivo) tags.push(`<span class="badge bg-success bg-opacity-10 text-success fw-bold">${m.cultivo}</span>`);
+                if (m.textura) tags.push(`<span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold">${m.textura}</span>`);
+                document.getElementById('fichaHeader-tags').innerHTML = tags.join('');
+
+                const obsPartes = [m.descripcion, m.informacion_relevante].filter(Boolean);
+                document.getElementById('fichaHeader-obs').textContent = obsPartes.join(' · ');
+
+                const params = [
+                    { label: 'pH',            value: m.ph,                unit: '',          dec: 1 },
+                    { label: 'Carbono POXC',  value: m.resultado_carbono, unit: 'mg/kg',     dec: 1 },
+                    { label: 'Fósforo Bray',  value: m.fosforo_ppm,       unit: 'ppm',       dec: 1 },
+                    { label: 'MOP',           value: m.mop,               unit: '%',         dec: 1 },
+                    { label: 'Respiración',   value: m.respiracion,       unit: 'µgC/g·h',   dec: 2 },
+                    { label: 'Estabilidad',   value: m.indice_slakes,     unit: 'Slakes',    dec: 1 },
+                    { label: 'Conductividad', value: m.conductividad,     unit: 'µS/cm',     dec: 1 },
+                ];
+
+                const cardsHtml = params
+                    .filter(p => p.value !== null && p.value !== undefined && p.value !== '')
+                    .map(p => `
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <div class="section-card text-center h-100 py-4">
+                                <p class="text-muted fw-bold mb-2 text-uppercase" style="font-size:0.7rem;letter-spacing:0.07em;">${p.label}</p>
+                                <p class="fw-bold m-0" style="font-size:2rem;color:var(--r-accent);">${parseFloat(p.value).toFixed(p.dec)}</p>
+                                ${p.unit ? `<p class="text-muted small m-0">${p.unit}</p>` : ''}
+                            </div>
+                        </div>`).join('');
+                document.getElementById('fichaCards').innerHTML = cardsHtml || '<p class="text-muted">No hay análisis cargados para esta muestra.</p>';
+
+                let fotosHtml = '';
+                if (m.foto_macrofauna) fotosHtml += `<a href="${m.foto_macrofauna}" target="_blank" class="btn btn-outline-secondary rounded-pill px-4"><i class="bi bi-camera me-2"></i>Ver macrofauna</a>`;
+                if (m.foto_cromatografia) fotosHtml += `<a href="${m.foto_cromatografia}" target="_blank" class="btn btn-outline-secondary rounded-pill px-4"><i class="bi bi-camera me-2"></i>Ver cromatografía</a>`;
+                document.getElementById('fichaFotos').innerHTML = fotosHtml;
+            });
         });
     </script>
 
