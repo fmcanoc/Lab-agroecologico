@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem C:\\\\Fabri\\\\Paginaweb\\\\Lab-agroecologico -Exclude venv)",
+      "Bash(Select-Object Name, Attributes)",
+      "Bash(python -c \"import py_compile; py_compile.compile\\('app.py', doraise=True\\); print\\('OK'\\)\")",
+      "Bash(venv/Scripts/python -c \"import py_compile; py_compile.compile\\('app.py', doraise=True\\); print\\('OK'\\)\")",
+      "Bash(venv/Scripts/python app.py)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5000/login)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:5000/login)",
+      "Bash(curl *)",
+      "Bash(python -m py_compile app.py)",
+      "Bash(venv\\\\Scripts\\\\python.exe -m py_compile app.py)",
+      "PowerShell(cd \"C:\\\\Fabri\\\\Paginaweb\\\\Lab-agroecologico\"; .\\\\venv\\\\Scripts\\\\python.exe -m py_compile app.py; if \\($?\\) { Write-Host \"app.py OK\" }; $content = Get-Content \"templates\\\\index.html\" -Raw; $opens = \\([regex]::Matches\\($content, '<div'\\)\\).Count; $closes = \\([regex]::Matches\\($content, '</div>'\\)\\).Count; Write-Host \"div opens: $opens  closes: $closes\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(.venvScriptspython.exe -c ' *)"
+    ]
+  }
+}
