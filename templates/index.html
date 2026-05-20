@@ -1023,27 +1023,25 @@
                                     try { allBounds.push(layer.getBounds()); } catch(e) {}
                                 });
 
-                                muestrasMapData.forEach(function(m) {
-                                    const marker = L.circleMarker([m.lat, m.lng], {
-                                        radius: 7,
-                                        color: '#fff',
-                                        weight: 2,
-                                        fillColor: '#e05c2e',
-                                        fillOpacity: 0.95
-                                    }).addTo(mapaObj);
-                                    marker.bindPopup(
-                                        '<strong style="font-size:.95rem">📍 ' + m.nombre + '</strong>' +
-                                        (m.cultivo ? '<br><span class="text-muted">Cultivo: ' + m.cultivo + '</span>' : ''),
-                                        { minWidth: 140 }
-                                    );
-                                    try { allBounds.push(marker.getBounds ? marker.getBounds() : L.latLngBounds([[m.lat, m.lng]])); } catch(e) {}
-                                });
-
                                 if (allBounds.length) {
                                     let combined = allBounds[0];
                                     for (let i = 1; i < allBounds.length; i++) combined = combined.extend(allBounds[i]);
                                     mapaObj.fitBounds(combined, { padding: [30, 30] });
                                 }
+
+                                muestrasMapData.forEach(function(m) {
+                                    L.circleMarker([m.lat, m.lng], {
+                                        radius: 7,
+                                        color: '#fff',
+                                        weight: 2,
+                                        fillColor: '#e05c2e',
+                                        fillOpacity: 0.95
+                                    }).addTo(mapaObj).bindPopup(
+                                        '<strong style="font-size:.95rem">📍 ' + m.nombre + '</strong>' +
+                                        (m.cultivo ? '<br><span class="text-muted">Cultivo: ' + m.cultivo + '</span>' : ''),
+                                        { minWidth: 140 }
+                                    );
+                                });
                             }
 
                             const tabBtn = document.getElementById('sub-parcelas-tab');
