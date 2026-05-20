@@ -17,6 +17,7 @@ import pandas as pd
 import psycopg
 from psycopg.rows import dict_row
 from psycopg import errors
+from decimal import Decimal
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Response, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -570,25 +571,39 @@ def eliminar_cromo(muestra_id):
         conexion.close()
     return redirect(url_for('inicio') + '#cromatografia')
 
+def _fmt_csv(v):
+    if v is None:
+        return ''
+    if isinstance(v, bool):
+        return str(v)
+    if isinstance(v, int):
+        return str(v)
+    try:
+        fv = float(v)
+        formatted = f'{fv:.6f}'.rstrip('0').rstrip('.')
+        return formatted.replace('.', ',')
+    except (TypeError, ValueError):
+        return str(v)
+
 @app.route('/descargar_csv')
 def descargar_csv():
     if 'usuario_id' not in session: return redirect(url_for('login'))
     conexion = obtener_conexion()
     cur = conexion.cursor()
-    consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion", 
+    consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion",
                   m.foto_macrofauna AS "Foto_Macrofauna", m.foto_cromatografia AS "Foto_Cromatografia", m.obs_cromatografia AS "Obs_Cromatografia",
-                  c.resultado_carbono AS "Carbono_Activo", fo.resultado_ppm AS "Fosforo_ppm", fo.resultado_mg_kg AS "Fosforo_mg_kg", 
-                  p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc", 
+                  c.resultado_carbono AS "Carbono_Activo", fo.resultado_ppm AS "Fosforo_ppm", fo.resultado_mg_kg AS "Fosforo_mg_kg",
+                  p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc",
                   ea.indice_slakes AS "Indice_Slakes",
                   rs.ugc_gsoil AS "Respiracion_ugC_g"
-                  FROM muestras m 
-                  LEFT JOIN carbono_activo c ON m.id = c.muestra_id 
-                  LEFT JOIN fosforo_olsen fo ON m.id = fo.muestra_id 
-                  LEFT JOIN ph_conductividad p ON m.id = p.muestra_id 
-                  LEFT JOIN materia_organica mo ON m.id = mo.muestra_id 
-                  LEFT JOIN estabilidad_agregados ea ON m.id = ea.muestra_id 
+                  FROM muestras m
+                  LEFT JOIN carbono_activo c ON m.id = c.muestra_id
+                  LEFT JOIN fosforo_olsen fo ON m.id = fo.muestra_id
+                  LEFT JOIN ph_conductividad p ON m.id = p.muestra_id
+                  LEFT JOIN materia_organica mo ON m.id = mo.muestra_id
+                  LEFT JOIN estabilidad_agregados ea ON m.id = ea.muestra_id
                   LEFT JOIN respiracion_suelo rs ON m.id = rs.muestra_id
-                  WHERE m.usuario_id = %s'''
+                  WHERE m.usuario_id = %s ORDER BY m.id'''
     cur.execute(consulta, (session['usuario_id'],))
     filas = cur.fetchall()
     nombres_columnas = [col.name for col in cur.description]
@@ -598,7 +613,8 @@ def descargar_csv():
     output.write('\ufeff')
     writer = csv.writer(output, delimiter=';')
     writer.writerow(nombres_columnas)
-    for fila in filas: writer.writerow(list(fila.values()))
+    for fila in filas:
+        writer.writerow([_fmt_csv(v) for v in fila.values()])
     return Response(output.getvalue(), mimetype="text/csv", headers={"Content-disposition": "attachment; filename=Mis_Datos_Suelos.csv"})
 
 @app.route('/sincronizar_api', methods=['POST'])

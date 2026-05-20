@@ -15,7 +15,9 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(.venvScriptspython.exe -c ' *)"
+      "Bash(.venvScriptspython.exe -c ' *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Fabri\\\\Paginaweb\\\\Lab-agroecologico\" -Exclude venv -Recurse -Filter \"*.py\")",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }

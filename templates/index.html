@@ -968,6 +968,12 @@
                                 {% endif %}{% endfor %}
                             ];
 
+                            const muestrasMapData = [
+                                {% for f in consolidado %}{% if f.latitud and f.longitud %}
+                                { nombre: {{ f.nombre_muestra|tojson }}, cultivo: {{ (f.cultivo or '')|tojson }}, lat: {{ f.latitud }}, lng: {{ f.longitud }} },
+                                {% endif %}{% endfor %}
+                            ];
+
                             let mapaInit = false;
                             let mapaObj = null;
 
@@ -1015,6 +1021,22 @@
 
                                     layer.addTo(mapaObj);
                                     try { allBounds.push(layer.getBounds()); } catch(e) {}
+                                });
+
+                                muestrasMapData.forEach(function(m) {
+                                    const marker = L.circleMarker([m.lat, m.lng], {
+                                        radius: 7,
+                                        color: '#fff',
+                                        weight: 2,
+                                        fillColor: '#e05c2e',
+                                        fillOpacity: 0.95
+                                    }).addTo(mapaObj);
+                                    marker.bindPopup(
+                                        '<strong style="font-size:.95rem">📍 ' + m.nombre + '</strong>' +
+                                        (m.cultivo ? '<br><span class="text-muted">Cultivo: ' + m.cultivo + '</span>' : ''),
+                                        { minWidth: 140 }
+                                    );
+                                    try { allBounds.push(marker.getBounds ? marker.getBounds() : L.latLngBounds([[m.lat, m.lng]])); } catch(e) {}
                                 });
 
                                 if (allBounds.length) {
