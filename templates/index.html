@@ -172,6 +172,7 @@
                     
                     <h6 class="sidebar-heading">LABORATORIO</h6>
                     <button class="nav-link text-start" id="textura-tab" data-bs-toggle="tab" data-bs-target="#textura" type="button"><i class="bi bi-layers-half me-2"></i> Textura</button>
+                    <button class="nav-link text-start" id="vol-sedimentacion-tab" data-bs-toggle="tab" data-bs-target="#vol-sedimentacion" type="button"><i class="bi bi-filter me-2"></i> Vol. Sedimentación</button>
                     <button class="nav-link text-start" id="respiracion-tab" data-bs-toggle="tab" data-bs-target="#respiracion" type="button"><i class="bi bi-wind me-2"></i> Respiración</button>
                     <button class="nav-link text-start" id="carbono-tab" data-bs-toggle="tab" data-bs-target="#carbono" type="button"><i class="bi bi-droplet-half me-2"></i> Carbono activo</button>
                     <button class="nav-link text-start" id="fosforo-tab" data-bs-toggle="tab" data-bs-target="#fosforo" type="button"><i class="bi bi-moisture me-2"></i> Fósforo</button>
@@ -316,7 +317,18 @@
                         </div>
                         <form action="/" method="POST" class="form-memoria" data-tab="textura">
                             <input type="hidden" name="form_type" value="textura_suelo">
-                            <div class="section-card"><h5 class="fw-bold mb-4">Ingresar Textura</h5><div class="row g-3 align-items-end"><div class="col-md-5"><label class="form-label">Muestra Analizada</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="col-md-5"><label class="form-label">Resultado Final</label><input type="text" class="form-control" name="textura" placeholder="Ej: Franco arcillosa" required></div><div class="col-md-2"><button type="submit" class="btn btn-agro w-100 py-2"><i class="bi bi-check2"></i> Guardar</button></div></div></div>
+                            <div class="section-card"><h5 class="fw-bold mb-4">Ingresar Textura</h5><div class="row g-3 align-items-end"><div class="col-md-5"><label class="form-label">Muestra Analizada</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="col-md-5"><label class="form-label">Clase Textural Resultante</label><select class="form-select" name="textura" required><option value="">-- Seleccione clase --</option><option value="Suelo arenoso">Suelo arenoso</option><option value="Suelo franco arenoso">Suelo franco arenoso</option><option value="Suelo franco">Suelo franco</option><option value="Suelo franco limoso a limoso">Suelo franco limoso a limoso</option><option value="Suelo franco arcilloso a arcilloso">Suelo franco arcilloso a arcilloso</option></select></div><div class="col-md-2"><button type="submit" class="btn btn-agro w-100 py-2"><i class="bi bi-check2"></i> Guardar</button></div></div></div>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="vol-sedimentacion">
+                        <div class="row g-4 mb-4">
+                            <div class="col-lg-6"><div class="section-card h-100 p-0 overflow-hidden text-center d-flex align-items-center justify-content-center" style="background-color: #fdfdfd;"><img src="{{ url_for('static', filename='info-volumen-sedimentacion.svg') }}" class="img-fluid w-100 h-100" style="object-fit: contain;" alt="Esquema Volumen de Sedimentación"></div></div>
+                            <div class="col-lg-6"><div class="section-card h-100"><h5 class="fw-bold mb-4"><i class="bi bi-info-circle text-muted me-2"></i> Procedimiento</h5><ol class="text-muted small ps-3 mb-0 lh-lg"><li class="mb-2"><strong>Preparación:</strong> Pesa 50–100 g de suelo seco al aire y colócalos en una botella o cilindro graduado. Agrega agua hasta 500 mL.</li><li class="mb-2"><strong>Agitación:</strong> Agita vigorosamente durante 5 minutos y deja reposar en lugar estable.</li><li class="mb-2"><strong>Lectura de arena:</strong> A los 2 minutos mide la altura de la capa de fondo (arena).</li><li class="mb-2"><strong>Lectura de limo:</strong> A las 5–8 horas mide la capa media (limo). La arcilla permanece en suspensión.</li><li><strong>Clasificación:</strong> Calcula los porcentajes de arena, limo y arcilla. Usa el triángulo textural USDA para determinar la clase textural y selecciónala abajo.</li></ol></div></div>
+                        </div>
+                        <form action="/" method="POST" class="form-memoria" data-tab="vol-sedimentacion">
+                            <input type="hidden" name="form_type" value="volumen_sedimentacion_suelo">
+                            <div class="section-card"><h5 class="fw-bold mb-4">Ingresar Resultado</h5><div class="row g-3 align-items-end"><div class="col-md-5"><label class="form-label">Muestra Analizada</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="col-md-5"><label class="form-label">Clase Textural Resultante</label><select class="form-select" name="volumen_sedimentacion" required><option value="">-- Seleccione clase --</option><option value="Suelo arenoso">Suelo arenoso</option><option value="Suelo franco-arenoso">Suelo franco-arenoso</option><option value="Suelo franco">Suelo franco</option><option value="Suelo franco-limoso">Suelo franco-limoso</option><option value="Suelo franco-arcilloso">Suelo franco-arcilloso</option><option value="Suelo franco-arcilloso-limoso">Suelo franco-arcilloso-limoso</option><option value="Suelo arcilloso">Suelo arcilloso</option></select></div><div class="col-md-2"><button type="submit" class="btn btn-agro w-100 py-2"><i class="bi bi-check2"></i> Guardar</button></div></div></div>
                         </form>
                     </div>
 
@@ -793,6 +805,7 @@
                                         <tr>
                                             <th class="text-start px-4">Muestra</th>
                                             <th>Textura <button class="col-info-btn" data-method-id="textura" type="button" tabindex="0">ⓘ</button></th>
+                                            <th>Vol. Sedim. <button class="col-info-btn" data-method-id="volumen_sedimentacion" type="button" tabindex="0">ⓘ</button></th>
                                             <th>pH <button class="col-info-btn" data-method-id="ph" type="button" tabindex="0">ⓘ</button></th>
                                             <th>Cond. <button class="col-info-btn" data-method-id="ph" type="button" tabindex="0">ⓘ</button></th>
                                             <th>POXC <button class="col-info-btn" data-method-id="carbono_activo" type="button" tabindex="0">ⓘ</button></th>
@@ -810,6 +823,7 @@
                                         <tr>
                                             <td data-label="Lote" class="fw-bold text-dark lote-name">{{ fila.nombre_muestra }}</td>
                                             <td data-label="Textura"><span class="text-muted small">{{ fila.textura or '-' }}</span></td>
+                                            <td data-label="Vol. Sedim."><span class="text-muted small">{{ fila.volumen_sedimentacion or '-' }}</span></td>
                                             <td data-label="pH"><span class="text-muted fst-italic">{{ fila.ph or '-' }}</span></td>
                                             <td data-label="Cond. CE"><span class="text-muted fst-italic">{{ fila.conductividad or '-' }}</span></td>
                                             <td data-label="POXC">{% if fila.resultado_carbono %}<strong>{{ "%.2f"|format(fila.resultado_carbono) }}</strong>{% else %}-{% endif %}</td>
@@ -1190,6 +1204,7 @@
                         let tieneDatos = false;
                         if(tab === 'registro') { form.querySelector('[name="nombre"]').value = data.nombre || ''; form.querySelector('[name="cultivo"]').value = data.cultivo || ''; form.querySelector('[name="latitud"]').value = data.latitud || ''; form.querySelector('[name="longitud"]').value = data.longitud || ''; form.querySelector('[name="descripcion"]').value = data.descripcion || ''; form.querySelector('[name="info"]').value = data.info || ''; tieneDatos = true; }
                         if(tab === 'textura' && data.textura) { form.querySelector('[name="textura"]').value = data.textura; tieneDatos = true; }
+                        if(tab === 'vol-sedimentacion' && data.volumen_sedimentacion) { form.querySelector('[name="volumen_sedimentacion"]').value = data.volumen_sedimentacion; tieneDatos = true; }
                         if(tab === 'ph' && (data.ph !== undefined || data.conductividad !== undefined)) { 
                             if(data.ph !== null) form.querySelector('[name="ph"]').value = data.ph; 
                             if(data.conductividad !== null) form.querySelector('[name="conductividad"]').value = data.conductividad; 
@@ -1748,8 +1763,9 @@
 
         // Map Bootstrap tab button IDs → method info
         const TAB_METHOD = {
-            'textura-tab':       { id: 'textura',        nombre: 'Textura del Suelo' },
-            'respiracion-tab':   { id: 'respiracion',    nombre: 'Respiración del Suelo' },
+            'textura-tab':            { id: 'textura',                nombre: 'Textura del Suelo' },
+            'vol-sedimentacion-tab':  { id: 'volumen_sedimentacion',  nombre: 'Volumen de Sedimentación' },
+            'respiracion-tab':        { id: 'respiracion',            nombre: 'Respiración del Suelo' },
             'carbono-tab':       { id: 'carbono_activo', nombre: 'Carbono Activo (POXC)' },
             'fosforo-tab':       { id: 'fosforo',        nombre: 'Fósforo Olsen' },
             'ph-tab':            { id: 'ph',             nombre: 'pH y Conductividad Eléctrica' },

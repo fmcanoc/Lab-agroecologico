@@ -82,6 +82,22 @@
       },
       "notas": "La respiración del suelo es muy sensible a la temperatura y humedad. Los valores son más altos en primavera-verano y más bajos en invierno. Para comparar muestras correctamente es importante estandarizar las condiciones de incubación."
     },
+    "volumen_sedimentacion": {
+      "nombre": "Volumen de Sedimentación",
+      "que_es": "Es un método de campo/laboratorio para determinar la textura del suelo basado en la velocidad de asentamiento de las partículas en agua. Las partículas más grandes (arena) se sedimentan primero, luego el limo y finalmente la arcilla queda en suspensión. Midiendo los volúmenes de cada capa se estiman los porcentajes de arena, limo y arcilla.",
+      "para_que_sirve": "Permite clasificar la textura del suelo de manera sencilla y económica sin instrumentos de laboratorio sofisticados. La clase textural obtenida orienta decisiones sobre riego, labranza, enmiendas y manejo general del suelo. Es especialmente útil para diagnósticos rápidos en campo.",
+      "como_se_interpreta": "Se agita suelo con agua en un cilindro y se miden las capas tras el asentamiento. Los porcentajes de arena, limo y arcilla se ubican en el triángulo textural USDA para determinar la clase. Cada clase tiene implicancias distintas para la retención de agua, aireación y manejo.",
+      "clases_texturales": {
+        "suelo_arenoso": "Arena >70%. Alta permeabilidad, muy baja retención de agua y nutrientes. Requiere riegos frecuentes y aportes continuos de materia orgánica.",
+        "suelo_franco_arenoso": "Arena 50–70%. Buena aireación con algo más de retención que el arenoso. Apto para muchos cultivos hortícolas con manejo adecuado del riego.",
+        "suelo_franco": "Equilibrio entre arena, limo y arcilla. Generalmente los suelos más productivos: buena retención de agua, nutrientes y fácil laboreo.",
+        "suelo_franco_limoso": "Limo dominante (>50%). Alta retención de agua y tendencia al encostramiento superficial. Susceptible a la erosión hídrica.",
+        "suelo_franco_arcilloso": "Arcilla 27–40%. Buena retención de nutrientes, pero puede compactarse. Requiere manejo cuidadoso de la labranza y cobertura vegetal.",
+        "suelo_franco_arcilloso_limoso": "Alto contenido combinado de limo y arcilla. Muy alta retención de agua pero baja permeabilidad. Propenso a anegamiento y compactación.",
+        "suelo_arcilloso": "Arcilla >40%. Máxima retención de agua y nutrientes, pero muy susceptible a la compactación. Difícil laboreo en seco; anegamiento en húmedo."
+      },
+      "notas": "Para una clasificación exacta se recomienda usar el triángulo textural USDA con los porcentajes calculados. En suelos con alto contenido de materia orgánica o carbonatos, los resultados pueden necesitar corrección."
+    },
     "textura": {
       "nombre": "Textura del Suelo",
       "que_es": "Es la proporción relativa de arena, limo y arcilla en el suelo. La arena tiene partículas grandes (0.05–2 mm), el limo partículas medianas (0.002–0.05 mm) y la arcilla partículas muy finas (< 0.002 mm). La combinación de estas tres fracciones determina la clase textural del suelo (franco, arcilloso, arenoso, etc.).",

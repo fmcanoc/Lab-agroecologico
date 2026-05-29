@@ -89,6 +89,13 @@ def crear_tablas():
             except Exception:
                 conexion.rollback()
 
+            # CAMPO VOLUMEN DE SEDIMENTACION
+            try:
+                cur.execute("ALTER TABLE muestras ADD COLUMN IF NOT EXISTS volumen_sedimentacion TEXT;")
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+
             # MIGRACION CURVA CALIBRACION FOSFORO: renombrar columnas al nuevo esquema de 6 puntos
             try:
                 cur.execute("""
@@ -311,6 +318,12 @@ def inicio():
                 flash('Textura guardada exitosamente.', 'success')
                 return redirect(url_for('inicio', m=muestra_id) + '#textura')
 
+            if tipo_formulario == 'volumen_sedimentacion_suelo':
+                cur.execute('UPDATE muestras SET volumen_sedimentacion = %s WHERE id = %s AND usuario_id = %s', (request.form['volumen_sedimentacion'], muestra_id, usuario_id))
+                conexion.commit()
+                flash('Volumen de sedimentación guardado exitosamente.', 'success')
+                return redirect(url_for('inicio', m=muestra_id) + '#vol-sedimentacion')
+
             elif tipo_formulario == 'respiracion_suelo':
                 peso_g = float(request.form.get('peso_suelo', 30.0))
                 archivo = request.files.get('archivo_csv')
@@ -433,7 +446,7 @@ def inicio():
 
         cur.execute('SELECT id, nombre_muestra FROM muestras WHERE usuario_id = %s ORDER BY id DESC', (usuario_id,))
         muestras_db = cur.fetchall()
-        consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, m.foto_macrofauna, 
+        consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.volumen_sedimentacion, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, m.foto_macrofauna,
                                   m.foto_cromatografia, m.obs_cromatografia,
                                   c.resultado_carbono, p.ph, p.conductividad, mo.resultado_porcentaje AS mop, 
                                   ea.indice_slakes, fo.resultado_mg_kg AS fosforo, fo.resultado_ppm AS fosforo_ppm,
@@ -472,9 +485,9 @@ def datos_crudos(muestra_id):
     cur = conexion.cursor()
     try:
         datos = {}
-        cur.execute('SELECT nombre_muestra, cultivo, textura, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna, foto_cromatografia, obs_cromatografia FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
+        cur.execute('SELECT nombre_muestra, cultivo, textura, volumen_sedimentacion, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna, foto_cromatografia, obs_cromatografia FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         m_row = cur.fetchone()
-        if m_row: datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante'], 'foto_macrofauna': m_row['foto_macrofauna'], 'foto_cromatografia': m_row['foto_cromatografia'], 'obs_cromatografia': m_row['obs_cromatografia']})
+        if m_row: datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'volumen_sedimentacion': m_row['volumen_sedimentacion'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante'], 'foto_macrofauna': m_row['foto_macrofauna'], 'foto_cromatografia': m_row['foto_cromatografia'], 'obs_cromatografia': m_row['obs_cromatografia']})
         
         cur.execute('SELECT ph, conductividad FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
         ph_row = cur.fetchone()
@@ -590,7 +603,7 @@ def descargar_csv():
     if 'usuario_id' not in session: return redirect(url_for('login'))
     conexion = obtener_conexion()
     cur = conexion.cursor()
-    consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion",
+    consulta = '''SELECT m.id AS "ID", m.nombre_muestra AS "Muestra", m.cultivo AS "Cultivo", m.textura AS "Textura", m.volumen_sedimentacion AS "Vol_Sedimentacion", m.latitud AS "Latitud", m.longitud AS "Longitud", m.descripcion AS "Descripcion",
                   m.foto_macrofauna AS "Foto_Macrofauna", m.foto_cromatografia AS "Foto_Cromatografia", m.obs_cromatografia AS "Obs_Cromatografia",
                   c.resultado_carbono AS "Carbono_Activo", fo.resultado_ppm AS "Fosforo_ppm", fo.resultado_mg_kg AS "Fosforo_mg_kg",
                   p.ph AS "pH", p.conductividad AS "Conductividad", mo.resultado_porcentaje AS "Mat_Particulada_Porc",
