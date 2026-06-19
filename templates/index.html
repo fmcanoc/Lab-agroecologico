@@ -322,15 +322,41 @@
                     </div>
 
                     <div class="tab-pane fade" id="vol-sedimentacion">
-                        <div class="row g-4 mb-4">
-                            <div class="col-lg-6"><div class="section-card h-100 p-0 overflow-hidden text-center d-flex align-items-center justify-content-center" style="background-color: #fdfdfd;"><img src="{{ url_for('static', filename='info-volumen-sedimentacion.jpeg') }}" class="img-fluid w-100 h-100" style="object-fit: contain;" alt="Esquema Volumen de Sedimentación"></div></div>
-                            <div class="col-lg-6"><div class="section-card h-100"><h5 class="fw-bold mb-4"><i class="bi bi-info-circle text-muted me-2"></i> Procedimiento</h5><ol class="text-muted small ps-3 mb-0 lh-lg"><li class="mb-2"><strong>Preparación:</strong> Pesa 50–100 g de suelo seco al aire y colócalos en una botella o cilindro graduado. Agrega agua hasta 500 mL.</li><li class="mb-2"><strong>Agitación:</strong> Agita vigorosamente durante 5 minutos y deja reposar en lugar estable.</li><li class="mb-2"><strong>Lectura de arena:</strong> A los 2 minutos mide la altura de la capa de fondo (arena).</li><li class="mb-2"><strong>Lectura de limo:</strong> A las 5–8 horas mide la capa media (limo). La arcilla permanece en suspensión.</li><li><strong>Clasificación:</strong> Calcula los porcentajes de arena, limo y arcilla. Usa el triángulo textural USDA para determinar la clase textural y selecciónala abajo.</li></ol></div></div>
-                        </div>
-                        <form action="/" method="POST" class="form-memoria" data-tab="vol-sedimentacion">
-                            <input type="hidden" name="form_type" value="volumen_sedimentacion_suelo">
-                            <div class="section-card"><h5 class="fw-bold mb-4">Ingresar Resultado</h5><div class="row g-3 align-items-end"><div class="col-md-5"><label class="form-label">Muestra Analizada</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="col-md-5"><label class="form-label">Clase Textural Resultante</label><select class="form-select" name="volumen_sedimentacion" required><option value="">-- Seleccione clase --</option><option value="Suelo arenoso">Suelo arenoso</option><option value="Suelo franco-arenoso">Suelo franco-arenoso</option><option value="Suelo franco">Suelo franco</option><option value="Suelo franco-limoso">Suelo franco-limoso</option><option value="Suelo franco-arcilloso">Suelo franco-arcilloso</option><option value="Suelo franco-arcilloso-limoso">Suelo franco-arcilloso-limoso</option><option value="Suelo arcilloso">Suelo arcilloso</option></select></div><div class="col-md-2"><button type="submit" class="btn btn-agro w-100 py-2"><i class="bi bi-check2"></i> Guardar</button></div></div></div>
-                        </form>
-                    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6"><div class="section-card h-100 p-0 overflow-hidden text-center d-flex align-items-center justify-content-center" style="background-color: #fdfdfd;"><img src="{{ url_for('static', filename='info-volumen-sedimentacion.jpeg') }}" class="img-fluid w-100 h-100" style="object-fit: contain;" alt="Esquema Volumen de Sedimentación"></div></div>
+        <div class="col-lg-6"><div class="section-card h-100"><h5 class="fw-bold mb-4"><i class="bi bi-info-circle text-muted me-2"></i> Procedimiento</h5>
+            <p class="text-muted small mb-3">Sigue los 8 pasos de la infografía. Aquí se complementan con las precauciones clave, el cálculo del VS y la tabla de clasificación textural.</p>
+            <p class="text-muted small mb-1"><strong>Puntos a cuidar durante el ensayo:</strong></p>
+            <ul class="text-muted small ps-3 mb-3 lh-lg">
+                <li class="mb-2"><strong>Muestra:</strong> usa suelo seco tamizado a 2 mm e incorpóralo de forma lenta y continua para evitar grumos secos que floten.</li>
+                <li class="mb-2"><strong>Sin pérdidas:</strong> al lavar las paredes con la piseta, arrastra toda la tierra adherida; cualquier resto fuera de la suspensión altera la lectura.</li>
+                <li class="mb-2"><strong>Sin estratificar:</strong> homogeneiza con movimientos verticales (agitador de alambre con aro) hasta que las fracciones no queden separadas en capas.</li>
+                <li class="mb-2"><strong>Enrase y reposo:</strong> completa con agua desmineralizada justo hasta los 100 mL y deja reposar 24 h sin mover la probeta.</li>
+            </ul>
+            <p class="text-muted small mb-1"><strong>Cálculo del Volumen de Sedimentación (VS):</strong></p>
+            <p class="text-muted small mb-3">Lee el volumen del sedimento (Vs) a las 24 h y aplica <strong>VS = (Vs × 100) / P</strong>. Para 50 g de suelo se simplifica a <strong>VS = 2 × Vs</strong>, expresado en <em>mL&nbsp;%&nbsp;g⁻¹</em>.<br><span class="text-secondary">Ejemplo: Vs = 49 mL → VS = 2 × 49 = 98 mL % g⁻¹ → textura franca.</span></p>
+            <p class="text-muted small mb-1"><strong>Clasificación textural según el VS:</strong></p>
+            <table class="table table-sm table-bordered small mb-0">
+                <thead class="table-light">
+                    <tr><th scope="col">Clase textural</th><th scope="col" class="text-nowrap">VS (mL % g⁻¹)</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Suelo arenoso</td><td>&lt; 80</td></tr>
+                    <tr><td>Suelo franco-arenoso</td><td>80 – 93</td></tr>
+                    <tr><td>Suelo franco</td><td>94 – 104</td></tr>
+                    <tr><td>Suelo franco-limoso</td><td>105 – 115</td></tr>
+                    <tr><td>Suelo franco-arcilloso</td><td>116 – 125</td></tr>
+                    <tr><td>Suelo franco-arcillo-limoso</td><td>126 – 139</td></tr>
+                    <tr><td>Suelo arcilloso</td><td>&gt; 140</td></tr>
+                </tbody>
+            </table>
+        </div></div>
+    </div>
+    <form action="/" method="POST" class="form-memoria" data-tab="vol-sedimentacion">
+        <input type="hidden" name="form_type" value="volumen_sedimentacion_suelo">
+        <div class="section-card"><h5 class="fw-bold mb-4">Ingresar Resultado</h5><div class="row g-3 align-items-end"><div class="col-md-5"><label class="form-label">Muestra Analizada</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="col-md-5"><label class="form-label">Clase Textural Resultante</label><select class="form-select" name="volumen_sedimentacion" required><option value="">-- Seleccione clase --</option><option value="Suelo arenoso">Suelo arenoso</option><option value="Suelo franco-arenoso">Suelo franco-arenoso</option><option value="Suelo franco">Suelo franco</option><option value="Suelo franco-limoso">Suelo franco-limoso</option><option value="Suelo franco-arcilloso">Suelo franco-arcilloso</option><option value="Suelo franco-arcilloso-limoso">Suelo franco-arcilloso-limoso</option><option value="Suelo arcilloso">Suelo arcilloso</option></select></div><div class="col-md-2"><button type="submit" class="btn btn-agro w-100 py-2"><i class="bi bi-check2"></i> Guardar</button></div></div></div>
+    </form>
+</div>
 
                     <div class="tab-pane fade" id="respiracion">
                         <form action="/" method="POST" enctype="multipart/form-data" class="form-memoria" data-tab="respiracion">
