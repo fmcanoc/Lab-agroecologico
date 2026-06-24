@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(override=True)
 
 import os
 import numpy as np
@@ -24,6 +24,38 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-cambiar-en-produccion')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB por archivo
+
+NIVELES_FERTILIDAD = {
+    "N Total": {
+        "escala": ["Muy bajo", "Bajo", "Medio", "Alto", "Muy alto"],
+        "umbrales": [(1000, "Muy alto"), (800, "Alto"), (600, "Medio"), (400, "Bajo")],
+        "minimo": "Muy bajo",
+    },
+    "Fósforo (P)": {
+        "escala": ["Muy bajo", "Bajo", "Medio", "Alto", "Muy alto"],
+        "umbrales": [(10, "Muy alto"), (4.5, "Alto"), (3.5, "Medio"), (2.5, "Bajo")],
+        "minimo": "Muy bajo",
+    },
+    "Potasio (K) intercambiable": {
+        "escala": ["Muy pobre", "Pobre", "Bueno", "Alto"],
+        "umbrales": [(200, "Alto"), (150, "Bueno"), (50, "Pobre")],
+        "minimo": "Muy pobre",
+    },
+}
+
+def clasificar_nivel(parametro, valor):
+    cfg = NIVELES_FERTILIDAD.get(parametro)
+    if not cfg or valor in (None, ""):
+        return ""
+    try:
+        v = float(str(valor).replace(',', '.').strip())
+    except (ValueError, TypeError):
+        return ""
+    for umbral, etiqueta in cfg["umbrales"]:
+        if v >= umbral:
+            return etiqueta
+    return cfg["minimo"]
 
 def obtener_conexion():
     url_bd = os.environ.get('DATABASE_URL')
@@ -65,11 +97,27 @@ def crear_tablas():
                             vol_extracto NUMERIC, vol_dilucion NUMERIC, abs_muestra NUMERIC,
                             abs_0 NUMERIC, abs_01 NUMERIC, abs_02 NUMERIC, abs_04 NUMERIC, abs_06 NUMERIC, abs_08 NUMERIC)''')
             cur.execute('''CREATE TABLE IF NOT EXISTS respiracion_suelo (
-                            id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE, 
-                            peso_suelo NUMERIC, co2_initial NUMERIC, co2_final NUMERIC, horas NUMERIC, ugc_gsoil NUMERIC, 
+                            id SERIAL PRIMARY KEY, muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE,
+                            peso_suelo NUMERIC, co2_initial NUMERIC, co2_final NUMERIC, horas NUMERIC, ugc_gsoil NUMERIC,
                             curva_tiempo TEXT, curva_co2 TEXT)''')
             conexion.commit()
-            
+
+            try:
+                cur.execute('''CREATE TABLE IF NOT EXISTS analisis_externo (
+                    id SERIAL PRIMARY KEY,
+                    muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE,
+                    laboratorio TEXT,
+                    nro_protocolo TEXT,
+                    fecha_recepcion DATE,
+                    fecha_informe DATE,
+                    archivo_url TEXT,
+                    observaciones TEXT,
+                    determinaciones TEXT,
+                    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+
             try:
                 cur.execute("ALTER TABLE muestras ADD COLUMN foto_macrofauna TEXT;")
             except Exception:
@@ -92,6 +140,22 @@ def crear_tablas():
             # CAMPO VOLUMEN DE SEDIMENTACION
             try:
                 cur.execute("ALTER TABLE muestras ADD COLUMN IF NOT EXISTS volumen_sedimentacion TEXT;")
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+
+            # LECTURAS BRUTAS DEL ENSAYO DE VOLUMEN DE SEDIMENTACION
+            try:
+                cur.execute("ALTER TABLE muestras ADD COLUMN IF NOT EXISTS vs_lectura DOUBLE PRECISION;")
+                cur.execute("ALTER TABLE muestras ADD COLUMN IF NOT EXISTS vs_peso    DOUBLE PRECISION;")
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+
+            # PDF DEL INFORME EXTERNO
+            try:
+                cur.execute("ALTER TABLE analisis_externo ADD COLUMN IF NOT EXISTS archivo_pdf BYTEA;")
+                cur.execute("ALTER TABLE analisis_externo ADD COLUMN IF NOT EXISTS archivo_nombre TEXT;")
                 conexion.commit()
             except Exception:
                 conexion.rollback()
@@ -319,7 +383,13 @@ def inicio():
                 return redirect(url_for('inicio', m=muestra_id) + '#textura')
 
             if tipo_formulario == 'volumen_sedimentacion_suelo':
-                cur.execute('UPDATE muestras SET volumen_sedimentacion = %s WHERE id = %s AND usuario_id = %s', (request.form['volumen_sedimentacion'], muestra_id, usuario_id))
+                def _num(field):
+                    v = (request.form.get(field) or '').strip().replace(',', '.')
+                    return float(v) if v else None
+                cur.execute(
+                    'UPDATE muestras SET volumen_sedimentacion = %s, vs_lectura = %s, vs_peso = %s WHERE id = %s AND usuario_id = %s',
+                    (request.form['volumen_sedimentacion'], _num('vs_lectura'), _num('vs_peso'), muestra_id, usuario_id)
+                )
                 conexion.commit()
                 flash('Volumen de sedimentación guardado exitosamente.', 'success')
                 return redirect(url_for('inicio', m=muestra_id) + '#vol-sedimentacion')
@@ -444,23 +514,74 @@ def inicio():
                 flash('Registro de Cromatografía guardado.', 'success')
                 return redirect(url_for('inicio', m=muestra_id) + '#cromatografia')
 
+            elif tipo_formulario == 'analisis_externo':
+                laboratorio    = request.form.get('laboratorio')
+                nro_protocolo  = request.form.get('nro_protocolo')
+                fecha_recepcion = request.form.get('fecha_recepcion') or None
+                fecha_informe  = request.form.get('fecha_informe') or None
+                observaciones  = request.form.get('observaciones')
+                try:
+                    deters = json.loads(request.form.get('determinaciones') or '[]')
+                except Exception:
+                    deters = []
+
+                for d in deters:
+                    d['nivel'] = clasificar_nivel(d.get('parametro'), d.get('valor'))
+
+                archivo = request.files.get('archivo_pdf')
+                pdf_bytes = None
+                pdf_nombre = None
+                if archivo and archivo.filename:
+                    if not archivo.filename.lower().endswith('.pdf'):
+                        flash('El archivo del informe debe ser un PDF.', 'danger')
+                        return redirect(url_for('inicio', m=muestra_id) + '#analisis-externo')
+                    pdf_bytes = archivo.read()
+                    pdf_nombre = archivo.filename
+
+                if pdf_bytes is None:
+                    cur.execute('SELECT archivo_pdf, archivo_nombre FROM analisis_externo WHERE muestra_id = %s', (muestra_id,))
+                    prev = cur.fetchone()
+                    if prev:
+                        pdf_bytes  = prev['archivo_pdf']
+                        pdf_nombre = prev['archivo_nombre']
+
+                cur.execute('DELETE FROM analisis_externo WHERE muestra_id = %s', (muestra_id,))
+                cur.execute('''INSERT INTO analisis_externo
+                    (muestra_id, laboratorio, nro_protocolo, fecha_recepcion, fecha_informe,
+                     observaciones, determinaciones, archivo_pdf, archivo_nombre)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+                    (muestra_id, laboratorio, nro_protocolo, fecha_recepcion, fecha_informe,
+                     observaciones, json.dumps(deters), pdf_bytes, pdf_nombre))
+                conexion.commit()
+                flash('Análisis externo guardado.', 'success')
+                return redirect(url_for('inicio', m=muestra_id) + '#analisis-externo')
+
         cur.execute('SELECT id, nombre_muestra FROM muestras WHERE usuario_id = %s ORDER BY id DESC', (usuario_id,))
         muestras_db = cur.fetchall()
         consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.volumen_sedimentacion, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, m.foto_macrofauna,
                                   m.foto_cromatografia, m.obs_cromatografia,
-                                  c.resultado_carbono, p.ph, p.conductividad, mo.resultado_porcentaje AS mop, 
+                                  c.resultado_carbono, p.ph, p.conductividad, mo.resultado_porcentaje AS mop,
                                   ea.indice_slakes, fo.resultado_mg_kg AS fosforo, fo.resultado_ppm AS fosforo_ppm,
-                                  rs.ugc_gsoil AS respiracion, rs.co2_initial, rs.co2_final, rs.curva_tiempo, rs.curva_co2
-                                  FROM muestras m 
-                                  LEFT JOIN carbono_activo c ON m.id = c.muestra_id 
-                                  LEFT JOIN ph_conductividad p ON m.id = p.muestra_id 
-                                  LEFT JOIN materia_organica mo ON m.id = mo.muestra_id 
-                                  LEFT JOIN estabilidad_agregados ea ON m.id = ea.muestra_id 
+                                  rs.ugc_gsoil AS respiracion, rs.co2_initial, rs.co2_final, rs.curva_tiempo, rs.curva_co2,
+                                  ae.determinaciones AS det_externo, ae.laboratorio AS lab_externo,
+                                  ae.nro_protocolo AS nro_protocolo_ext,
+                                  (ae.archivo_pdf IS NOT NULL) AS tiene_pdf, ae.archivo_nombre
+                                  FROM muestras m
+                                  LEFT JOIN carbono_activo c ON m.id = c.muestra_id
+                                  LEFT JOIN ph_conductividad p ON m.id = p.muestra_id
+                                  LEFT JOIN materia_organica mo ON m.id = mo.muestra_id
+                                  LEFT JOIN estabilidad_agregados ea ON m.id = ea.muestra_id
                                   LEFT JOIN fosforo_olsen fo ON m.id = fo.muestra_id
                                   LEFT JOIN respiracion_suelo rs ON m.id = rs.muestra_id
+                                  LEFT JOIN analisis_externo ae ON m.id = ae.muestra_id
                                   WHERE m.usuario_id = %s ORDER BY m.id DESC'''
         cur.execute(consulta_consolidado, (usuario_id,))
         consolidado_db = cur.fetchall()
+        for fila in consolidado_db:
+            try:
+                fila['det_externo'] = json.loads(fila['det_externo']) if fila.get('det_externo') else None
+            except Exception:
+                fila['det_externo'] = None
         cur.execute('SELECT ss_token, ss_email FROM usuarios WHERE id=%s', (usuario_id,))
         ss_user = cur.fetchone()
         ss_conectado = bool(ss_user and ss_user.get('ss_token'))
@@ -485,9 +606,9 @@ def datos_crudos(muestra_id):
     cur = conexion.cursor()
     try:
         datos = {}
-        cur.execute('SELECT nombre_muestra, cultivo, textura, volumen_sedimentacion, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna, foto_cromatografia, obs_cromatografia FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
+        cur.execute('SELECT nombre_muestra, cultivo, textura, volumen_sedimentacion, vs_lectura, vs_peso, latitud, longitud, descripcion, informacion_relevante, foto_macrofauna, foto_cromatografia, obs_cromatografia FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         m_row = cur.fetchone()
-        if m_row: datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'volumen_sedimentacion': m_row['volumen_sedimentacion'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante'], 'foto_macrofauna': m_row['foto_macrofauna'], 'foto_cromatografia': m_row['foto_cromatografia'], 'obs_cromatografia': m_row['obs_cromatografia']})
+        if m_row: datos.update({'nombre': m_row['nombre_muestra'], 'cultivo': m_row['cultivo'], 'textura': m_row['textura'], 'volumen_sedimentacion': m_row['volumen_sedimentacion'], 'vs_lectura': m_row['vs_lectura'], 'vs_peso': m_row['vs_peso'], 'latitud': m_row['latitud'], 'longitud': m_row['longitud'], 'descripcion': m_row['descripcion'], 'info': m_row['informacion_relevante'], 'foto_macrofauna': m_row['foto_macrofauna'], 'foto_cromatografia': m_row['foto_cromatografia'], 'obs_cromatografia': m_row['obs_cromatografia']})
         
         cur.execute('SELECT ph, conductividad FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
         ph_row = cur.fetchone()
@@ -549,12 +670,51 @@ def eliminar_muestra(muestra_id):
         cur.execute('DELETE FROM materia_organica WHERE muestra_id = %s', (muestra_id,))
         cur.execute('DELETE FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
         cur.execute('DELETE FROM respiracion_suelo WHERE muestra_id = %s', (muestra_id,))
+        cur.execute('DELETE FROM analisis_externo WHERE muestra_id = %s', (muestra_id,))
         cur.execute('DELETE FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, session['usuario_id']))
         conexion.commit()
     finally: 
         cur.close()
         conexion.close()
     return redirect(url_for('inicio') + '#consolidado')
+
+@app.route('/informe_externo/<int:muestra_id>')
+def informe_externo(muestra_id):
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    try:
+        cur.execute('''SELECT ae.archivo_pdf, ae.archivo_nombre
+                       FROM analisis_externo ae
+                       JOIN muestras m ON m.id = ae.muestra_id
+                       WHERE ae.muestra_id = %s AND m.usuario_id = %s''',
+                    (muestra_id, session['usuario_id']))
+        row = cur.fetchone()
+        if not row or not row['archivo_pdf']:
+            return "Informe no encontrado", 404
+        resp = make_response(bytes(row['archivo_pdf']))
+        resp.headers['Content-Type'] = 'application/pdf'
+        resp.headers['Content-Disposition'] = 'inline; filename="' + (row['archivo_nombre'] or 'informe.pdf') + '"'
+        return resp
+    finally:
+        cur.close()
+        conexion.close()
+
+@app.route('/eliminar_analisis_externo/<int:muestra_id>', methods=['POST'])
+def eliminar_analisis_externo(muestra_id):
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    try:
+        cur.execute('''DELETE FROM analisis_externo WHERE muestra_id = %s
+                       AND muestra_id IN (SELECT id FROM muestras WHERE usuario_id = %s)''',
+                    (muestra_id, session['usuario_id']))
+        conexion.commit()
+        flash('Análisis externo eliminado.', 'success')
+    finally:
+        cur.close()
+        conexion.close()
+    return redirect(url_for('inicio') + '#analisis-externo')
 
 @app.route('/eliminar_foto/<int:muestra_id>', methods=['POST'])
 def eliminar_foto(muestra_id):
@@ -1139,4 +1299,4 @@ def sw():
     return response
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', port=5001)

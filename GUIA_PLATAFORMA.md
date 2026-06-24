@@ -2,7 +2,7 @@
 
 ## ¿Qué es la plataforma?
 
-El **Laboratorio Abierto Agroecológico** es una aplicación web para el seguimiento y análisis de la salud del suelo en sistemas productivos agroecológicos. Permite registrar muestras de suelo, cargar los resultados de distintos análisis de laboratorio, importar datos de productores y parcelas desde **SurveyStack**, y visualizar los resultados de forma integrada.
+Es una aplicación web para el seguimiento y análisis de la salud del suelo en sistemas productivos agroecológicos. Permite registrar muestras de suelo, cargar los resultados de distintos análisis de laboratorio, importar datos de productores y parcelas desde **SurveyStack**, y visualizar los resultados de forma integrada.
 
 Está diseñada para funcionar también sin conexión a internet (modo offline), guardando los datos ingresados localmente hasta que se pueda sincronizar.
 
@@ -12,7 +12,7 @@ Está diseñada para funcionar también sin conexión a internet (modo offline),
 
 1. Abrí el navegador y accedé a la URL de la plataforma.
 2. En la pantalla de inicio verás dos opciones:
-   - **Registrarse**: para crear una cuenta nueva (ingresás nombre de usuario, email y contraseña).
+   - **Registrarse**: para crear una cuenta nueva (ingresás nombre de usuario y contraseña).
    - **Iniciar sesión**: si ya tenés cuenta, ingresás tu usuario y contraseña.
 3. Una vez autenticado, serás redirigido al panel principal.
 

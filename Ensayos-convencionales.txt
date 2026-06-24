@@ -1,0 +1,382 @@
+# Pestaña "Análisis Externo" — Carga manual
+
+Guía para agregar el registro de **ensayos convencionales** (análisis de laboratorios externos como INTA: NPK, materia orgánica, pH, CE, sales, etc.) a la plataforma **Laboratorio Abierto Agroecológico**, respetando los patrones que ya tenés en `app.py` y `templates/index.html`.
+
+El diseño usa **un esquema flexible**: la metadata del informe en columnas fijas y las **determinaciones guardadas como JSON** en un campo de texto. Así no importa qué laboratorio sea ni qué determinaciones traiga — cualquier estructura entra sin tocar la base.
+
+> **Núcleo (PASOS 1 a 5):** carga manual completa y funcional, 100% gratis.
+> **Extra opcional (PASOS 6 a 8):** contraste contra valores propios, export CSV y asistente.
+
+---
+
+## PASO 1 — Crear la tabla (en `app.py`)
+
+Dentro de la función `crear_tablas()`, sumá este bloque junto a los otros `CREATE TABLE` (por ejemplo, justo después del bloque de `respiracion_suelo`). Seguí el mismo patrón de `try/except` con `rollback`:
+
+```python
+            try:
+                cur.execute('''CREATE TABLE IF NOT EXISTS analisis_externo (
+                    id SERIAL PRIMARY KEY,
+                    muestra_id INTEGER REFERENCES muestras(id) ON DELETE CASCADE,
+                    laboratorio TEXT,
+                    nro_protocolo TEXT,
+                    fecha_recepcion DATE,
+                    fecha_informe DATE,
+                    archivo_url TEXT,
+                    observaciones TEXT,
+                    determinaciones TEXT,
+                    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+                conexion.commit()
+            except Exception:
+                conexion.rollback()
+```
+
+**Por qué `determinaciones TEXT`:** ahí se guarda un JSON con la lista de determinaciones, igual que ya hacés con `curva_tiempo`/`curva_co2` en `respiracion_suelo`. Cada determinación es un objeto `{parametro, valor, unidad, metodo, nivel}`. Una muestra = un análisis externo (se reemplaza con DELETE+INSERT, como en `ph_conductividad`).
+
+---
+
+## PASO 2 — Guardar el formulario (en `app.py`)
+
+En la ruta `inicio` (la del `@app.route('/', ...)`), dentro de la cadena de `elif tipo_formulario == ...`, agregá este bloque (por ejemplo después del de `cromatografia`). `json` ya está importado en tu archivo:
+
+```python
+            elif tipo_formulario == 'analisis_externo':
+                laboratorio    = request.form.get('laboratorio')
+                nro_protocolo  = request.form.get('nro_protocolo')
+                fecha_recepcion = request.form.get('fecha_recepcion') or None
+                fecha_informe  = request.form.get('fecha_informe') or None
+                archivo_url    = request.form.get('archivo_url')
+                observaciones  = request.form.get('observaciones')
+
+                # Las determinaciones llegan como un string JSON desde el campo oculto
+                try:
+                    deters = json.loads(request.form.get('determinaciones') or '[]')
+                except Exception:
+                    deters = []
+
+                cur.execute('DELETE FROM analisis_externo WHERE muestra_id = %s', (muestra_id,))
+                cur.execute('''INSERT INTO analisis_externo
+                    (muestra_id, laboratorio, nro_protocolo, fecha_recepcion, fecha_informe,
+                     archivo_url, observaciones, determinaciones)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''',
+                    (muestra_id, laboratorio, nro_protocolo, fecha_recepcion, fecha_informe,
+                     archivo_url, observaciones, json.dumps(deters)))
+                conexion.commit()
+                flash('Análisis externo guardado.', 'success')
+                return redirect(url_for('inicio', m=muestra_id) + '#analisis-externo')
+```
+
+---
+
+## PASO 3 — Agregar la pestaña a la barra lateral (en `templates/index.html`)
+
+En la barra lateral (`<div class="nav side-menu" id="misPestanas" ...>`), después del grupo **LABORATORIO** (o donde prefieras), agregá una sección propia para que quede claro que es de un tercero:
+
+```html
+                    <h6 class="sidebar-heading">LABORATORIO EXTERNO</h6>
+                    <button class="nav-link text-start" id="analisis-externo-tab" data-bs-toggle="tab" data-bs-target="#analisis-externo" type="button"><i class="bi bi-clipboard-data me-2"></i> Análisis Externo</button>
+```
+
+---
+
+## PASO 4 — Crear el contenido de la pestaña (en `templates/index.html`)
+
+Dentro de `<div class="tab-content" id="contenidoPestanas">`, agregá este `tab-pane` nuevo (al mismo nivel que `#ph`, `#mop`, etc.):
+
+```html
+                    <div class="tab-pane fade" id="analisis-externo">
+                        <form action="/" method="POST" class="form-memoria" data-tab="analisis-externo" id="form-analisis-externo">
+                            <input type="hidden" name="form_type" value="analisis_externo">
+
+                            <!-- DATOS DEL INFORME -->
+                            <div class="section-card mb-4">
+                                <h5 class="fw-bold mb-4"><i class="bi bi-file-earmark-text text-muted me-2"></i> Datos del informe</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Muestra Analizada</label>
+                                        <select class="form-select selector-memoria bg-light" name="muestra_id" required>
+                                            <option value="">-- Seleccione --</option>
+                                            {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Laboratorio</label>
+                                        <input type="text" class="form-control bg-light" name="laboratorio" placeholder="Ej: INTA EEA Mendoza">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Nº de protocolo / muestra (lab)</label>
+                                        <input type="text" class="form-control bg-light" name="nro_protocolo" placeholder="Ej: 18010">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Fecha de recepción</label>
+                                        <input type="date" class="form-control bg-light" name="fecha_recepcion">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Fecha de informe</label>
+                                        <input type="date" class="form-control bg-light" name="fecha_informe">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Link al informe (opcional)</label>
+                                        <input type="url" class="form-control bg-light" name="archivo_url" placeholder="Pegá un link a Drive/PDF si lo tenés online">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Observaciones</label>
+                                        <textarea class="form-control bg-light" name="observaciones" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- DETERMINACIONES -->
+                            <div class="section-card mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                    <h5 class="fw-bold m-0"><i class="bi bi-list-check text-muted me-2"></i> Determinaciones</h5>
+                                    <button type="button" id="det-add" class="btn btn-outline-success btn-sm rounded-pill px-3"><i class="bi bi-plus-lg me-1"></i> Agregar</button>
+                                </div>
+                                <p class="text-muted small mb-3">Cargá lo que venga en el informe. El <strong>método</strong> y la <strong>unidad</strong> importan para poder contrastar después (ej: P por Olsen vs P-H₂CO₃ 1:10 no son lo mismo).</p>
+
+                                <!-- Encabezados (visibles en pantallas medianas o más) -->
+                                <div class="row g-2 mb-1 d-none d-md-flex text-muted small fw-bold">
+                                    <div class="col-md-3">Parámetro</div>
+                                    <div class="col-md-2">Valor</div>
+                                    <div class="col-md-2">Unidad</div>
+                                    <div class="col-md-3">Método</div>
+                                    <div class="col-md-1">Nivel</div>
+                                    <div class="col-md-1"></div>
+                                </div>
+
+                                <div id="det-rows"></div>
+
+                                <!-- Sugerencias de parámetros frecuentes -->
+                                <datalist id="lista-parametros">
+                                    <option value="pH"></option>
+                                    <option value="Conductividad eléctrica"></option>
+                                    <option value="N total"></option>
+                                    <option value="P disponible"></option>
+                                    <option value="K intercambiable"></option>
+                                    <option value="Materia orgánica"></option>
+                                    <option value="Relación C/N"></option>
+                                    <option value="Sales totales"></option>
+                                    <option value="Calcio"></option>
+                                    <option value="Magnesio"></option>
+                                    <option value="Sodio"></option>
+                                    <option value="RAS"></option>
+                                    <option value="Vol. sedimentación"></option>
+                                    <option value="Clasificación textural"></option>
+                                </datalist>
+                            </div>
+
+                            <!-- Campo oculto donde se serializan las determinaciones como JSON -->
+                            <input type="hidden" name="determinaciones" id="det-json">
+
+                            <div class="text-end mb-5">
+                                <button type="submit" class="btn btn-agro px-5 py-2 shadow-sm"><i class="bi bi-save me-2"></i> Guardar análisis</button>
+                            </div>
+                        </form>
+
+                        <!-- HISTORIAL DE ANÁLISIS EXTERNOS CARGADOS -->
+                        <div class="section-card">
+                            <h5 class="text-dark fw-bold mb-4"><i class="bi bi-archive text-muted me-2"></i> Análisis externos cargados</h5>
+                            {% set externos = consolidado | selectattr('det_externo') | list %}
+                            {% if externos %}
+                                {% for fila in externos %}
+                                <div class="border rounded-3 p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                                        <div>
+                                            <strong>{{ fila.nombre_muestra }}</strong>
+                                            <span class="text-muted small ms-2">{{ fila.lab_externo or 'Sin laboratorio' }}{% if fila.nro_protocolo_ext %} · Nº {{ fila.nro_protocolo_ext }}{% endif %}</span>
+                                        </div>
+                                        <form action="/eliminar_analisis_externo/{{ fila.id }}" method="POST" onsubmit="return confirm('¿Eliminar este análisis externo?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm mb-0">
+                                            <thead><tr class="text-muted small"><th>Parámetro</th><th>Valor</th><th>Unidad</th><th>Método</th><th>Nivel</th></tr></thead>
+                                            <tbody>
+                                                {% for d in fila.det_externo %}
+                                                <tr>
+                                                    <td>{{ d.parametro }}</td>
+                                                    <td class="fw-bold">{{ d.valor }}</td>
+                                                    <td>{{ d.unidad }}</td>
+                                                    <td class="small text-muted">{{ d.metodo }}</td>
+                                                    <td>{{ d.nivel }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% if fila.archivo_url_ext %}<a href="{{ fila.archivo_url_ext }}" target="_blank" class="small"><i class="bi bi-box-arrow-up-right me-1"></i>Ver informe original</a>{% endif %}
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted small mb-0">Todavía no cargaste análisis externos.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+```
+
+> El historial usa `consolidado` con tres campos extra (`det_externo`, `lab_externo`, `nro_protocolo_ext`, `archivo_url_ext`) que se agregan en el **PASO 6**. Si por ahora solo querés la carga, podés borrar el bloque "HISTORIAL" y sumarlo después.
+
+---
+
+## PASO 5 — El JavaScript de las determinaciones dinámicas (en `templates/index.html`)
+
+Cerca de los otros `<script>` del final del archivo, agregá:
+
+```html
+    <script>
+    (function () {
+        const cont   = document.getElementById('det-rows');
+        const hidden = document.getElementById('det-json');
+        const form   = document.getElementById('form-analisis-externo');
+        const addBtn = document.getElementById('det-add');
+        if (!cont || !form) return;
+
+        function addRow(d) {
+            d = d || {};
+            const div = document.createElement('div');
+            div.className = 'row g-2 mb-2 det-row align-items-center';
+            div.innerHTML =
+                '<div class="col-md-3"><input type="text" list="lista-parametros" class="form-control form-control-sm det-parametro bg-light" placeholder="Parámetro" value="' + (d.parametro || '') + '"></div>' +
+                '<div class="col-md-2"><input type="text" class="form-control form-control-sm det-valor bg-light" placeholder="Valor" value="' + (d.valor || '') + '"></div>' +
+                '<div class="col-md-2"><input type="text" class="form-control form-control-sm det-unidad bg-light" placeholder="mg/kg, dS/m..." value="' + (d.unidad || '') + '"></div>' +
+                '<div class="col-md-3"><input type="text" class="form-control form-control-sm det-metodo bg-light" placeholder="Método" value="' + (d.metodo || '') + '"></div>' +
+                '<div class="col-md-1"><input type="text" class="form-control form-control-sm det-nivel bg-light" placeholder="Nivel" value="' + (d.nivel || '') + '"></div>' +
+                '<div class="col-md-1 text-end"><button type="button" class="btn btn-sm btn-outline-danger det-del"><i class="bi bi-x-lg"></i></button></div>';
+            cont.appendChild(div);
+            div.querySelector('.det-del').addEventListener('click', function () { div.remove(); });
+        }
+
+        // Serializa las filas al JSON oculto (antes de enviar y en cada cambio, por si el form se guarda offline)
+        function serializar() {
+            const rows = [];
+            cont.querySelectorAll('.det-row').forEach(function (r) {
+                const parametro = r.querySelector('.det-parametro').value.trim();
+                const valor     = r.querySelector('.det-valor').value.trim();
+                if (!parametro && !valor) return;
+                rows.push({
+                    parametro: parametro,
+                    valor: valor,
+                    unidad: r.querySelector('.det-unidad').value.trim(),
+                    metodo: r.querySelector('.det-metodo').value.trim(),
+                    nivel:  r.querySelector('.det-nivel').value.trim()
+                });
+            });
+            hidden.value = JSON.stringify(rows);
+        }
+
+        addBtn.addEventListener('click', function () { addRow(); });
+        cont.addEventListener('input', serializar);
+        form.addEventListener('submit', serializar);
+
+        addRow(); // arranca con una fila vacía
+    })();
+    </script>
+```
+
+**Con esto ya funciona la carga manual.** Lo de abajo es opcional.
+
+---
+
+## PASO 6 — (Opcional) Mostrar el historial y el contraste
+
+### 6a. Sumar el análisis externo a la consulta consolidada (en `app.py`)
+
+En la ruta `inicio`, en la `consulta_consolidado`, agregá el LEFT JOIN y los campos:
+
+```python
+        consulta_consolidado = '''SELECT m.id, m.nombre_muestra, m.cultivo, m.textura, m.volumen_sedimentacion, m.descripcion, m.informacion_relevante, m.latitud, m.longitud, m.foto_macrofauna,
+                                  m.foto_cromatografia, m.obs_cromatografia,
+                                  c.resultado_carbono, p.ph, p.conductividad, mo.resultado_porcentaje AS mop,
+                                  ea.indice_slakes, fo.resultado_mg_kg AS fosforo, fo.resultado_ppm AS fosforo_ppm,
+                                  rs.ugc_gsoil AS respiracion, rs.co2_initial, rs.co2_final, rs.curva_tiempo, rs.curva_co2,
+                                  ae.determinaciones AS det_externo, ae.laboratorio AS lab_externo,
+                                  ae.nro_protocolo AS nro_protocolo_ext, ae.archivo_url AS archivo_url_ext
+                                  FROM muestras m
+                                  LEFT JOIN carbono_activo c ON m.id = c.muestra_id
+                                  LEFT JOIN ph_conductividad p ON m.id = p.muestra_id
+                                  LEFT JOIN materia_organica mo ON m.id = mo.muestra_id
+                                  LEFT JOIN estabilidad_agregados ea ON m.id = ea.muestra_id
+                                  LEFT JOIN fosforo_olsen fo ON m.id = fo.muestra_id
+                                  LEFT JOIN respiracion_suelo rs ON m.id = rs.muestra_id
+                                  LEFT JOIN analisis_externo ae ON m.id = ae.muestra_id
+                                  WHERE m.usuario_id = %s ORDER BY m.id DESC'''
+        cur.execute(consulta_consolidado, (usuario_id,))
+        consolidado_db = cur.fetchall()
+
+        # Parsear el JSON de determinaciones para que el template lo use directo
+        for fila in consolidado_db:
+            try:
+                fila['det_externo'] = json.loads(fila['det_externo']) if fila.get('det_externo') else None
+            except Exception:
+                fila['det_externo'] = None
+```
+
+Con esto, el historial del PASO 4 ya queda funcionando.
+
+### 6b. (Opcional) Contraste propio vs externo
+
+Como tu `consolidado` ya trae `ph`, `conductividad`, `textura` y `volumen_sedimentacion` medidos por ustedes, podés mostrar la comparación dentro de cada tarjeta del historial. Ejemplo para pH y CE — agregalo dentro del `{% for fila in externos %}`, después de la tabla:
+
+```html
+                                    {% set ext_ph = (fila.det_externo | selectattr('parametro', 'equalto', 'pH') | first) %}
+                                    {% set ext_ce = (fila.det_externo | selectattr('parametro', 'equalto', 'Conductividad eléctrica') | first) %}
+                                    {% if (ext_ph and fila.ph) or (ext_ce and fila.conductividad) %}
+                                    <div class="bg-light rounded-3 p-2 mt-2 small">
+                                        <span class="fw-bold text-muted">Contraste con tu medición:</span>
+                                        {% if ext_ph and fila.ph %} pH propio <strong>{{ fila.ph }}</strong> vs lab <strong>{{ ext_ph.valor }}</strong>.{% endif %}
+                                        {% if ext_ce and fila.conductividad %} CE propia <strong>{{ fila.conductividad }}</strong> vs lab <strong>{{ ext_ce.valor }}</strong>.{% endif %}
+                                    </div>
+                                    {% endif %}
+```
+
+> Para que el `selectattr ... equalto 'pH'` matchee, el parámetro tiene que escribirse igual que en el datalist. Por eso conviene usar las sugerencias.
+
+---
+
+## PASO 7 — (Opcional) Limpieza al borrar y ruta de eliminación
+
+### 7a. Ruta para eliminar un análisis externo (en `app.py`)
+
+Agregala junto a las otras rutas `/eliminar_...`:
+
+```python
+@app.route('/eliminar_analisis_externo/<int:muestra_id>', methods=['POST'])
+def eliminar_analisis_externo(muestra_id):
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    try:
+        cur.execute('''DELETE FROM analisis_externo WHERE muestra_id = %s
+                       AND muestra_id IN (SELECT id FROM muestras WHERE usuario_id = %s)''',
+                    (muestra_id, session['usuario_id']))
+        conexion.commit()
+        flash('Análisis externo eliminado.', 'success')
+    finally:
+        cur.close()
+        conexion.close()
+    return redirect(url_for('inicio') + '#analisis-externo')
+```
+
+### 7b. Limpieza al borrar una muestra (en `app.py`)
+
+El `ON DELETE CASCADE` ya lo borra solo, pero para mantener la consistencia con tu ruta `eliminar_muestra`, podés sumar la línea junto a los otros DELETE:
+
+```python
+        cur.execute('DELETE FROM analisis_externo WHERE muestra_id = %s', (muestra_id,))
+```
+
+---
+
+## PASO 8 — (Opcional) Export CSV y asistente
+
+- **CSV:** en tu ruta `/descargar_csv`, si querés incluir las determinaciones externas, recorré el JSON de `determinaciones` y agregá columnas tipo `"pH (ext.)"`, `"P disponible (ext.)"`, etc., marcándolas como externas para no confundir con las propias.
+- **Asistente flotante:** si querés que el chat de métodos también funcione en esta pestaña, agregá la entrada al mapeo `TAB_METHOD` en el JS (clave `'analisis-externo-tab'`) y un objeto al `metodos_laboratorio.json` explicando qué es un análisis externo y que el método del laboratorio puede diferir del propio.
+
+---
+
+## Notas
+
+- **Offline:** el formulario lleva las clases `form-memoria` y `selector-memoria`, así que se guarda en la "mochila" como los demás. Las determinaciones viajan en un único campo oculto (`determinaciones`), que es justo lo que el sistema offline serializa bien.
+- **Un informe = varias muestras:** este informe de INTA trae 16 muestras en un PDF. Con la carga manual, cargás cada una eligiendo su muestra y poniendo el mismo laboratorio/fechas y su Nº de protocolo. (El día que quieras automatizar esto con la API de Claude, el esquema ya está listo para recibirlo sin cambios.)
+- **Editar:** por ahora guardar reemplaza el análisis de esa muestra (DELETE+INSERT). Si más adelante querés precargar el formulario al elegir una muestra ya cargada, se hace con un pequeño endpoint tipo `/api/datos_crudos` que devuelva las determinaciones.

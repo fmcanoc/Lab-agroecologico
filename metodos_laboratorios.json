@@ -38,9 +38,9 @@
     {
       "id": "agregados",
       "nombre": "Estabilidad de Agregados (Índice Slakes)",
-      "que_es": "El Índice Slakes evalúa la resistencia de los agregados del suelo a la desintegración cuando se sumergen bruscamente en agua. Los agregados se sumergen y se observa su comportamiento en una escala de 0 a 6, donde 0 = desintegración total instantánea y 6 = agregado completamente estable. Es un método sencillo y rápido de campo o laboratorio.",
+      "que_es": "El Índice Slakes evalúa la resistencia de los agregados del suelo a desintegrarse cuando se sumergen bruscamente en agua. Se mide con la aplicación Slakes, que analiza con la cámara del celular cómo se desarman los terrones y devuelve un índice de estabilidad entre 0 y 1: valores cercanos a 0 indican desintegración rápida y valores cercanos a 1, agregados muy estables. Es un método rápido de campo o laboratorio.",
       "para_que_sirve": "La estabilidad de agregados es clave para la salud estructural del suelo. Determina la resistencia a la erosión hídrica, la formación de costras superficiales, la infiltración de agua y la aireación radicular. Un suelo con alta estabilidad de agregados resiste mejor la degradación física producida por lluvia o labranza excesiva.",
-      "como_se_interpreta": "Escala Slakes (0–6): 0–1 = muy inestable (alto riesgo de erosión), 2–3 = moderadamente estable, 4–5 = estable (buena estructura), 6 = muy estable (excelente condición estructural). Valores altos se asocian a mayor contenido de materia orgánica, mayor actividad biológica (hongos, lombrices) y uso de labranza reducida."
+      "como_se_interpreta": "El Índice Slakes va de 0 a 1: de 0 a 0,2 = muy inestable (alto riesgo de erosión y encostramiento), de 0,3 a 0,4 = estabilidad baja a moderada, de 0,5 a 0,6 = buena estabilidad estructural, y de 0,7 a 1 = muy estable (excelente estructura). Los valores altos se asocian a mayor contenido de materia orgánica, mayor actividad biológica (hongos, lombrices) y labranza reducida. Un valor bajo indica que los terrones se desarman fácilmente al mojarse."
     },
     {
       "id": "textura",
@@ -55,6 +55,13 @@
       "que_es": "La macrofauna del suelo incluye todos los invertebrados con tamaño corporal mayor a 2 mm: lombrices, escarabajos, hormigas, ciempiés, arañas, isópodos, entre otros. Se cuantifica mediante el método TSBF (Tropical Soil Biology and Fertility), extrayendo monolitos de suelo de 25×25×30 cm y separando manualmente los organismos encontrados.",
       "para_que_sirve": "Es un indicador biológico clave de la salud del suelo. La macrofauna regula procesos esenciales: descomposición de residuos, bioturbación (aireación y mezcla del suelo), regulación de microorganismos y formación de agregados estables. La abundancia y diversidad de macrofauna reflejan la calidad del hábitat edáfico y son muy sensibles al uso de agroquímicos, la labranza intensiva y la compactación.",
       "como_se_interpreta": "Se evalúa la presencia de grupos funcionales clave: ingenieros del ecosistema (lombrices, termitas, hormigas), depredadores reguladores y transformadores de residuos (escarabajos descomponedores). Alta abundancia de lombrices (>80 ind/m²) indica buen estado del suelo. La diversidad elevada señala un sistema biológicamente activo. La ausencia de grupos clave indica degradación del hábitat edáfico."
+    },
+    {
+      "id": "volumen_sedimentacion",
+      "nombre": "Volumen de Sedimentación",
+      "que_es": "El Volumen de Sedimentación (VS) es el volumen que ocupan 100 g de tierra seca cuando está sumergida en agua (Nijensohn, 1971). Se determina por 'volumetría del sedimento': se agrega un peso conocido de tierra fina seca al aire (TFSA) a un volumen de agua, cuidando que las fracciones del suelo no se estratifiquen, y tras 24 horas de reposo se lee el volumen que ocupa el sedimento. El resultado se expresa en mL % g⁻¹.",
+      "para_que_sirve": "Permite estimar la textura del suelo de forma rápida y económica, sin instrumentos sofisticados, y da una idea de las características de la fase sólida y de las relaciones cuantitativas entre las fases. La clase textural obtenida orienta decisiones de riego, labranza, enmiendas y manejo general. Esta técnica está validada para suelos de Cuyo con bajo contenido de materia orgánica, calcáreo total y yeso.",
+      "como_se_interpreta": "El VS se calcula como VS = (lectura del sedimento en mL × 100) / peso de la muestra en g, expresado en mL % g⁻¹. Según el valor obtenido (Cuadro 3): menos de 80 = suelo arenoso, de 80 a 93 = franco-arenoso, de 94 a 104 = franco, de 105 a 115 = franco-limoso, de 116 a 125 = franco-arcilloso, de 126 a 139 = franco-arcillo-limoso, y más de 140 = arcilloso. Ejemplo: una lectura de 24,5 mL para 25 g de TFSA da VS = 24,5 × 100 / 25 = 98 mL % g⁻¹, que corresponde a un suelo de textura franca."
     },
     {
       "id": "cromatografia",

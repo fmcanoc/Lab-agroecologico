@@ -17,7 +17,15 @@
       "Bash(git push *)",
       "Bash(.venvScriptspython.exe -c ' *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Fabri\\\\Paginaweb\\\\Lab-agroecologico\" -Exclude venv -Recurse -Filter \"*.py\")",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Fabri\\\\Paginaweb\\\\Lab-agroecologico\" -Recurse -Directory)",
+      "Bash(Select-Object -First 20)",
+      "Bash(python -c \"import app; print\\('OK'\\)\")",
+      "Bash(py -c \"import ast; ast.parse\\(open\\('app.py'\\).read\\(\\)\\); print\\('app.py OK'\\)\")",
+      "Bash(py -c \"import ast; ast.parse\\(open\\('app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('app.py OK'\\)\")",
+      "Bash(py -c \"import json; json.load\\(open\\('metodos_laboratorio.json', encoding='utf-8'\\)\\); print\\('JSON OK'\\)\")",
+      "Bash(python *)",
+      "Bash(git rm *)"
     ]
   }
 }

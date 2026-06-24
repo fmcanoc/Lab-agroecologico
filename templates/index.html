@@ -184,6 +184,9 @@
                     <button class="nav-link text-start" id="macrofauna-tab" data-bs-toggle="tab" data-bs-target="#macrofauna" type="button"><i class="bi bi-bug-fill me-2 text-warning"></i> Macrofauna</button>
                     <button class="nav-link text-start" id="cromatografia-tab" data-bs-toggle="tab" data-bs-target="#cromatografia" type="button"><i class="bi bi-palette me-2 text-info"></i> Cromatografía</button>
                     
+                    <h6 class="sidebar-heading">LABORATORIO EXTERNO</h6>
+                    <button class="nav-link text-start" id="analisis-externo-tab" data-bs-toggle="tab" data-bs-target="#analisis-externo" type="button"><i class="bi bi-clipboard-data me-2"></i> Análisis Externo</button>
+
                     <h6 class="sidebar-heading">MÉTRICAS</h6>
                     <button class="nav-link text-start" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button"><i class="bi bi-bar-chart-fill me-2"></i> Resultados</button>
 
@@ -352,10 +355,109 @@
             </table>
         </div></div>
     </div>
-    <form action="/" method="POST" class="form-memoria" data-tab="vol-sedimentacion">
+    <form action="/" method="POST" class="form-memoria" data-tab="vol-sedimentacion" id="form-vs">
         <input type="hidden" name="form_type" value="volumen_sedimentacion_suelo">
-        <div class="section-card"><h5 class="fw-bold mb-4">Ingresar Resultado</h5><div class="row g-3 align-items-end"><div class="col-md-5"><label class="form-label">Muestra Analizada</label><select class="form-select selector-memoria bg-light" name="muestra_id" required><option value="">-- Elija una muestra --</option>{% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}</select></div><div class="col-md-5"><label class="form-label">Clase Textural Resultante</label><select class="form-select" name="volumen_sedimentacion" required><option value="">-- Seleccione clase --</option><option value="Suelo arenoso">Suelo arenoso</option><option value="Suelo franco-arenoso">Suelo franco-arenoso</option><option value="Suelo franco">Suelo franco</option><option value="Suelo franco-limoso">Suelo franco-limoso</option><option value="Suelo franco-arcilloso">Suelo franco-arcilloso</option><option value="Suelo franco-arcilloso-limoso">Suelo franco-arcilloso-limoso</option><option value="Suelo arcilloso">Suelo arcilloso</option></select></div><div class="col-md-2"><button type="submit" class="btn btn-agro w-100 py-2"><i class="bi bi-check2"></i> Guardar</button></div></div></div>
+        <input type="hidden" name="volumen_sedimentacion" id="vs-hidden">
+        <div class="section-card">
+            <h5 class="fw-bold mb-4">Ingresar Resultado</h5>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Muestra Analizada</label>
+                    <select class="form-select selector-memoria bg-light" name="muestra_id" required>
+                        <option value="">-- Elija una muestra --</option>
+                        {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Lectura del sedimento (mL)</label>
+                    <input type="text" inputmode="decimal" class="form-control" name="vs_lectura" id="vs-lectura" placeholder="Ej: 49" autocomplete="off" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Peso muestra TFSA (g)</label>
+                    <input type="text" inputmode="decimal" class="form-control" name="vs_peso" id="vs-peso" placeholder="Ej: 50" autocomplete="off" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-agro w-100 py-2" id="btn-vs-guardar" disabled><i class="bi bi-check2"></i> Guardar</button>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div id="vs-resultado" class="rounded-3 p-3 text-center" style="display:none; background-color:#f0f7f0; border:1px solid #a3c4a3;">
+                        <span class="text-muted small me-2">VS =</span>
+                        <strong id="vs-val" class="fs-5 text-success me-3"></strong>
+                        <span class="text-muted small me-2">mL&nbsp;%&nbsp;g⁻¹&nbsp;&rarr;</span>
+                        <strong id="vs-clase" class="fs-5" style="color:var(--bs-dark,#212529);"></strong>
+                    </div>
+                    <div id="vs-error" class="text-danger small mt-1" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
     </form>
+    <script>
+    (function(){
+        var lecEl  = document.getElementById('vs-lectura');
+        var pesEl  = document.getElementById('vs-peso');
+        var hidEl  = document.getElementById('vs-hidden');
+        var resDiv = document.getElementById('vs-resultado');
+        var errDiv = document.getElementById('vs-error');
+        var valEl  = document.getElementById('vs-val');
+        var claEl  = document.getElementById('vs-clase');
+        var btnEl  = document.getElementById('btn-vs-guardar');
+
+        function parseNum(s){ return parseFloat(String(s).replace(',','.')); }
+
+        function clasificar(vs){
+            if (vs <  80)  return 'Suelo arenoso';
+            if (vs <  94)  return 'Suelo franco-arenoso';
+            if (vs < 105)  return 'Suelo franco';
+            if (vs < 116)  return 'Suelo franco-limoso';
+            if (vs < 126)  return 'Suelo franco-arcilloso';
+            if (vs < 140)  return 'Suelo franco-arcilloso-limoso';
+            return 'Suelo arcilloso';
+        }
+
+        function calcular(){
+            var lec = parseNum(lecEl.value);
+            var pes = parseNum(pesEl.value);
+            errDiv.style.display = 'none';
+            resDiv.style.display = 'none';
+            hidEl.value = '';
+            btnEl.disabled = true;
+
+            if(lecEl.value.trim() === '' && pesEl.value.trim() === '') return;
+
+            if(isNaN(lec) || isNaN(pes)){
+                errDiv.textContent = 'Ingresá valores numéricos válidos (podés usar coma o punto decimal).';
+                errDiv.style.display = 'block'; return;
+            }
+            if(pes <= 0){
+                errDiv.textContent = 'El peso de la muestra debe ser mayor que 0.';
+                errDiv.style.display = 'block'; return;
+            }
+
+            var vs = (lec * 100) / pes;
+            var clase = clasificar(vs);
+            valEl.textContent  = vs.toFixed(1);
+            claEl.textContent  = clase;
+            hidEl.value        = clase;
+            resDiv.style.display = 'block';
+            btnEl.disabled = false;
+        }
+
+        lecEl.addEventListener('input', calcular);
+        pesEl.addEventListener('input', calcular);
+
+        document.getElementById('form-vs').addEventListener('submit', function(e){
+            var lec = parseNum(lecEl.value);
+            var pes = parseNum(pesEl.value);
+            if(isNaN(lec) || isNaN(pes) || pes <= 0 || hidEl.value === ''){
+                e.preventDefault();
+                errDiv.textContent = 'Completá ambos campos con valores válidos antes de guardar.';
+                errDiv.style.display = 'block';
+            }
+        }, true);
+    })();
+    </script>
 </div>
 
                     <div class="tab-pane fade" id="respiracion">
@@ -585,7 +687,7 @@
                                                 <input type="number" step="any" inputmode="decimal" class="form-control form-control-lg bg-light fw-bold text-center" name="ph">
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label">Cond. Eléctrica (dS/m)</label>
+                                                <label class="form-label">Cond. Eléctrica (μS/cm)</label>
                                                 <input type="number" step="any" inputmode="decimal" class="form-control form-control-lg bg-light fw-bold text-center" name="conductividad">
                                             </div>
                                         </div>
@@ -763,6 +865,125 @@
                             </div>
                         </div>
                         <div class="section-card"><h5 class="text-dark fw-bold mb-4"><i class="bi bi-images text-muted me-2"></i> Galería de Cromas</h5><div class="row g-3">{% set cromas = consolidado | selectattr('foto_cromatografia') | list %}{% if cromas %}{% for fila in cromas %}<div class="col-6 col-md-4 col-lg-3 position-relative"><div class="gallery-card h-100 d-flex flex-column"><a href="{{ fila.foto_cromatografia }}" target="_blank" style="overflow: hidden; display: block; flex-grow: 1;"><img src="{{ fila.foto_cromatografia }}" class="gallery-img h-100" alt="Cromatografía"></a><div class="p-2 bg-light border-top text-center"><small class="fw-bold d-block text-truncate text-secondary" title="{{ fila.nombre_muestra }}">{{ fila.nombre_muestra }}</small></div><form action="/eliminar_cromo/{{ fila.id }}" method="POST" class="position-absolute top-0 end-0 m-2"><button type="submit" class="btn btn-sm btn-danger rounded-circle p-1 lh-1 shadow border border-white" onclick="return confirm('¿Eliminar croma permanentemente?');"><i class="bi bi-x fw-bold"></i></button></form></div></div>{% endfor %}{% else %}<div class="col-12 text-center text-muted py-5 bg-light rounded-3" style="border: 1px dashed #ccc;"><i class="bi bi-camera-slash" style="font-size: 3rem; color: #dee2e6;"></i><h6 class="mt-3 fw-bold">Galería vacía</h6><p class="small mb-0">No hay cromatografías registradas aún.</p></div>{% endif %}</div></div>
+                    </div>
+
+                    <div class="tab-pane fade" id="analisis-externo">
+                        <form action="/" method="POST" enctype="multipart/form-data" class="form-memoria" data-tab="analisis-externo" id="form-analisis-externo">
+                            <input type="hidden" name="form_type" value="analisis_externo">
+
+                            <!-- DATOS DEL INFORME -->
+                            <div class="section-card mb-4">
+                                <h5 class="fw-bold mb-4"><i class="bi bi-file-earmark-text text-muted me-2"></i> Datos del informe</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Muestra Analizada</label>
+                                        <select class="form-select selector-memoria bg-light" name="muestra_id" required>
+                                            <option value="">-- Seleccione --</option>
+                                            {% for m in muestras %}<option value="{{ m.id }}">{{ m.nombre_muestra }}</option>{% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Laboratorio</label>
+                                        <input type="text" class="form-control bg-light" name="laboratorio" placeholder="Ej: INTA EEA Mendoza">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Nº de protocolo / muestra (lab)</label>
+                                        <input type="text" class="form-control bg-light" name="nro_protocolo" placeholder="Ej: 18010">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Fecha de recepción</label>
+                                        <input type="date" class="form-control bg-light" name="fecha_recepcion">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Fecha de informe</label>
+                                        <input type="date" class="form-control bg-light" name="fecha_informe">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Informe del laboratorio (PDF)</label>
+                                        <input type="file" class="form-control bg-light" name="archivo_pdf" accept="application/pdf">
+                                        <div class="form-text">Opcional. Si editás un análisis ya cargado y no subís un PDF nuevo, se conserva el anterior.</div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Observaciones</label>
+                                        <textarea class="form-control bg-light" name="observaciones" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- DETERMINACIONES -->
+                            <div class="section-card mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                    <h5 class="fw-bold m-0"><i class="bi bi-list-check text-muted me-2"></i> Determinaciones</h5>
+                                    <button type="button" id="det-add" class="btn btn-outline-success btn-sm rounded-pill px-3"><i class="bi bi-plus-lg me-1"></i> Agregar</button>
+                                </div>
+                                <p class="text-muted small mb-3">Cargá lo que venga en el informe. El <strong>método</strong> y la <strong>unidad</strong> importan para poder contrastar después (ej: P por Olsen vs P-H₂CO₃ 1:10 no son lo mismo).</p>
+
+                                <div class="row g-2 mb-1 d-none d-md-flex text-muted small fw-bold">
+                                    <div class="col-md-3">Parámetro</div>
+                                    <div class="col-md-2">Valor</div>
+                                    <div class="col-md-2">Unidad</div>
+                                    <div class="col-md-4">Método</div>
+                                    <div class="col-md-1"></div>
+                                </div>
+
+                                <div id="det-rows"></div>
+                            </div>
+
+                            <input type="hidden" name="determinaciones" id="det-json">
+
+                            <div class="text-end mb-5">
+                                <button type="submit" class="btn btn-agro px-5 py-2 shadow-sm"><i class="bi bi-save me-2"></i> Guardar análisis</button>
+                            </div>
+                        </form>
+
+                        <!-- HISTORIAL DE ANÁLISIS EXTERNOS CARGADOS -->
+                        <div class="section-card">
+                            <h5 class="text-dark fw-bold mb-4"><i class="bi bi-archive text-muted me-2"></i> Análisis externos cargados</h5>
+                            {% set externos = consolidado | selectattr('det_externo') | list %}
+                            {% if externos %}
+                                {% for fila in externos %}
+                                <div class="border rounded-3 p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                                        <div>
+                                            <strong>{{ fila.nombre_muestra }}</strong>
+                                            <span class="text-muted small ms-2">{{ fila.lab_externo or 'Sin laboratorio' }}{% if fila.nro_protocolo_ext %} · Nº {{ fila.nro_protocolo_ext }}{% endif %}</span>
+                                        </div>
+                                        <form action="/eliminar_analisis_externo/{{ fila.id }}" method="POST" onsubmit="return confirm('¿Eliminar este análisis externo?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm mb-0">
+                                            <thead><tr class="text-muted small"><th>Parámetro</th><th>Valor</th><th>Unidad</th><th>Método</th><th>Nivel</th></tr></thead>
+                                            <tbody>
+                                                {% for d in fila.det_externo %}
+                                                <tr>
+                                                    <td>{{ d.parametro }}</td>
+                                                    <td class="fw-bold">{{ d.valor }}</td>
+                                                    <td>{{ d.unidad }}</td>
+                                                    <td class="small text-muted">{{ d.metodo }}</td>
+                                                    <td>{{ d.nivel }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% set ext_ph = (fila.det_externo | selectattr('parametro', 'equalto', 'pH') | first) %}
+                                    {% set ext_ce = (fila.det_externo | selectattr('parametro', 'equalto', 'Conductividad eléctrica') | first) %}
+                                    {% if (ext_ph and fila.ph) or (ext_ce and fila.conductividad) %}
+                                    <div class="bg-light rounded-3 p-2 mt-2 small">
+                                        <span class="fw-bold text-muted">Contraste con tu medición:</span>
+                                        {% if ext_ph and fila.ph %} pH propio <strong>{{ fila.ph }}</strong> vs lab <strong>{{ ext_ph.valor }}</strong>.{% endif %}
+                                        {% if ext_ce and fila.conductividad %} CE propia <strong>{{ fila.conductividad }}</strong> vs lab <strong>{{ ext_ce.valor }}</strong>.{% endif %}
+                                    </div>
+                                    {% endif %}
+                                    {% if fila.tiene_pdf %}<a href="/informe_externo/{{ fila.id }}" target="_blank" class="small mt-2 d-inline-block"><i class="bi bi-file-earmark-pdf me-1 text-danger"></i>Ver informe (PDF){% if fila.archivo_nombre %} · {{ fila.archivo_nombre }}{% endif %}</a>{% endif %}
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted small mb-0">Todavía no cargaste análisis externos.</p>
+                            {% endif %}
+                        </div>
                     </div>
 
                     <div class="tab-pane fade" id="consolidado">
@@ -1230,7 +1451,12 @@
                         let tieneDatos = false;
                         if(tab === 'registro') { form.querySelector('[name="nombre"]').value = data.nombre || ''; form.querySelector('[name="cultivo"]').value = data.cultivo || ''; form.querySelector('[name="latitud"]').value = data.latitud || ''; form.querySelector('[name="longitud"]').value = data.longitud || ''; form.querySelector('[name="descripcion"]').value = data.descripcion || ''; form.querySelector('[name="info"]').value = data.info || ''; tieneDatos = true; }
                         if(tab === 'textura' && data.textura) { form.querySelector('[name="textura"]').value = data.textura; tieneDatos = true; }
-                        if(tab === 'vol-sedimentacion' && data.volumen_sedimentacion) { form.querySelector('[name="volumen_sedimentacion"]').value = data.volumen_sedimentacion; tieneDatos = true; }
+                        if(tab === 'vol-sedimentacion') {
+                            if(data.vs_lectura != null) form.querySelector('[name="vs_lectura"]').value = data.vs_lectura;
+                            if(data.vs_peso    != null) form.querySelector('[name="vs_peso"]').value    = data.vs_peso;
+                            form.querySelector('[name="vs_lectura"]').dispatchEvent(new Event('input', { bubbles: true }));
+                            if(data.vs_lectura != null && data.vs_peso != null) tieneDatos = true;
+                        }
                         if(tab === 'ph' && (data.ph !== undefined || data.conductividad !== undefined)) { 
                             if(data.ph !== null) form.querySelector('[name="ph"]').value = data.ph; 
                             if(data.conductividad !== null) form.querySelector('[name="conductividad"]').value = data.conductividad; 
@@ -1292,11 +1518,20 @@
                             
                             let chart = echarts.getInstanceByDom(document.getElementById('resp-chart-individual')) || echarts.init(document.getElementById('resp-chart-individual'));
                             let t_arr = JSON.parse(data.r_tiempo); let c_arr = JSON.parse(data.r_co2);
+                            let pts_ind = t_arr.map(function(t,i){ return [t, c_arr[i]]; });
                             chart.setOption({
-                                tooltip: {trigger: 'axis'}, grid: {left: '15%', right: '5%', bottom: '15%', top: '10%'},
-                                xAxis: {name: 'Tiempo (min)', nameLocation: 'middle', nameGap: 25, type: 'category', data: t_arr, boundaryGap: false, splitLine:{show:false}},
+                                tooltip: {trigger: 'axis', formatter: function(p){ return 'Tiempo: ' + p[0].value[0] + ' min<br/>CO2: ' + p[0].value[1] + ' ppm'; }},
+                                grid: {left: '15%', right: '5%', bottom: '15%', top: '10%'},
+                                xAxis: {name: 'Tiempo (min)', nameLocation: 'middle', nameGap: 25, type: 'value', boundaryGap: false, splitLine:{show:false}},
                                 yAxis: {name: 'CO2 (ppm)', type: 'value', scale: true, splitLine:{lineStyle:{type:'dashed', color:'#eee'}}},
-                                series: [{name: 'CO2', type: 'line', data: c_arr, smooth: true, showSymbol: false, areaStyle:{color:'rgba(23, 162, 184, 0.1)'}, lineStyle:{color:'#17a2b8'}, itemStyle:{color:'#17a2b8'}}]
+                                series: [{name: 'CO2', type: 'line', data: pts_ind, smooth: true, showSymbol: false,
+                                    areaStyle:{color:'rgba(23, 162, 184, 0.1)'}, lineStyle:{color:'#17a2b8'}, itemStyle:{color:'#17a2b8'},
+                                    markLine: {silent: true, symbol:['none','none'],
+                                        lineStyle:{color:'#e63946', type:'dashed', width:2},
+                                        label:{position:'insideStartTop', formatter:'24 h', color:'#e63946', fontWeight:'bold'},
+                                        data:[{xAxis:1440}]
+                                    }
+                                }]
                             });
                             window.addEventListener('resize', function() { chart.resize(); });
                         }
@@ -1528,13 +1763,19 @@
                         let chartRespModal = echarts.getInstanceByDom(document.getElementById('chart-resp-modal-{{ f.id }}'));
                         if (!chartRespModal) {
                             chartRespModal = echarts.init(document.getElementById('chart-resp-modal-{{ f.id }}'));
-                            chartRespModal.setOption({
-                                tooltip: { trigger: 'axis', formatter: 'Tiempo: {b} min<br/>CO2: {c} ppm' },
-                                grid: { left: '10%', right: '5%', bottom: '15%', top: '10%', containLabel: true },
-                                xAxis: { type: 'category', data: {{ f.curva_tiempo|safe }}, boundaryGap: false, splitLine: { show: false } },
-                                yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { type: 'dashed', color: '#eee' } } },
-                                series: [{ data: {{ f.curva_co2|safe }}, type: 'line', smooth: true, showSymbol: false, areaStyle: { color: 'rgba(45, 106, 79, 0.1)' }, lineStyle: { color: '#2d6a4f', width: 2 }, itemStyle: { color: '#2d6a4f' } }]
-                            });
+                            (function(){
+                                var _t = {{ f.curva_tiempo|safe }};
+                                var _c = {{ f.curva_co2|safe }};
+                                var _pts = [];
+                                for(var _i=0; _i<_t.length; _i++){ if(_t[_i] <= 1440) _pts.push([_t[_i], _c[_i]]); }
+                                chartRespModal.setOption({
+                                    tooltip: { trigger: 'axis', formatter: function(p){ return 'Tiempo: ' + p[0].value[0] + ' min<br/>CO2: ' + p[0].value[1] + ' ppm'; } },
+                                    grid: { left: '10%', right: '5%', bottom: '15%', top: '10%', containLabel: true },
+                                    xAxis: { type: 'value', name: 'Tiempo (min)', nameLocation: 'middle', nameGap: 25, boundaryGap: false, splitLine: { show: false } },
+                                    yAxis: { type: 'value', scale: true, name: 'CO2 (ppm)', splitLine: { lineStyle: { type: 'dashed', color: '#eee' } } },
+                                    series: [{ data: _pts, type: 'line', smooth: true, showSymbol: false, areaStyle: { color: 'rgba(45, 106, 79, 0.1)' }, lineStyle: { color: '#2d6a4f', width: 2 }, itemStyle: { color: '#2d6a4f' } }]
+                                });
+                            })();
                         }
                         chartRespModal.resize();
                     });
@@ -1551,7 +1792,7 @@
                             let co2 = {{ f.curva_co2 | safe }};
                             let points = [];
                             for(let i=0; i<tiempos.length; i++) {
-                                points.push([tiempos[i], co2[i]]);
+                                if(tiempos[i] <= 1440) points.push([tiempos[i], co2[i]]);
                             }
                             seriesDataResp.push({
                                 name: "{{ f.nombre_muestra }}",
@@ -1595,7 +1836,7 @@
                     {% endfor %}
                 ];
 
-                const dictVars = { 'ph': { label: 'pH', unit: '' }, 'poxc': { label: 'Carbono Activo', unit: 'mg/kg' }, 'p': { label: 'Fósforo', unit: 'mg/kg' }, 'mop': { label: 'Materia Orgánica', unit: '%' }, 'agregados': { label: 'Índice Slakes', unit: 'SI' }, 'conductividad': { label: 'Conductividad', unit: 'dS/m' }, 'respiracion': { label: 'Respiración', unit: 'μgC/g' } };
+                const dictVars = { 'ph': { label: 'pH', unit: '' }, 'poxc': { label: 'Carbono Activo', unit: 'mg/kg' }, 'p': { label: 'Fósforo', unit: 'mg/kg' }, 'mop': { label: 'Materia Orgánica', unit: '%' }, 'agregados': { label: 'Índice Slakes', unit: 'SI' }, 'conductividad': { label: 'Conductividad', unit: 'μS/cm' }, 'respiracion': { label: 'Respiración', unit: 'μgC/g' } };
                 const maxValues = { ph: 14, poxc: Math.max(...datosSuelo.map(d=>d.poxc), 800), p: Math.max(...datosSuelo.map(d=>d.p), 50), mop: Math.max(...datosSuelo.map(d=>d.mop), 5), agregados: Math.max(...datosSuelo.map(d=>d.agregados), 10) };
 
                 let chartRadar = echarts.init(document.getElementById('chart-radar'));
@@ -1684,6 +1925,116 @@
                 document.getElementById('fichaFotos').innerHTML = fotosHtml;
             });
         });
+    </script>
+
+    <script>
+    (function () {
+        const cont   = document.getElementById('det-rows');
+        const hidden = document.getElementById('det-json');
+        const form   = document.getElementById('form-analisis-externo');
+        const addBtn = document.getElementById('det-add');
+        if (!cont || !form) return;
+
+        const CATALOGO = [
+            { nombre: "pH",                           unidad: "",      metodo: "" },
+            { nombre: "Conductividad eléctrica (CE)", unidad: "dS/m",  metodo: "" },
+            { nombre: "N Total",                      unidad: "mg/kg", metodo: "" },
+            { nombre: "Fósforo (P)",                  unidad: "mg/kg", metodo: "H₂CO₃ 1:10" },
+            { nombre: "Potasio (K) intercambiable",   unidad: "mg/kg", metodo: "Ac-NH₄ pH 7" },
+            { nombre: "Materia orgánica",             unidad: "%",     metodo: "Walkley & Black" },
+            { nombre: "Relación C/N",                 unidad: "",      metodo: "" },
+            { nombre: "Sales totales",                unidad: "mg/kg", metodo: "" },
+            { nombre: "Calcio (Ca)",                  unidad: "meq/L", metodo: "" },
+            { nombre: "Magnesio (Mg)",                unidad: "meq/L", metodo: "" },
+            { nombre: "Sodio (Na)",                   unidad: "meq/L", metodo: "" },
+            { nombre: "RAS",                          unidad: "",      metodo: "" },
+            { nombre: "Vol. de sedimentación",        unidad: "cm³%g", metodo: "" },
+            { nombre: "Clasificación textural",       unidad: "",      metodo: "" }
+        ];
+
+        function opcionesSelect(seleccion) {
+            let html = '<option value="">-- Elegir --</option>';
+            CATALOGO.forEach(function (c) {
+                const sel = (c.nombre === seleccion) ? ' selected' : '';
+                html += '<option value="' + c.nombre + '"' + sel + '>' + c.nombre + '</option>';
+            });
+            const selOtro = (seleccion === 'Otro') ? ' selected' : '';
+            html += '<option value="Otro"' + selOtro + '>Otro…</option>';
+            return html;
+        }
+
+        function addRow(d) {
+            d = d || {};
+            const enCatalogo = CATALOGO.some(function (c) { return c.nombre === d.parametro; });
+            const seleccion  = d.parametro ? (enCatalogo ? d.parametro : 'Otro') : '';
+            const nombreOtro = (d.parametro && !enCatalogo) ? d.parametro : '';
+
+            const div = document.createElement('div');
+            div.className = 'row g-2 mb-2 det-row align-items-start';
+            div.innerHTML =
+                '<div class="col-md-3">' +
+                    '<select class="form-select form-select-sm det-parametro bg-light">' + opcionesSelect(seleccion) + '</select>' +
+                    '<input type="text" class="form-control form-control-sm det-otro bg-light mt-1" placeholder="Nombre del parámetro" value="' + nombreOtro + '" style="display:none;">' +
+                '</div>' +
+                '<div class="col-md-2"><input type="text" class="form-control form-control-sm det-valor bg-light" placeholder="Valor" value="' + (d.valor || '') + '"></div>' +
+                '<div class="col-md-2"><input type="text" class="form-control form-control-sm det-unidad bg-light" placeholder="Unidad" value="' + (d.unidad || '') + '"></div>' +
+                '<div class="col-md-4"><input type="text" class="form-control form-control-sm det-metodo bg-light" placeholder="Método" value="' + (d.metodo || '') + '"></div>' +
+                '<div class="col-md-1 text-end"><button type="button" class="btn btn-sm btn-outline-danger det-del"><i class="bi bi-x-lg"></i></button></div>';
+            cont.appendChild(div);
+
+            const select    = div.querySelector('.det-parametro');
+            const inputOtro = div.querySelector('.det-otro');
+            const inUnidad  = div.querySelector('.det-unidad');
+            const inMetodo  = div.querySelector('.det-metodo');
+
+            if (seleccion === 'Otro') inputOtro.style.display = 'block';
+
+            select.addEventListener('change', function () {
+                if (select.value === 'Otro') {
+                    inputOtro.style.display = 'block';
+                    inputOtro.focus();
+                    inUnidad.value = '';
+                    inMetodo.value = '';
+                } else {
+                    inputOtro.style.display = 'none';
+                    inputOtro.value = '';
+                    const item = CATALOGO.find(function (c) { return c.nombre === select.value; });
+                    if (item) {
+                        inUnidad.value = item.unidad;
+                        inMetodo.value = item.metodo;
+                    }
+                }
+                serializar();
+            });
+
+            div.querySelector('.det-del').addEventListener('click', function () { div.remove(); serializar(); });
+        }
+
+        function serializar() {
+            const rows = [];
+            cont.querySelectorAll('.det-row').forEach(function (r) {
+                const sel  = r.querySelector('.det-parametro').value;
+                const otro = r.querySelector('.det-otro').value.trim();
+                const parametro = (sel === 'Otro') ? otro : sel;
+                const valor = r.querySelector('.det-valor').value.trim();
+                if (!parametro && !valor) return;
+                rows.push({
+                    parametro: parametro,
+                    valor: valor,
+                    unidad: r.querySelector('.det-unidad').value.trim(),
+                    metodo: r.querySelector('.det-metodo').value.trim()
+                });
+            });
+            hidden.value = JSON.stringify(rows);
+        }
+
+        addBtn.addEventListener('click', function () { addRow(); });
+        cont.addEventListener('input',  serializar);
+        cont.addEventListener('change', serializar);
+        form.addEventListener('submit', serializar);
+
+        addRow();
+    })();
     </script>
 
     <!-- ===== CHAT WIDGET: Asistente de Métodos ===== -->
@@ -1797,8 +2148,9 @@
             'ph-tab':            { id: 'ph',             nombre: 'pH y Conductividad Eléctrica' },
             'mop-tab':           { id: 'mop',            nombre: 'Materia Orgánica Particulada (MOP)' },
             'estab-tab':         { id: 'agregados',      nombre: 'Estabilidad de Agregados (Slakes)' },
-            'macrofauna-tab':    { id: 'macrofauna',     nombre: 'Macrofauna del Suelo' },
-            'cromatografia-tab': { id: 'cromatografia',  nombre: 'Cromatografía de Pfeiffer' }
+            'macrofauna-tab':       { id: 'macrofauna',     nombre: 'Macrofauna del Suelo' },
+            'cromatografia-tab':    { id: 'cromatografia',  nombre: 'Cromatografía de Pfeiffer' },
+            'analisis-externo-tab': { id: 'analisis_externo', nombre: 'Análisis Externo (Lab)' }
         };
 
         let metodosData    = null;
