@@ -25,7 +25,9 @@
       "Bash(py -c \"import ast; ast.parse\\(open\\('app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('app.py OK'\\)\")",
       "Bash(py -c \"import json; json.load\\(open\\('metodos_laboratorio.json', encoding='utf-8'\\)\\); print\\('JSON OK'\\)\")",
       "Bash(python *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(git commit *)",
+      "Bash(git config *)"
     ]
   }
 }
