@@ -24,7 +24,7 @@ Está diseñada para funcionar también sin conexión a internet (modo offline),
 2. Creá un archivo `.env` en la raíz con:
 
    ```
-   DATABASE_URL=***REMOVED_DB_URI***
+   DATABASE_URL=postgresql://usuario:password@host:puerto/basededatos
    SECRET_KEY=una-clave-secreta
    ```
 
