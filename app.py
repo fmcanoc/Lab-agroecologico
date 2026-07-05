@@ -716,6 +716,46 @@ def eliminar_analisis_externo(muestra_id):
         conexion.close()
     return redirect(url_for('inicio') + '#analisis-externo')
 
+TIPOS_DATO_ELIMINABLE = {'textura', 'volumen_sedimentacion', 'ph', 'carbono', 'fosforo', 'respiracion', 'mop', 'agregados'}
+
+@app.route('/eliminar_dato/<int:muestra_id>/<tipo>', methods=['POST'])
+def eliminar_dato(muestra_id, tipo):
+    if 'usuario_id' not in session: return redirect(url_for('login'))
+    if tipo not in TIPOS_DATO_ELIMINABLE:
+        flash('Tipo de análisis no válido.', 'danger')
+        return redirect(url_for('inicio') + '#consolidado')
+    usuario_id = session['usuario_id']
+    conexion = obtener_conexion()
+    cur = conexion.cursor()
+    try:
+        cur.execute('SELECT id FROM muestras WHERE id = %s AND usuario_id = %s', (muestra_id, usuario_id))
+        if not cur.fetchone():
+            flash('Muestra no encontrada.', 'danger')
+            return redirect(url_for('inicio') + '#consolidado')
+
+        if tipo == 'textura':
+            cur.execute('UPDATE muestras SET textura = NULL WHERE id = %s AND usuario_id = %s', (muestra_id, usuario_id))
+        elif tipo == 'volumen_sedimentacion':
+            cur.execute('UPDATE muestras SET volumen_sedimentacion = NULL, vs_lectura = NULL, vs_peso = NULL WHERE id = %s AND usuario_id = %s', (muestra_id, usuario_id))
+        elif tipo == 'ph':
+            cur.execute('DELETE FROM ph_conductividad WHERE muestra_id = %s', (muestra_id,))
+        elif tipo == 'carbono':
+            cur.execute('DELETE FROM carbono_activo WHERE muestra_id = %s', (muestra_id,))
+        elif tipo == 'fosforo':
+            cur.execute('DELETE FROM fosforo_olsen WHERE muestra_id = %s', (muestra_id,))
+        elif tipo == 'respiracion':
+            cur.execute('DELETE FROM respiracion_suelo WHERE muestra_id = %s', (muestra_id,))
+        elif tipo == 'mop':
+            cur.execute('DELETE FROM materia_organica WHERE muestra_id = %s', (muestra_id,))
+        elif tipo == 'agregados':
+            cur.execute('DELETE FROM estabilidad_agregados WHERE muestra_id = %s', (muestra_id,))
+        conexion.commit()
+        flash('Dato eliminado correctamente.', 'success')
+    finally:
+        cur.close()
+        conexion.close()
+    return redirect(url_for('inicio') + '#consolidado')
+
 @app.route('/eliminar_foto/<int:muestra_id>', methods=['POST'])
 def eliminar_foto(muestra_id):
     if 'usuario_id' not in session: return redirect(url_for('login'))

@@ -1083,7 +1083,26 @@
                                             <td data-label="Índice Slakes">{% if fila.indice_slakes %}<strong>{{ "%.1f"|format(fila.indice_slakes) }}</strong>{% else %}-{% endif %}</td>
                                             <td data-label="Croma">{% if fila.foto_cromatografia %}<i class="bi bi-check-circle-fill text-info"></i>{% else %}-{% endif %}</td>
                                             <td data-label="Opciones">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle" data-bs-toggle="modal" data-bs-target="#modal-{{ fila.id }}"><i class="bi bi-arrows-fullscreen"></i></button>
+                                                <div class="d-flex gap-1 justify-content-center">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle" data-bs-toggle="modal" data-bs-target="#modal-{{ fila.id }}" title="Ver detalle"><i class="bi bi-arrows-fullscreen"></i></button>
+                                                {% set tiene_datos = fila.textura or fila.volumen_sedimentacion or fila.ph or fila.resultado_carbono or fila.fosforo or fila.respiracion or fila.mop or fila.indice_slakes %}
+                                                {% if tiene_datos %}
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-outline-secondary rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Borrar un dato puntual"><i class="bi bi-eraser"></i></button>
+                                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                        <li><h6 class="dropdown-header">Borrar dato puntual</h6></li>
+                                                        {% if fila.textura %}<li><form action="/eliminar_dato/{{ fila.id }}/textura" method="POST" onsubmit="return confirm('¿Eliminar la textura registrada?');"><button type="submit" class="dropdown-item text-danger small">Textura</button></form></li>{% endif %}
+                                                        {% if fila.volumen_sedimentacion %}<li><form action="/eliminar_dato/{{ fila.id }}/volumen_sedimentacion" method="POST" onsubmit="return confirm('¿Eliminar el volumen de sedimentación registrado?');"><button type="submit" class="dropdown-item text-danger small">Volumen de sedimentación</button></form></li>{% endif %}
+                                                        {% if fila.ph %}<li><form action="/eliminar_dato/{{ fila.id }}/ph" method="POST" onsubmit="return confirm('¿Eliminar el pH y la conductividad registrados?');"><button type="submit" class="dropdown-item text-danger small">pH y conductividad</button></form></li>{% endif %}
+                                                        {% if fila.resultado_carbono %}<li><form action="/eliminar_dato/{{ fila.id }}/carbono" method="POST" onsubmit="return confirm('¿Eliminar el resultado de Carbono Activo (POXC)?');"><button type="submit" class="dropdown-item text-danger small">Carbono Activo (POXC)</button></form></li>{% endif %}
+                                                        {% if fila.fosforo %}<li><form action="/eliminar_dato/{{ fila.id }}/fosforo" method="POST" onsubmit="return confirm('¿Eliminar el resultado de Fósforo?');"><button type="submit" class="dropdown-item text-danger small">Fósforo</button></form></li>{% endif %}
+                                                        {% if fila.respiracion %}<li><form action="/eliminar_dato/{{ fila.id }}/respiracion" method="POST" onsubmit="return confirm('¿Eliminar el resultado de Respiración?');"><button type="submit" class="dropdown-item text-danger small">Respiración</button></form></li>{% endif %}
+                                                        {% if fila.mop %}<li><form action="/eliminar_dato/{{ fila.id }}/mop" method="POST" onsubmit="return confirm('¿Eliminar el resultado de Materia Orgánica Particulada?');"><button type="submit" class="dropdown-item text-danger small">Materia Orgánica (MOP)</button></form></li>{% endif %}
+                                                        {% if fila.indice_slakes %}<li><form action="/eliminar_dato/{{ fila.id }}/agregados" method="POST" onsubmit="return confirm('¿Eliminar el Índice Slakes registrado?');"><button type="submit" class="dropdown-item text-danger small">Índice Slakes</button></form></li>{% endif %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                                </div>
                                             </td>
                                             <td>
                                                 <form action="/eliminar_muestra/{{ fila.id }}" method="POST" onsubmit="return confirm('¿Eliminar la muestra {{ fila.nombre_muestra }} y todos sus datos? Esta acción no se puede deshacer.');">
